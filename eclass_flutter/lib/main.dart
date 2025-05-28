@@ -1,8 +1,12 @@
+import 'package:eclass_flutter/teacher_panel/dash/ui.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 void main() {
   runApp(const MyApp());
 }
+
+ColorScheme colours = ColorScheme.fromSeed(seedColor: Colors.deepPurple);
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -11,7 +15,7 @@ class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Eclass',
       theme: ThemeData(
         // This is the theme of your application.
         //
@@ -28,10 +32,52 @@ class MyApp extends StatelessWidget {
         //
         // This works for code too, not just values: Most code changes can be
         // tested with just a hot reload.
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
+        
+        colorScheme: colours,
+        scaffoldBackgroundColor: colours.surfaceBright,
         useMaterial3: true,
+        //
+        textTheme: TextTheme(
+          displayLarge: GoogleFonts.abrilFatface(fontSize: 57),
+          displayMedium: GoogleFonts.abrilFatface(fontSize: 45),
+          displaySmall: GoogleFonts.abrilFatface(fontSize: 36),
+
+          headlineLarge: GoogleFonts.abrilFatface(fontSize: 32),
+          headlineMedium: GoogleFonts.abrilFatface(fontSize: 28),
+          headlineSmall: GoogleFonts.abrilFatface(fontSize: 24),
+
+          titleLarge: GoogleFonts.poppins(
+            fontSize: 22,
+            fontWeight: FontWeight.w600,
+          ),
+          titleMedium: GoogleFonts.poppins(
+            fontSize: 16,
+            fontWeight: FontWeight.w500,
+          ),
+          titleSmall: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+
+          bodyLarge: GoogleFonts.poppins(fontSize: 16),
+          bodyMedium: GoogleFonts.poppins(fontSize: 14),
+          bodySmall: GoogleFonts.poppins(fontSize: 12),
+
+          labelLarge: GoogleFonts.poppins(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
+          ),
+          labelMedium: GoogleFonts.poppins(
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
+          ),
+          labelSmall: GoogleFonts.poppins(
+            fontSize: 11,
+            fontWeight: FontWeight.w500,
+          ),
+        ),
       ),
-      home: const MyHomePage(title: 'Flutter Demo Home Page'),
+      home: const TeacherDash(),
     );
   }
 }
