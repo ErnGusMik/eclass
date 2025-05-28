@@ -13,7 +13,7 @@ class TeacherDash extends StatelessWidget {
           Container(
             width: double.infinity,
             decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHigh,
+              color: Theme.of(context).colorScheme.surfaceBright,
               borderRadius: BorderRadius.circular(16.0),
             ),
             child: Padding(
@@ -25,6 +25,43 @@ class TeacherDash extends StatelessWidget {
                     'Latest Notices',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                       color: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  SizedBox(
+                    height: 200.0, 
+                    child: CarouselView(
+                      backgroundColor: Theme.of(context).colorScheme.tertiaryContainer,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28.0),
+                      ),
+                      padding: EdgeInsets.all(16.0),
+                      itemSnapping: true,
+                      scrollDirection: Axis.horizontal,
+                      itemExtent: MediaQuery.of(context).size.width * 0.8,
+                      children: [
+                        Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.surfaceBright,
+                            border: Border.all(
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
+                            borderRadius: BorderRadius.circular(28.0),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.add_circle, color: Theme.of(context).colorScheme.onSurface,),
+                              Text(
+                                'Create new notice',
+                                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  color: Theme.of(context).colorScheme.onSurface,
+                                ),
+                              )
+                            ],
+                          ),
+                        )
+                      ],
                     ),
                   )
                 ],

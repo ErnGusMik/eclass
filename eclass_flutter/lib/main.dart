@@ -34,7 +34,7 @@ class MyApp extends StatelessWidget {
         // tested with just a hot reload.
         
         colorScheme: colours,
-        scaffoldBackgroundColor: colours.surfaceBright,
+        scaffoldBackgroundColor: colours.surfaceContainerLow,
         useMaterial3: true,
         //
         textTheme: TextTheme(
