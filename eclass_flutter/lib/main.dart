@@ -38,42 +38,46 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         //
         textTheme: TextTheme(
-          displayLarge: GoogleFonts.abrilFatface(fontSize: 57),
-          displayMedium: GoogleFonts.abrilFatface(fontSize: 45),
-          displaySmall: GoogleFonts.abrilFatface(fontSize: 36),
+          displayLarge: GoogleFonts.abrilFatface(fontSize: 57, color: colours.onSurface,),
+          displayMedium: GoogleFonts.abrilFatface(fontSize: 45, color: colours.onSurface,),
+          displaySmall: GoogleFonts.abrilFatface(fontSize: 36, color: colours.onSurface,),
 
-          headlineLarge: GoogleFonts.abrilFatface(fontSize: 32),
-          headlineMedium: GoogleFonts.abrilFatface(fontSize: 28),
-          headlineSmall: GoogleFonts.abrilFatface(fontSize: 24),
+          headlineLarge: GoogleFonts.abrilFatface(fontSize: 32, color: colours.onSurface,),
+          headlineMedium: GoogleFonts.abrilFatface(fontSize: 28, color: colours.onSurface,),
+          headlineSmall: GoogleFonts.abrilFatface(fontSize: 24, color: colours.onSurface,),
 
           titleLarge: GoogleFonts.poppins(
             fontSize: 22,
-            fontWeight: FontWeight.w600,
+            color: colours.onSurface,
           ),
           titleMedium: GoogleFonts.poppins(
             fontSize: 16,
             fontWeight: FontWeight.w500,
+            color: colours.onSurface,
           ),
           titleSmall: GoogleFonts.poppins(
             fontSize: 14,
-            fontWeight: FontWeight.w500,
+            color: colours.onSurface,
           ),
 
-          bodyLarge: GoogleFonts.poppins(fontSize: 16),
-          bodyMedium: GoogleFonts.poppins(fontSize: 14),
-          bodySmall: GoogleFonts.poppins(fontSize: 12),
+          bodyLarge: GoogleFonts.poppins(fontSize: 16, color: colours.onSurface,),
+          bodyMedium: GoogleFonts.poppins(fontSize: 14, color: colours.onSurface,),
+          bodySmall: GoogleFonts.poppins(fontSize: 12, color: colours.onSurface,),
 
           labelLarge: GoogleFonts.poppins(
             fontSize: 14,
             fontWeight: FontWeight.w500,
+            color: colours.onSurface,
           ),
           labelMedium: GoogleFonts.poppins(
             fontSize: 12,
             fontWeight: FontWeight.w500,
+            color: colours.onSurface,
           ),
           labelSmall: GoogleFonts.poppins(
             fontSize: 11,
             fontWeight: FontWeight.w500,
+            color: colours.onSurface,
           ),
         ),
       ),
