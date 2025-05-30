@@ -15,7 +15,7 @@ class TeacherDash extends StatelessWidget {
             Header(),
             LatestNotices(),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -26,7 +26,10 @@ class TeacherDash extends StatelessWidget {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 8.0),
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 10.0,
+                      vertical: 8.0,
+                    ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -64,13 +67,151 @@ class TeacherDash extends StatelessWidget {
                         ),
                       ],
                     ),
-                  )
+                  ),
                 ],
               ),
-            )
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                spacing: 8.0,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Quick Actions",
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  Column(
+                    spacing: 8.0,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          FilledButton.icon(
+                            onPressed: () => {}, 
+                            label: Text(
+                              "Add homework",
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.onPrimary
+                              ),
+                            ),
+                            icon: Icon(Icons.add_circle_outline),
+                            style: FilledButton.styleFrom(
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                              padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0)
+                            ),
+                          ),
+                          SizedBox(width: 8.0),
+                          FilledButton.tonalIcon(
+                            onPressed: () => {},
+                            label: Text(
+                              "Add test",
+                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.onSecondaryContainer
+                              ),
+                            ),
+                            icon: Icon(Icons.today_rounded),
+                            style: FilledButton.styleFrom(
+                              padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
+                            ),
+                          )
+                        ],
+                      ),
+                      ConnectedButtonGroup(),
+                      Wrap(
+                        alignment: WrapAlignment.center,
+                        spacing: 4.0,
+                        children: [
+                          FilledButton.tonal(
+                            onPressed: () => {},
+                            style: FilledButton.styleFrom(
+                              padding: EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0)
+                            ),
+                            child: Text(
+                              "Cancel lesson",
+                            ),
+                          ),
+                          FilledButton(
+                            onPressed: () => {},
+                            style: FilledButton.styleFrom(
+                              padding: EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0)
+                            ),
+                            child: Text("Add lesson topic"),
+                          ),
+                          FilledButton.tonal(
+                            onPressed: () => {},
+                            style: FilledButton.styleFrom(
+                              padding: EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0)
+                            ),
+                            child: Text("Add notice"),
+                          )
+                        ],
+                      )
+                    ],
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
       ),
+    );
+  }
+}
+
+class ConnectedButtonGroup extends StatelessWidget {
+  const ConnectedButtonGroup({
+    super.key,
+    this.selected = 0,
+    this.labels = const ["Item 1", "Item 2", "Item 3"]
+  });
+
+  final int selected;
+  final List<String> labels;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      spacing: 2.0,
+      children: [
+        FilledButton(
+          onPressed: () => {},
+          style: FilledButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.secondary,
+            foregroundColor: Theme.of(context).colorScheme.onSecondary,
+          ),
+          child: Text(
+            "In school"
+          ),
+        ),
+        FilledButton.tonal(
+          onPressed: () => {},
+          style: FilledButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(8.0))
+            ),
+          ),
+          child: Text(
+            "Busy"
+          ),
+        ),
+        FilledButton.tonal(
+          onPressed: () => {},
+          style: FilledButton.styleFrom(
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.horizontal(
+                left: Radius.circular(8.0),
+                right: Radius.circular(24.0)
+              ),
+            ),
+          ),
+          child: Text(
+            "Sick"
+          ),
+        )
+      ],
     );
   }
 }
@@ -93,10 +234,8 @@ class TeacherClass extends StatelessWidget {
   final bool first;
   final bool last;
 
-
   @override
   Widget build(BuildContext context) {
-
     var startTimeStr = startTime.format(context).toString();
     var endTimeStr = endTime.format(context).toString();
     return Card(
@@ -119,8 +258,9 @@ class TeacherClass extends StatelessWidget {
               children: [
                 CircleAvatar(
                   child: Text(
-                    classGrade.substring(0, 2) + classGrade.substring(classGrade.length - 1)
-                  )
+                    classGrade.substring(0, 2) +
+                        classGrade.substring(classGrade.length - 1),
+                  ),
                 ),
                 SizedBox(width: 16.0),
                 Column(
@@ -139,25 +279,23 @@ class TeacherClass extends StatelessWidget {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                   ],
-                )
+                ),
               ],
             ),
             IconButton(onPressed: () => {}, icon: Icon(Icons.arrow_right)),
           ],
         ),
-      )
+      ),
     );
   }
 }
 
 class LatestNotices extends StatelessWidget {
-  const LatestNotices({
-    super.key,
-  });
+  const LatestNotices({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -213,8 +351,7 @@ class LatestNotices extends StatelessWidget {
                           style: Theme.of(
                             context,
                           ).textTheme.titleMedium?.copyWith(
-                            color:
-                                Theme.of(context).colorScheme.onSurface,
+                            color: Theme.of(context).colorScheme.onSurface,
                           ),
                         ),
                       ],
@@ -226,7 +363,13 @@ class LatestNotices extends StatelessWidget {
                     date: DateTime(2025, 5, 27),
                     content:
                         "Hi all!\nAttached is the exam schedule for MYP Year 5 and DP Year 2. Please note, this stuff won't be seen.",
-                    tags: ["Exam", "Schedule changes", "Important", "MYP5", "DP2"],
+                    tags: [
+                      "Exam",
+                      "Schedule changes",
+                      "Important",
+                      "MYP5",
+                      "DP2",
+                    ],
                   ),
                 ],
               ),
