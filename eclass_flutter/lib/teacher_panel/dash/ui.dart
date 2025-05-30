@@ -18,6 +18,7 @@ class TeacherDash extends StatelessWidget {
               padding: EdgeInsets.symmetric(horizontal: 16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 8.0,
                 children: [
                   Text(
                     "Today's Classes",
@@ -26,10 +27,7 @@ class TeacherDash extends StatelessWidget {
                     ),
                   ),
                   Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 10.0,
-                      vertical: 8.0,
-                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 10.0),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
@@ -88,18 +86,25 @@ class TeacherDash extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           FilledButton.icon(
-                            onPressed: () => {}, 
+                            onPressed: () => {},
                             label: Text(
                               "Add homework",
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onPrimary
+                              style: Theme.of(
+                                context,
+                              ).textTheme.titleMedium?.copyWith(
+                                color: Theme.of(context).colorScheme.onPrimary,
                               ),
                             ),
                             icon: Icon(Icons.add_circle_outline),
                             style: FilledButton.styleFrom(
-                              backgroundColor: Theme.of(context).colorScheme.primary,
-                              foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                              padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0)
+                              backgroundColor:
+                                  Theme.of(context).colorScheme.primary,
+                              foregroundColor:
+                                  Theme.of(context).colorScheme.onPrimary,
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 24.0,
+                                vertical: 16.0,
+                              ),
                             ),
                           ),
                           SizedBox(width: 8.0),
@@ -107,18 +112,29 @@ class TeacherDash extends StatelessWidget {
                             onPressed: () => {},
                             label: Text(
                               "Add test",
-                              style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                color: Theme.of(context).colorScheme.onSecondaryContainer
+                              style: Theme.of(
+                                context,
+                              ).textTheme.titleMedium?.copyWith(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onSecondaryContainer,
                               ),
                             ),
                             icon: Icon(Icons.today_rounded),
                             style: FilledButton.styleFrom(
-                              padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0),
+                              padding: EdgeInsets.symmetric(
+                                vertical: 16.0,
+                                horizontal: 24.0,
+                              ),
                             ),
-                          )
+                          ),
                         ],
                       ),
-                      ConnectedButtonGroup(),
+                      ConnectedButtonGroup(
+                        selected: 0,
+                        labels: ["In school", "Busy", "Sick"],
+                      ),
                       Wrap(
                         alignment: WrapAlignment.center,
                         spacing: 4.0,
@@ -126,35 +142,113 @@ class TeacherDash extends StatelessWidget {
                           FilledButton.tonal(
                             onPressed: () => {},
                             style: FilledButton.styleFrom(
-                              padding: EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0)
+                              padding: EdgeInsets.symmetric(
+                                vertical: 6.0,
+                                horizontal: 12.0,
+                              ),
                             ),
-                            child: Text(
-                              "Cancel lesson",
-                            ),
+                            child: Text("Cancel lesson"),
                           ),
                           FilledButton(
                             onPressed: () => {},
                             style: FilledButton.styleFrom(
-                              padding: EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0)
+                              padding: EdgeInsets.symmetric(
+                                vertical: 6.0,
+                                horizontal: 12.0,
+                              ),
                             ),
                             child: Text("Add lesson topic"),
                           ),
                           FilledButton.tonal(
                             onPressed: () => {},
                             style: FilledButton.styleFrom(
-                              padding: EdgeInsets.symmetric(vertical: 6.0, horizontal: 12.0)
+                              padding: EdgeInsets.symmetric(
+                                vertical: 6.0,
+                                horizontal: 12.0,
+                              ),
                             ),
                             child: Text("Add notice"),
-                          )
+                          ),
                         ],
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 8.0,
+                children: [
+                  Text(
+                    "Your Classes",
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      TeacherClass(
+                        lesson: "Theory of Knowledge",
+                        classGrade: "DP2",
+                        first: true,
+                      ),
+                      TeacherClass(
+                        lesson: "Theory of Knowledge",
+                        classGrade: "DP1",
+                      ),
+                      TeacherClass(lesson: "English B SL", classGrade: "MYP5"),
+                      TeacherClass(lesson: "English B HL", classGrade: "MYP5"),
+                      TeacherClass(
+                        lesson: "English B HL",
+                        classGrade: "MYP4",
+                      ),
+                      Card(
+                        elevation: 0.0,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.only(
+                            topLeft: Radius.circular(4.0),
+                            topRight: Radius.circular(4.0),
+                            bottomLeft: Radius.circular(12.0),
+                            bottomRight: Radius.circular(12.0),
+                          ),
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.outline
+                          )
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.stretch,
+                            children: [
+                              IconButton(onPressed: () => {}, icon: Icon(Icons.add_circle_outline),),
+                              Text(
+                                "Create new class",
+                                style: Theme.of(context).textTheme.titleMedium,
+                                textAlign: TextAlign.center,
+                              )
+                            ],
+                          ),
+                        ),
                       )
                     ],
                   ),
                 ],
               ),
             ),
+            SizedBox(height: 8.0)
           ],
         ),
+      ),
+      bottomNavigationBar: NavigationBar(
+        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
+        destinations: [
+            NavigationDestination(icon: Icon(Icons.home_outlined), label: "Dashboard", selectedIcon: Icon(Icons.home),),
+            NavigationDestination(icon: Icon(Icons.school_outlined), label: "Overviews", selectedIcon: Icon(Icons.school),),
+            NavigationDestination(icon: Icon(Icons.schedule), label: "Schedule", selectedIcon: Icon(Icons.schedule), enabled: false,),
+            NavigationDestination(icon: Icon(Icons.inbox_outlined), label: "E-mail", selectedIcon: Icon(Icons.inbox), enabled: false,)
+        ],
       ),
     );
   }
@@ -164,7 +258,7 @@ class ConnectedButtonGroup extends StatelessWidget {
   const ConnectedButtonGroup({
     super.key,
     this.selected = 0,
-    this.labels = const ["Item 1", "Item 2", "Item 3"]
+    this.labels = const ["Item 1", "Item 2", "Item 3"],
   });
 
   final int selected;
@@ -175,43 +269,43 @@ class ConnectedButtonGroup extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       spacing: 2.0,
-      children: [
-        FilledButton(
-          onPressed: () => {},
-          style: FilledButton.styleFrom(
-            backgroundColor: Theme.of(context).colorScheme.secondary,
-            foregroundColor: Theme.of(context).colorScheme.onSecondary,
-          ),
-          child: Text(
-            "In school"
-          ),
-        ),
-        FilledButton.tonal(
-          onPressed: () => {},
-          style: FilledButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(8.0))
-            ),
-          ),
-          child: Text(
-            "Busy"
-          ),
-        ),
-        FilledButton.tonal(
-          onPressed: () => {},
-          style: FilledButton.styleFrom(
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.horizontal(
-                left: Radius.circular(8.0),
-                right: Radius.circular(24.0)
-              ),
-            ),
-          ),
-          child: Text(
-            "Sick"
-          ),
-        )
-      ],
+      children:
+          labels.asMap().entries.map((entry) {
+            final idx = entry.key;
+            final label = entry.value;
+            final isSelected = idx == selected;
+            if (isSelected) {
+              return FilledButton(
+                onPressed: () => {},
+                style: FilledButton.styleFrom(
+                  backgroundColor: Theme.of(context).colorScheme.secondary,
+                  foregroundColor: Theme.of(context).colorScheme.onSecondary,
+                ),
+                child: Text(label),
+              );
+            } else {
+              return FilledButton.tonal(
+                onPressed: () => {},
+                style: FilledButton.styleFrom(
+                  shape: RoundedRectangleBorder(
+                    borderRadius:
+                        idx == 0
+                            ? BorderRadius.horizontal(
+                              right: Radius.circular(8.0),
+                              left: Radius.circular(24.0),
+                            )
+                            : idx == labels.length - 1
+                            ? BorderRadius.horizontal(
+                              left: Radius.circular(8.0),
+                              right: Radius.circular(24.0),
+                            )
+                            : BorderRadius.all(Radius.circular(8.0)),
+                  ),
+                ),
+                child: Text(label),
+              );
+            }
+          }).toList(),
     );
   }
 }
@@ -221,23 +315,23 @@ class TeacherClass extends StatelessWidget {
     super.key,
     required this.lesson,
     required this.classGrade,
-    required this.startTime,
-    required this.endTime,
+    this.startTime,
+    this.endTime,
     this.first = false,
     this.last = false,
   });
 
   final String lesson;
   final String classGrade;
-  final TimeOfDay startTime;
-  final TimeOfDay endTime;
+  final TimeOfDay? startTime;
+  final TimeOfDay? endTime;
   final bool first;
   final bool last;
 
   @override
   Widget build(BuildContext context) {
-    var startTimeStr = startTime.format(context).toString();
-    var endTimeStr = endTime.format(context).toString();
+    var startTimeStr = startTime?.format(context).toString();
+    var endTimeStr = endTime?.format(context).toString();
     return Card(
       elevation: 0.0,
       shape: RoundedRectangleBorder(
@@ -275,7 +369,9 @@ class TeacherClass extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      "$classGrade \u2022 $startTimeStr - $endTimeStr",
+                      (startTime != null && endTime != null)
+                          ? "$classGrade \u2022 $startTimeStr - $endTimeStr"
+                          : classGrade,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
