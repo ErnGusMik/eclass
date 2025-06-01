@@ -89,7 +89,7 @@ class TeacherDash extends StatelessWidget {
                           FilledButton.icon(
                             onPressed:
                                 () => {
-                                  showModalBottomSheet(
+                                  showModalBottomSheet<dynamic>(
                                     context: context,
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.vertical(
@@ -98,68 +98,9 @@ class TeacherDash extends StatelessWidget {
                                     ),
                                     showDragHandle: true,
                                     builder: (BuildContext context) {
-                                      return Padding(
-                                        padding: EdgeInsets.symmetric(
-                                          horizontal: 16.0,
-                                        ),
-                                        child: Column(
-                                          // mainAxisSize: MainAxisSize.min,
-                                          spacing: 30.0,
-                                          children: [
-                                            Text(
-                                              "Add Homework",
-                                              style:
-                                                  Theme.of(
-                                                    context,
-                                                  ).textTheme.headlineLarge,
-                                            ),
-                                            TextField(
-                                              maxLines: null,
-                                              style:
-                                                  Theme.of(
-                                                    context,
-                                                  ).textTheme.bodyLarge,
-                                              decoration: InputDecoration(
-                                                labelText: "Assignment",
-                                                labelStyle: Theme.of(
-                                                  context,
-                                                ).textTheme.bodySmall?.copyWith(
-                                                  color:
-                                                      Theme.of(context)
-                                                          .colorScheme
-                                                          .onSurfaceVariant,
-                                                ),
-                                                filled: true,
-                                                fillColor:
-                                                    Theme.of(context)
-                                                        .colorScheme
-                                                        .surfaceContainerHighest,
-                                                border: UnderlineInputBorder(
-                                                  borderRadius:
-                                                      BorderRadius.vertical(
-                                                        top: Radius.circular(8)
-                                                      ),
-                                                ),
-                                                focusedBorder:
-                                                    UnderlineInputBorder(
-                                                      borderRadius:
-                                                        BorderRadius.vertical(
-                                                          top: Radius.circular(8)
-                                                      ),
-                                                      
-                                                    ),
-                                              ),
-                                            ),
-                                            Row(
-                                              spacing: 16.0,
-                                              children: [
-                                                TimeSelector(label: "Assigned")
-                                              ],
-                                            )
-                                          ],
-                                        ),
-                                      );
+                                      return Wrap(children: [HomeworkModal()]);
                                     },
+                                    isScrollControlled: true,
                                   ),
                                 },
                             label: Text(
@@ -347,7 +288,155 @@ class TeacherDash extends StatelessWidget {
   }
 }
 
-class TimeSelector extends StatelessWidget {
+class HomeworkModal extends StatelessWidget {
+  const HomeworkModal({
+    super.key,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: 16.0,
+        ),
+        child: Column(
+          spacing: 30.0,
+          children: [
+            Text(
+              "Add Homework",
+              style:
+                  Theme.of(
+                    context,
+                  ).textTheme.headlineLarge,
+            ),
+            TextField(
+              maxLines: null,
+              style:
+                  Theme.of(
+                    context,
+                  ).textTheme.bodyLarge,
+              decoration: InputDecoration(
+                labelText: "Assignment",
+                labelStyle: Theme.of(
+                  context,
+                ).textTheme.bodySmall?.copyWith(
+                  color:
+                      Theme.of(context)
+                          .colorScheme
+                          .onSurfaceVariant,
+                ),
+                filled: true,
+                fillColor:
+                    Theme.of(context)
+                        .colorScheme
+                        .surfaceContainerHighest,
+                border: UnderlineInputBorder(
+                  borderRadius:
+                      BorderRadius.vertical(
+                        top: Radius.circular(8)
+                      ),
+                ),
+                focusedBorder:
+                    UnderlineInputBorder(
+                      borderRadius:
+                        BorderRadius.vertical(
+                          top: Radius.circular(8)
+                      ),
+                      
+                    ),
+              ),
+            ),
+            Container(
+              padding: EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerLowest,
+                borderRadius: BorderRadius.all(Radius.circular(12.0))
+              ),
+              child: Column(
+                spacing: 4.0,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    "Class",
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
+                  ClassTile()
+                ],
+              ),
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                TimeSelector(label: "Assigned"),
+                TimeSelector(label: "Due"),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                FilledButton.icon(
+                  onPressed: () {},
+                  icon: Icon(Icons.add),
+                  label: Text("Add"),
+                  style: FilledButton.styleFrom(
+                    padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0)
+                  ),
+                )
+              ],
+            )
+          ],
+        ),
+      );
+  }
+}
+
+class ClassTile extends StatefulWidget {
+  const ClassTile({
+    super.key,
+  });
+
+  @override
+  State<ClassTile> createState() => _ClassTileState();
+}
+
+class _ClassTileState extends State<ClassTile> {
+  String? selectedClass;
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      child: ListTile(
+        selected: selectedClass == "DP2",
+        leading: CircleAvatar(
+          backgroundColor: Theme.of(context).colorScheme.tertiary,
+          child: Text("DP2", style: Theme.of(context).textTheme.titleMedium?.copyWith(
+            color: Theme.of(context).colorScheme.onTertiary
+          )),
+        ),
+        trailing: Radio.adaptive(value: "DP2", groupValue: selectedClass, onChanged: (String? val) {
+          setState(() {
+            selectedClass = val;
+          });
+        }),
+        title: Text("DP2", style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          color: Theme.of(context).colorScheme.onTertiaryContainer
+        ),),
+        tileColor: Theme.of(context).colorScheme.tertiaryContainer,
+        selectedTileColor: Theme.of(context).colorScheme.tertiaryContainer,
+        contentPadding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.all(Radius.circular(12.0))
+        ),
+        onTap: () {
+          setState(() {
+            selectedClass = "DP2";
+          });
+        },
+      ),
+    );
+  }
+}
+
+class TimeSelector extends StatefulWidget {
   const TimeSelector({
     super.key,
     required this.label
@@ -356,32 +445,40 @@ class TimeSelector extends StatelessWidget {
   final String label;
 
   @override
+  State<TimeSelector> createState() => _TimeSelectorState();
+}
+
+class _TimeSelectorState extends State<TimeSelector> {
+  DateTime _date = DateTime.now();
+  DateTime _startTime = DateTime.now();
+  DateTime _endTime = DateTime.now().add(Duration(minutes: 40));
+  @override
   Widget build(BuildContext context) {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primaryContainer,
         borderRadius: BorderRadius.all(Radius.circular(12.0))
       ),
-      width: 182,
+      width: 180,
       padding: EdgeInsets.all(10.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         spacing: 10,
         children: [
           Text(
-            label,
+            widget.label,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
               color: Theme.of(context).colorScheme.onPrimaryContainer
             ),
           ),
           Text(
-            DateFormat("dd.MM.yy").format(DateTime.now()),
+            DateFormat("dd.MM.yy").format(_date),
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
               color: Theme.of(context).colorScheme.onPrimaryContainer
             ),
           ),
           Text(
-            "11:40 - 12:20",
+            "${DateFormat(DateFormat.HOUR24_MINUTE).format(_startTime)} - ${DateFormat(DateFormat.HOUR24_MINUTE).format(_endTime)}",
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
               color: Theme.of(context).colorScheme.onPrimaryContainer
             ),
@@ -390,8 +487,70 @@ class TimeSelector extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               OutlinedButton.icon(
-                onPressed: () => {},
-                label: Text("Label", style: Theme.of(context).textTheme.labelLarge,),
+                onPressed: () async {
+                  var resultingDate = await showDatePicker(
+                    context: context,
+                    firstDate: DateTime.now().subtract(Duration(days: 7)),
+                    lastDate: DateTime.now().add(Duration(days: 30)),
+                    initialDate: _date,
+                    helpText: "Select a date with a lesson"
+                  );
+                  setState(() {
+                    _date = resultingDate ?? DateTime.now();
+                  });
+                  var startTimeOfDay = await showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay(hour: _startTime.hour, minute: _startTime.minute),
+                    builder: (BuildContext context, Widget? child) {
+                      return MediaQuery(
+                        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                        child: child!
+                      );
+                    },
+                    helpText: "Select lesson start time on ${resultingDate != null ? DateFormat('dd/MM/yy').format(resultingDate) : ""}"
+                  );
+                  setState(() {
+                    if (startTimeOfDay != null) {
+                      _startTime = DateTime(
+                        _date.year,
+                        _date.month,
+                        _date.day,
+                        startTimeOfDay.hour,
+                        startTimeOfDay.minute,
+                      );
+                      _endTime = DateTime(
+                        _date.year,
+                        _date.month,
+                        _date.day,
+                        startTimeOfDay.hour,
+                        startTimeOfDay.minute,
+                      ).add(Duration(minutes: 40));
+                    }
+                  });
+                  var endTimeOfDay = await showTimePicker(
+                    context: context,
+                    initialTime: TimeOfDay(hour: _endTime.hour, minute: _endTime.minute),
+                    builder: (BuildContext context, Widget? child) {
+                      return MediaQuery(
+                        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+                        child: child!
+                      );
+                    },
+                    helpText: "Select lesson end time on ${resultingDate != null ? DateFormat('dd/MM/yy').format(resultingDate) : ""}"
+                  );
+                  setState(() {
+                    if (endTimeOfDay != null) {
+                      _endTime = DateTime(
+                        _date.year,
+                        _date.month,
+                        _date.day,
+                        endTimeOfDay.hour,
+                        endTimeOfDay.minute,
+                      );
+                    }
+                  });
+                },
+                label: Text("Edit", style: Theme.of(context).textTheme.labelLarge,),
                 icon: Icon(Icons.today, color: Theme.of(context).colorScheme.onSurfaceVariant,),
               )
             ],
