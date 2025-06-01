@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 
 class TeacherDash extends StatelessWidget {
   const TeacherDash({super.key});
@@ -86,7 +87,81 @@ class TeacherDash extends StatelessWidget {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           FilledButton.icon(
-                            onPressed: () => {},
+                            onPressed:
+                                () => {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.vertical(
+                                        top: Radius.circular(16.0),
+                                      ),
+                                    ),
+                                    showDragHandle: true,
+                                    builder: (BuildContext context) {
+                                      return Padding(
+                                        padding: EdgeInsets.symmetric(
+                                          horizontal: 16.0,
+                                        ),
+                                        child: Column(
+                                          // mainAxisSize: MainAxisSize.min,
+                                          spacing: 30.0,
+                                          children: [
+                                            Text(
+                                              "Add Homework",
+                                              style:
+                                                  Theme.of(
+                                                    context,
+                                                  ).textTheme.headlineLarge,
+                                            ),
+                                            TextField(
+                                              maxLines: null,
+                                              style:
+                                                  Theme.of(
+                                                    context,
+                                                  ).textTheme.bodyLarge,
+                                              decoration: InputDecoration(
+                                                labelText: "Assignment",
+                                                labelStyle: Theme.of(
+                                                  context,
+                                                ).textTheme.bodySmall?.copyWith(
+                                                  color:
+                                                      Theme.of(context)
+                                                          .colorScheme
+                                                          .onSurfaceVariant,
+                                                ),
+                                                filled: true,
+                                                fillColor:
+                                                    Theme.of(context)
+                                                        .colorScheme
+                                                        .surfaceContainerHighest,
+                                                border: UnderlineInputBorder(
+                                                  borderRadius:
+                                                      BorderRadius.vertical(
+                                                        top: Radius.circular(8)
+                                                      ),
+                                                ),
+                                                focusedBorder:
+                                                    UnderlineInputBorder(
+                                                      borderRadius:
+                                                        BorderRadius.vertical(
+                                                          top: Radius.circular(8)
+                                                      ),
+                                                      
+                                                    ),
+                                              ),
+                                            ),
+                                            Row(
+                                              spacing: 16.0,
+                                              children: [
+                                                TimeSelector(label: "Assigned")
+                                              ],
+                                            )
+                                          ],
+                                        ),
+                                      );
+                                    },
+                                  ),
+                                },
                             label: Text(
                               "Add homework",
                               style: Theme.of(
@@ -200,10 +275,7 @@ class TeacherDash extends StatelessWidget {
                       ),
                       TeacherClass(lesson: "English B SL", classGrade: "MYP5"),
                       TeacherClass(lesson: "English B HL", classGrade: "MYP5"),
-                      TeacherClass(
-                        lesson: "English B HL",
-                        classGrade: "MYP4",
-                      ),
+                      TeacherClass(lesson: "English B HL", classGrade: "MYP4"),
                       Card(
                         elevation: 0.0,
                         shape: RoundedRectangleBorder(
@@ -214,40 +286,116 @@ class TeacherDash extends StatelessWidget {
                             bottomRight: Radius.circular(12.0),
                           ),
                           side: BorderSide(
-                            color: Theme.of(context).colorScheme.outline
-                          )
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
                         ),
                         child: Padding(
                           padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              IconButton(onPressed: () => {}, icon: Icon(Icons.add_circle_outline),),
+                              IconButton(
+                                onPressed: () => {},
+                                icon: Icon(Icons.add_circle_outline),
+                              ),
                               Text(
                                 "Create new class",
                                 style: Theme.of(context).textTheme.titleMedium,
                                 textAlign: TextAlign.center,
-                              )
+                              ),
                             ],
                           ),
                         ),
-                      )
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
-            SizedBox(height: 8.0)
+            SizedBox(height: 8.0),
           ],
         ),
       ),
       bottomNavigationBar: NavigationBar(
         backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
         destinations: [
-            NavigationDestination(icon: Icon(Icons.home_outlined), label: "Dashboard", selectedIcon: Icon(Icons.home),),
-            NavigationDestination(icon: Icon(Icons.school_outlined), label: "Overviews", selectedIcon: Icon(Icons.school),),
-            NavigationDestination(icon: Icon(Icons.schedule), label: "Schedule", selectedIcon: Icon(Icons.schedule), enabled: false,),
-            NavigationDestination(icon: Icon(Icons.inbox_outlined), label: "E-mail", selectedIcon: Icon(Icons.inbox), enabled: false,)
+          NavigationDestination(
+            icon: Icon(Icons.home_outlined),
+            label: "Dashboard",
+            selectedIcon: Icon(Icons.home),
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.school_outlined),
+            label: "Overviews",
+            selectedIcon: Icon(Icons.school),
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.schedule),
+            label: "Schedule",
+            selectedIcon: Icon(Icons.schedule),
+            enabled: false,
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.inbox_outlined),
+            label: "E-mail",
+            selectedIcon: Icon(Icons.inbox),
+            enabled: false,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class TimeSelector extends StatelessWidget {
+  const TimeSelector({
+    super.key,
+    required this.label
+  });
+
+  final String label;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer,
+        borderRadius: BorderRadius.all(Radius.circular(12.0))
+      ),
+      width: 182,
+      padding: EdgeInsets.all(10.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 10,
+        children: [
+          Text(
+            label,
+            style: Theme.of(context).textTheme.labelMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onPrimaryContainer
+            ),
+          ),
+          Text(
+            DateFormat("dd.MM.yy").format(DateTime.now()),
+            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+              color: Theme.of(context).colorScheme.onPrimaryContainer
+            ),
+          ),
+          Text(
+            "11:40 - 12:20",
+            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+              color: Theme.of(context).colorScheme.onPrimaryContainer
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              OutlinedButton.icon(
+                onPressed: () => {},
+                label: Text("Label", style: Theme.of(context).textTheme.labelLarge,),
+                icon: Icon(Icons.today, color: Theme.of(context).colorScheme.onSurfaceVariant,),
+              )
+            ],
+          )
         ],
       ),
     );
@@ -331,6 +479,7 @@ class TeacherClass extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var startTimeStr = startTime?.format(context).toString();
+    
     var endTimeStr = endTime?.format(context).toString();
     return Card(
       elevation: 0.0,
