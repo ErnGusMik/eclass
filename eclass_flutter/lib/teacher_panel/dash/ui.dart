@@ -98,7 +98,16 @@ class TeacherDash extends StatelessWidget {
                                     ),
                                     showDragHandle: true,
                                     builder: (BuildContext context) {
-                                      return Wrap(children: [HomeworkModal()]);
+                                      return DraggableScrollableSheet(
+                                        expand: false,
+                                        maxChildSize: 0.9,
+                                        builder: (context, scrollContainer) {
+                                          return SingleChildScrollView(
+                                            controller: scrollContainer,
+                                            child: HomeworkModal(),
+                                          );
+                                        },
+                                      );
                                     },
                                     isScrollControlled: true,
                                   ),
@@ -125,7 +134,31 @@ class TeacherDash extends StatelessWidget {
                           ),
                           SizedBox(width: 8.0),
                           FilledButton.tonalIcon(
-                            onPressed: () => {},
+                            onPressed:
+                                () => {
+                                  showModalBottomSheet(
+                                    context: context,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.vertical(
+                                        top: Radius.circular(16.0),
+                                      ),
+                                    ),
+                                    showDragHandle: true,
+                                    isScrollControlled: true,
+                                    builder:
+                                        (context) => DraggableScrollableSheet(
+                                          expand: false,
+                                          maxChildSize: 0.9,
+                                          builder:
+                                              (context, scrollController) =>
+                                                  SingleChildScrollView(
+                                                    controller:
+                                                        scrollController,
+                                                    child: TestModal(),
+                                                  ),
+                                        ),
+                                  ),
+                                },
                             label: Text(
                               "Add test",
                               style: Theme.of(
@@ -288,159 +321,359 @@ class TeacherDash extends StatelessWidget {
   }
 }
 
-class HomeworkModal extends StatelessWidget {
-  const HomeworkModal({
-    super.key,
-  });
+class TestModal extends StatelessWidget {
+  const TestModal({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Padding(
-        padding: EdgeInsets.symmetric(
-          horizontal: 16.0,
-        ),
-        child: Column(
-          spacing: 30.0,
-          children: [
-            Text(
-              "Add Homework",
-              style:
-                  Theme.of(
-                    context,
-                  ).textTheme.headlineLarge,
+      padding: EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        spacing: 30.0,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            "Create New Assessment",
+            style: Theme.of(context).textTheme.headlineLarge,
+            textAlign: TextAlign.center,
+          ),
+          TextField(
+            maxLines: null,
+            style: Theme.of(context).textTheme.bodyLarge,
+            decoration: InputDecoration(
+              labelText: "Topic",
+              labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              border: UnderlineInputBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              ),
             ),
-            TextField(
-              maxLines: null,
-              style:
-                  Theme.of(
-                    context,
-                  ).textTheme.bodyLarge,
-              decoration: InputDecoration(
-                labelText: "Assignment",
-                labelStyle: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(
-                  color:
-                      Theme.of(context)
-                          .colorScheme
-                          .onSurfaceVariant,
+          ),
+          Column(
+            spacing: 8.0,
+            children: [
+              GradingSysSelector(),
+              Text(
+                "Practice assessments don't count towards the final grade and are assessed in percent by the teacher.",
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant
                 ),
-                filled: true,
-                fillColor:
-                    Theme.of(context)
-                        .colorScheme
-                        .surfaceContainerHighest,
-                border: UnderlineInputBorder(
-                  borderRadius:
-                      BorderRadius.vertical(
-                        top: Radius.circular(8)
-                      ),
-                ),
-                focusedBorder:
-                    UnderlineInputBorder(
-                      borderRadius:
-                        BorderRadius.vertical(
-                          top: Radius.circular(8)
-                      ),
-                      
-                    ),
               ),
+            ],
+          ),
+          Container(
+            padding: EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerLowest,
+              borderRadius: BorderRadius.all(Radius.circular(12.0)),
             ),
-            Container(
-              padding: EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerLowest,
-                borderRadius: BorderRadius.all(Radius.circular(12.0))
-              ),
-              child: Column(
-                spacing: 4.0,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Class",
-                    style: Theme.of(context).textTheme.labelMedium,
-                  ),
-                  ClassTile()
-                ],
-              ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            child: Column(
+              spacing: 8.0,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                TimeSelector(label: "Assigned"),
-                TimeSelector(label: "Due"),
+                Text("Class", style: Theme.of(context).textTheme.labelMedium),
+                ClassGroup(),
               ],
             ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.end,
-              children: [
-                FilledButton.icon(
-                  onPressed: () {},
-                  icon: Icon(Icons.add),
-                  label: Text("Add"),
-                  style: FilledButton.styleFrom(
-                    padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0)
+          ),
+          TimeSelector(label: "Lesson"),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              FilledButton.icon(
+                onPressed: () {},
+                icon: Icon(Icons.add),
+                label: Text("Create"),
+                style: FilledButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    vertical: 16.0,
+                    horizontal: 24.0,
                   ),
-                )
-              ],
-            )
-          ],
-        ),
-      );
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.0),
+        ],
+      ),
+    );
   }
 }
 
-class ClassTile extends StatefulWidget {
-  const ClassTile({
+class GradingSysSelector extends StatefulWidget {
+  const GradingSysSelector({
     super.key,
   });
 
   @override
-  State<ClassTile> createState() => _ClassTileState();
+  State<GradingSysSelector> createState() => _GradingSysSelectorState();
 }
 
-class _ClassTileState extends State<ClassTile> {
-  String? selectedClass;
+class _GradingSysSelectorState extends State<GradingSysSelector> {
+  String? _selectodMethod;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      spacing: 16.0,
+      children: [
+        Expanded(
+          child: ListTile(
+            title: Text(
+              "Graded assessment",
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: _selectodMethod == "graded" ? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            trailing: Radio.adaptive(value: "graded", groupValue: _selectodMethod, onChanged: (String? val) {
+              setState(() {
+                _selectodMethod = val;
+              });
+            }),
+            onTap: () {
+              setState(() {
+                _selectodMethod = "graded";
+              });
+            },
+            tileColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+            selectedTileColor: Theme.of(context).colorScheme.primaryContainer,
+            selected: _selectodMethod == "graded",
+            contentPadding: EdgeInsets.all(10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(12.0))
+            ),
+            selectedColor: Theme.of(context).colorScheme.onPrimaryContainer,
+          ),
+        ),
+        Expanded(
+          child: ListTile(
+            title: Text(
+              "Practice assessment",
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: _selectodMethod == "practice" ? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.onSurface,
+              )
+            ),
+            trailing: Radio.adaptive(value: "practice", groupValue: _selectodMethod, onChanged: (String? val) {
+              setState(() {
+                _selectodMethod = val;
+              });
+            }),
+            onTap: () {
+              setState(() {
+                _selectodMethod = "practice";
+              });
+            },
+            tileColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+            selectedTileColor: Theme.of(context).colorScheme.primaryContainer,
+            selected: _selectodMethod == "practice",
+            contentPadding: EdgeInsets.all(10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(12)),
+            ),
+            selectedColor: Theme.of(context).colorScheme.onPrimaryContainer,
+          ),
+        )
+      ],
+    );
+  }
+}
+
+class HomeworkModal extends StatelessWidget {
+  const HomeworkModal({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        spacing: 30.0,
+        children: [
+          Text(
+            "Add Homework",
+            style: Theme.of(context).textTheme.headlineLarge,
+          ),
+          TextField(
+            maxLines: null,
+            style: Theme.of(context).textTheme.bodyLarge,
+            decoration: InputDecoration(
+              labelText: "Assignment",
+              labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              border: UnderlineInputBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              ),
+            ),
+          ),
+          Container(
+            padding: EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerLowest,
+              borderRadius: BorderRadius.all(Radius.circular(12.0)),
+            ),
+            child: Column(
+              spacing: 8.0,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Class", style: Theme.of(context).textTheme.labelMedium),
+                ClassGroup(),
+              ],
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              TimeSelector(label: "Assigned"),
+              TimeSelector(label: "Due"),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              FilledButton.icon(
+                onPressed: () {},
+                icon: Icon(Icons.add),
+                label: Text("Add"),
+                style: FilledButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    vertical: 16.0,
+                    horizontal: 24.0,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.0),
+        ],
+      ),
+    );
+  }
+}
+
+class ClassGroup extends StatefulWidget {
+  const ClassGroup({super.key});
+
+  @override
+  State<ClassGroup> createState() => _ClassGroupState();
+}
+
+class _ClassGroupState extends State<ClassGroup> {
+  String? _selectedValue;
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      spacing: 6.0,
+      children: [
+        ClassTile(
+          value: "DP2E",
+          headline: "DP2 English",
+          groupValue: _selectedValue,
+          onChanged: _handleStateChange,
+        ),
+        ClassTile(
+          value: "DP1E",
+          headline: "DP1 English",
+          groupValue: _selectedValue,
+          onChanged: _handleStateChange,
+        ),
+        ClassTile(
+          value: "MYP5E",
+          headline: "MYP5 English",
+          groupValue: _selectedValue,
+          onChanged: _handleStateChange,
+        ),
+        ClassTile(
+          value: "MYP4E",
+          headline: "MYP4 English",
+          groupValue: _selectedValue,
+          onChanged: _handleStateChange,
+        ),
+        ClassTile(
+          value: "MYP3E",
+          headline: "MYP3 English",
+          groupValue: _selectedValue,
+          onChanged: _handleStateChange,
+        ),
+        ClassTile(
+          value: "MYP2E",
+          headline: "MYP2 English",
+          groupValue: _selectedValue,
+          onChanged: _handleStateChange,
+        ),
+      ],
+    );
+  }
+
+  void _handleStateChange(String? val) {
+    setState(() {
+      _selectedValue = val;
+    });
+  }
+}
+
+class ClassTile extends StatelessWidget {
+  const ClassTile({
+    super.key,
+    required this.value,
+    required this.groupValue,
+    required this.onChanged,
+    required this.headline,
+  });
+
+  final String headline;
+  final String value;
+  final String? groupValue;
+  final ValueChanged<String?>? onChanged;
   @override
   Widget build(BuildContext context) {
     return Material(
       child: ListTile(
-        selected: selectedClass == "DP2",
+        selected: groupValue == value,
         leading: CircleAvatar(
           backgroundColor: Theme.of(context).colorScheme.tertiary,
-          child: Text("DP2", style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            color: Theme.of(context).colorScheme.onTertiary
-          )),
+          child: Text(
+            value.substring(0, 2) + value.substring(value.length - 1),
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+              color: Theme.of(context).colorScheme.onTertiary,
+            ),
+          ),
         ),
-        trailing: Radio.adaptive(value: "DP2", groupValue: selectedClass, onChanged: (String? val) {
-          setState(() {
-            selectedClass = val;
-          });
-        }),
-        title: Text("DP2", style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-          color: Theme.of(context).colorScheme.onTertiaryContainer
-        ),),
+        trailing: Radio.adaptive(
+          value: value,
+          groupValue: groupValue,
+          onChanged: onChanged,
+        ),
+        title: Text(
+          headline,
+          style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+            color: Theme.of(context).colorScheme.onTertiaryContainer,
+          ),
+        ),
         tileColor: Theme.of(context).colorScheme.tertiaryContainer,
         selectedTileColor: Theme.of(context).colorScheme.tertiaryContainer,
         contentPadding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0),
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.all(Radius.circular(12.0))
+          borderRadius: BorderRadius.all(Radius.circular(12.0)),
         ),
-        onTap: () {
-          setState(() {
-            selectedClass = "DP2";
-          });
-        },
+        onTap: () => onChanged!(value),
       ),
     );
   }
 }
 
 class TimeSelector extends StatefulWidget {
-  const TimeSelector({
-    super.key,
-    required this.label
-  });
+  const TimeSelector({super.key, required this.label});
 
   final String label;
 
@@ -457,7 +690,7 @@ class _TimeSelectorState extends State<TimeSelector> {
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.primaryContainer,
-        borderRadius: BorderRadius.all(Radius.circular(12.0))
+        borderRadius: BorderRadius.all(Radius.circular(12.0)),
       ),
       width: 180,
       padding: EdgeInsets.all(10.0),
@@ -468,19 +701,19 @@ class _TimeSelectorState extends State<TimeSelector> {
           Text(
             widget.label,
             style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onPrimaryContainer
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
             ),
           ),
           Text(
             DateFormat("dd.MM.yy").format(_date),
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: Theme.of(context).colorScheme.onPrimaryContainer
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
             ),
           ),
           Text(
             "${DateFormat(DateFormat.HOUR24_MINUTE).format(_startTime)} - ${DateFormat(DateFormat.HOUR24_MINUTE).format(_endTime)}",
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onPrimaryContainer
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
             ),
           ),
           Row(
@@ -493,21 +726,29 @@ class _TimeSelectorState extends State<TimeSelector> {
                     firstDate: DateTime.now().subtract(Duration(days: 7)),
                     lastDate: DateTime.now().add(Duration(days: 30)),
                     initialDate: _date,
-                    helpText: "Select a date with a lesson"
+                    helpText: "Select a date with a lesson",
                   );
                   setState(() {
                     _date = resultingDate ?? DateTime.now();
                   });
+                  // ? MAYBE CHANGE TO NORMAL LIST DIALOG? (with lessons)
+
                   var startTimeOfDay = await showTimePicker(
                     context: context,
-                    initialTime: TimeOfDay(hour: _startTime.hour, minute: _startTime.minute),
+                    initialTime: TimeOfDay(
+                      hour: _startTime.hour,
+                      minute: _startTime.minute,
+                    ),
                     builder: (BuildContext context, Widget? child) {
                       return MediaQuery(
-                        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-                        child: child!
+                        data: MediaQuery.of(
+                          context,
+                        ).copyWith(alwaysUse24HourFormat: true),
+                        child: child!,
                       );
                     },
-                    helpText: "Select lesson start time on ${resultingDate != null ? DateFormat('dd/MM/yy').format(resultingDate) : ""}"
+                    helpText:
+                        "Select lesson start time on ${resultingDate != null ? DateFormat('dd/MM/yy').format(resultingDate) : ""}",
                   );
                   setState(() {
                     if (startTimeOfDay != null) {
@@ -529,14 +770,20 @@ class _TimeSelectorState extends State<TimeSelector> {
                   });
                   var endTimeOfDay = await showTimePicker(
                     context: context,
-                    initialTime: TimeOfDay(hour: _endTime.hour, minute: _endTime.minute),
+                    initialTime: TimeOfDay(
+                      hour: _endTime.hour,
+                      minute: _endTime.minute,
+                    ),
                     builder: (BuildContext context, Widget? child) {
                       return MediaQuery(
-                        data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
-                        child: child!
+                        data: MediaQuery.of(
+                          context,
+                        ).copyWith(alwaysUse24HourFormat: true),
+                        child: child!,
                       );
                     },
-                    helpText: "Select lesson end time on ${resultingDate != null ? DateFormat('dd/MM/yy').format(resultingDate) : ""}"
+                    helpText:
+                        "Select lesson end time on ${resultingDate != null ? DateFormat('dd/MM/yy').format(resultingDate) : ""}",
                   );
                   setState(() {
                     if (endTimeOfDay != null) {
@@ -550,11 +797,17 @@ class _TimeSelectorState extends State<TimeSelector> {
                     }
                   });
                 },
-                label: Text("Edit", style: Theme.of(context).textTheme.labelLarge,),
-                icon: Icon(Icons.today, color: Theme.of(context).colorScheme.onSurfaceVariant,),
-              )
+                label: Text(
+                  "Edit",
+                  style: Theme.of(context).textTheme.labelLarge,
+                ),
+                icon: Icon(
+                  Icons.today,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
             ],
-          )
+          ),
         ],
       ),
     );
@@ -638,7 +891,7 @@ class TeacherClass extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     var startTimeStr = startTime?.format(context).toString();
-    
+
     var endTimeStr = endTime?.format(context).toString();
     return Card(
       elevation: 0.0,
@@ -721,7 +974,7 @@ class LatestNotices extends StatelessWidget {
               ),
             ),
             SizedBox(
-              height: 220.0,
+              height: 230,
               child: CarouselView(
                 backgroundColor:
                     Theme.of(context).colorScheme.tertiaryContainer,
