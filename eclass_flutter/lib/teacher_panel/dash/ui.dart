@@ -189,7 +189,20 @@ class TeacherDash extends StatelessWidget {
                         spacing: 4.0,
                         children: [
                           FilledButton.tonal(
-                            onPressed: () => {},
+                            onPressed: () {
+                              showModalBottomSheet(
+                                context: context,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(16.0),
+                                  ),
+                                ),
+                                showDragHandle: true,
+                                isScrollControlled: true,
+                                builder:
+                                    (context) => CancelLessonModal(),
+                              );
+                            },
                             style: FilledButton.styleFrom(
                               padding: EdgeInsets.symmetric(
                                 vertical: 6.0,
@@ -199,7 +212,17 @@ class TeacherDash extends StatelessWidget {
                             child: Text("Cancel lesson"),
                           ),
                           FilledButton(
-                            onPressed: () => {},
+                            onPressed: () {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                showDragHandle: true,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(top: Radius.circular(16.0))
+                                ),
+                                builder: (context) => LessonTopicModal(),
+                              );
+                            },
                             style: FilledButton.styleFrom(
                               padding: EdgeInsets.symmetric(
                                 vertical: 6.0,
@@ -209,7 +232,24 @@ class TeacherDash extends StatelessWidget {
                             child: Text("Add lesson topic"),
                           ),
                           FilledButton.tonal(
-                            onPressed: () => {},
+                            onPressed: () {
+                              showModalBottomSheet(
+                                context: context,
+                                isScrollControlled: true,
+                                showDragHandle: true,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.vertical(top: Radius.circular(16.0))
+                                ),
+                                builder: (context) => DraggableScrollableSheet(
+                                  expand: false,
+                                  maxChildSize: 0.9,
+                                  builder: (context, scrollController) => SingleChildScrollView(
+                                    controller: scrollController,
+                                    child: CreateNoticeModal(),
+                                  ),
+                                ),
+                              );
+                            },
                             style: FilledButton.styleFrom(
                               padding: EdgeInsets.symmetric(
                                 vertical: 6.0,
@@ -321,6 +361,174 @@ class TeacherDash extends StatelessWidget {
   }
 }
 
+class CreateNoticeModal extends StatelessWidget {
+  const CreateNoticeModal({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        spacing: 30.0,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            "Create Notice",
+            style: Theme.of(context).textTheme.headlineLarge,
+            textAlign: TextAlign.center,
+          ),
+          TextField(
+            maxLines: null,
+            style: Theme.of(context).textTheme.bodyLarge,
+            decoration: InputDecoration(
+              helperText: "By Maggie Smith",
+              labelText: "Heading",
+              labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              border: UnderlineInputBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              ),
+            ),
+            
+          ),
+          TextField(
+            maxLines: null,
+            minLines: 8,
+            style: Theme.of(context).textTheme.bodySmall,
+            decoration: InputDecoration(
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
+              labelText: "Notice",
+              border: OutlineInputBorder(
+                borderSide: BorderSide.none,
+                borderRadius: BorderRadius.all(Radius.circular(16.0))
+              ),
+              contentPadding: EdgeInsets.all(16.0)
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class LessonTopicModal extends StatelessWidget {
+  const LessonTopicModal({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        spacing: 30.0,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            "Add Lesson Topic",
+            style: Theme.of(context).textTheme.headlineLarge,
+            textAlign: TextAlign.center,
+          ),
+          TextField(
+            maxLines: null,
+            style: Theme.of(context).textTheme.bodyLarge,
+            decoration: InputDecoration(
+              labelText: "Topic",
+              labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              border: UnderlineInputBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              ),
+            ),
+          ),
+          TimeSelector(label: "Lesson", expanded: true),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              FilledButton.icon(
+                onPressed: () {},
+                icon: Icon(Icons.add),
+                label: Text("Add"),
+                style: FilledButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    vertical: 16.0,
+                    horizontal: 24.0,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.0),
+        ],
+      ),
+    );
+  }
+}
+
+class CancelLessonModal extends StatelessWidget {
+  const CancelLessonModal({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        spacing: 30.0,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            "Cancel Lesson",
+            style: Theme.of(context).textTheme.headlineLarge,
+            textAlign: TextAlign.center,
+          ),
+          Column(
+            spacing: 8.0,
+            children: [
+              TimeSelector(label: "Lesson", expanded: true),
+              Text(
+                "Students do not receive notifications for lesson cancellations, so please inform them.",
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              FilledButton.icon(
+                onPressed: () {},
+                icon: Icon(Icons.delete_outline),
+                label: Text("Cancel"),
+                style: FilledButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    vertical: 16.0,
+                    horizontal: 24.0,
+                  ),
+                  backgroundColor: Theme.of(context).colorScheme.error,
+                  foregroundColor: Theme.of(context).colorScheme.onError,
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.0),
+        ],
+      ),
+    );
+  }
+}
+
 class TestModal extends StatelessWidget {
   const TestModal({super.key});
 
@@ -362,7 +570,7 @@ class TestModal extends StatelessWidget {
               Text(
                 "Practice assessments don't count towards the final grade and are assessed in percent by the teacher.",
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -382,7 +590,7 @@ class TestModal extends StatelessWidget {
               ],
             ),
           ),
-          TimeSelector(label: "Lesson"),
+          TimeSelector(label: "Lesson", expanded: true),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
@@ -407,9 +615,7 @@ class TestModal extends StatelessWidget {
 }
 
 class GradingSysSelector extends StatefulWidget {
-  const GradingSysSelector({
-    super.key,
-  });
+  const GradingSysSelector({super.key});
 
   @override
   State<GradingSysSelector> createState() => _GradingSysSelectorState();
@@ -428,14 +634,21 @@ class _GradingSysSelectorState extends State<GradingSysSelector> {
             title: Text(
               "Graded assessment",
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: _selectodMethod == "graded" ? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.onSurface,
+                color:
+                    _selectodMethod == "graded"
+                        ? Theme.of(context).colorScheme.onPrimaryContainer
+                        : Theme.of(context).colorScheme.onSurface,
               ),
             ),
-            trailing: Radio.adaptive(value: "graded", groupValue: _selectodMethod, onChanged: (String? val) {
-              setState(() {
-                _selectodMethod = val;
-              });
-            }),
+            trailing: Radio.adaptive(
+              value: "graded",
+              groupValue: _selectodMethod,
+              onChanged: (String? val) {
+                setState(() {
+                  _selectodMethod = val;
+                });
+              },
+            ),
             onTap: () {
               setState(() {
                 _selectodMethod = "graded";
@@ -446,7 +659,7 @@ class _GradingSysSelectorState extends State<GradingSysSelector> {
             selected: _selectodMethod == "graded",
             contentPadding: EdgeInsets.all(10),
             shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.all(Radius.circular(12.0))
+              borderRadius: BorderRadius.all(Radius.circular(12.0)),
             ),
             selectedColor: Theme.of(context).colorScheme.onPrimaryContainer,
           ),
@@ -456,14 +669,21 @@ class _GradingSysSelectorState extends State<GradingSysSelector> {
             title: Text(
               "Practice assessment",
               style: Theme.of(context).textTheme.labelMedium?.copyWith(
-                color: _selectodMethod == "practice" ? Theme.of(context).colorScheme.onPrimaryContainer : Theme.of(context).colorScheme.onSurface,
-              )
+                color:
+                    _selectodMethod == "practice"
+                        ? Theme.of(context).colorScheme.onPrimaryContainer
+                        : Theme.of(context).colorScheme.onSurface,
+              ),
             ),
-            trailing: Radio.adaptive(value: "practice", groupValue: _selectodMethod, onChanged: (String? val) {
-              setState(() {
-                _selectodMethod = val;
-              });
-            }),
+            trailing: Radio.adaptive(
+              value: "practice",
+              groupValue: _selectodMethod,
+              onChanged: (String? val) {
+                setState(() {
+                  _selectodMethod = val;
+                });
+              },
+            ),
             onTap: () {
               setState(() {
                 _selectodMethod = "practice";
@@ -478,7 +698,7 @@ class _GradingSysSelectorState extends State<GradingSysSelector> {
             ),
             selectedColor: Theme.of(context).colorScheme.onPrimaryContainer,
           ),
-        )
+        ),
       ],
     );
   }
@@ -673,8 +893,9 @@ class ClassTile extends StatelessWidget {
 }
 
 class TimeSelector extends StatefulWidget {
-  const TimeSelector({super.key, required this.label});
+  const TimeSelector({super.key, required this.label, this.expanded = false});
 
+  final bool expanded;
   final String label;
 
   @override
@@ -685,6 +906,75 @@ class _TimeSelectorState extends State<TimeSelector> {
   DateTime _date = DateTime.now();
   DateTime _startTime = DateTime.now();
   DateTime _endTime = DateTime.now().add(Duration(minutes: 40));
+
+  void _editLogic() async {
+    var resultingDate = await showDatePicker(
+      context: context,
+      firstDate: DateTime.now().subtract(Duration(days: 7)),
+      lastDate: DateTime.now().add(Duration(days: 30)),
+      initialDate: _date,
+      helpText: "Select a date with a lesson",
+    );
+    setState(() {
+      _date = resultingDate ?? DateTime.now();
+    });
+    // ? MAYBE CHANGE TO NORMAL LIST DIALOG? (with lessons)
+
+    var startTimeOfDay = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: _startTime.hour, minute: _startTime.minute),
+      builder: (BuildContext context, Widget? child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: child!,
+        );
+      },
+      helpText:
+          "Select lesson start time on ${resultingDate != null ? DateFormat('dd/MM/yy').format(resultingDate) : ""}",
+    );
+    setState(() {
+      if (startTimeOfDay != null) {
+        _startTime = DateTime(
+          _date.year,
+          _date.month,
+          _date.day,
+          startTimeOfDay.hour,
+          startTimeOfDay.minute,
+        );
+        _endTime = DateTime(
+          _date.year,
+          _date.month,
+          _date.day,
+          startTimeOfDay.hour,
+          startTimeOfDay.minute,
+        ).add(Duration(minutes: 40));
+      }
+    });
+    var endTimeOfDay = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay(hour: _endTime.hour, minute: _endTime.minute),
+      builder: (BuildContext context, Widget? child) {
+        return MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: true),
+          child: child!,
+        );
+      },
+      helpText:
+          "Select lesson end time on ${resultingDate != null ? DateFormat('dd/MM/yy').format(resultingDate) : ""}",
+    );
+    setState(() {
+      if (endTimeOfDay != null) {
+        _endTime = DateTime(
+          _date.year,
+          _date.month,
+          _date.day,
+          endTimeOfDay.hour,
+          endTimeOfDay.minute,
+        );
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -692,124 +982,93 @@ class _TimeSelectorState extends State<TimeSelector> {
         color: Theme.of(context).colorScheme.primaryContainer,
         borderRadius: BorderRadius.all(Radius.circular(12.0)),
       ),
-      width: 180,
+      width: widget.expanded ? null : 180,
       padding: EdgeInsets.all(10.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: 10,
-        children: [
-          Text(
-            widget.label,
-            style: Theme.of(context).textTheme.labelMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-            ),
-          ),
-          Text(
-            DateFormat("dd.MM.yy").format(_date),
-            style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-            ),
-          ),
-          Text(
-            "${DateFormat(DateFormat.HOUR24_MINUTE).format(_startTime)} - ${DateFormat(DateFormat.HOUR24_MINUTE).format(_endTime)}",
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onPrimaryContainer,
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              OutlinedButton.icon(
-                onPressed: () async {
-                  var resultingDate = await showDatePicker(
-                    context: context,
-                    firstDate: DateTime.now().subtract(Duration(days: 7)),
-                    lastDate: DateTime.now().add(Duration(days: 30)),
-                    initialDate: _date,
-                    helpText: "Select a date with a lesson",
-                  );
-                  setState(() {
-                    _date = resultingDate ?? DateTime.now();
-                  });
-                  // ? MAYBE CHANGE TO NORMAL LIST DIALOG? (with lessons)
-
-                  var startTimeOfDay = await showTimePicker(
-                    context: context,
-                    initialTime: TimeOfDay(
-                      hour: _startTime.hour,
-                      minute: _startTime.minute,
+      child:
+          widget.expanded
+              ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.label,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
-                    builder: (BuildContext context, Widget? child) {
-                      return MediaQuery(
-                        data: MediaQuery.of(
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        DateFormat("dd.MM.yy").format(_date),
+                        style: Theme.of(
                           context,
-                        ).copyWith(alwaysUse24HourFormat: true),
-                        child: child!,
-                      );
-                    },
-                    helpText:
-                        "Select lesson start time on ${resultingDate != null ? DateFormat('dd/MM/yy').format(resultingDate) : ""}",
-                  );
-                  setState(() {
-                    if (startTimeOfDay != null) {
-                      _startTime = DateTime(
-                        _date.year,
-                        _date.month,
-                        _date.day,
-                        startTimeOfDay.hour,
-                        startTimeOfDay.minute,
-                      );
-                      _endTime = DateTime(
-                        _date.year,
-                        _date.month,
-                        _date.day,
-                        startTimeOfDay.hour,
-                        startTimeOfDay.minute,
-                      ).add(Duration(minutes: 40));
-                    }
-                  });
-                  var endTimeOfDay = await showTimePicker(
-                    context: context,
-                    initialTime: TimeOfDay(
-                      hour: _endTime.hour,
-                      minute: _endTime.minute,
+                        ).textTheme.headlineSmall?.copyWith(
+                          color:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                      Text(
+                        "${DateFormat(DateFormat.HOUR24_MINUTE).format(_startTime)} - ${DateFormat(DateFormat.HOUR24_MINUTE).format(_endTime)}",
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: _editLogic,
+                        label: Text(
+                          "Edit",
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                        icon: Icon(
+                          Icons.today,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+              : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 10,
+                children: [
+                  Text(
+                    widget.label,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
-                    builder: (BuildContext context, Widget? child) {
-                      return MediaQuery(
-                        data: MediaQuery.of(
-                          context,
-                        ).copyWith(alwaysUse24HourFormat: true),
-                        child: child!,
-                      );
-                    },
-                    helpText:
-                        "Select lesson end time on ${resultingDate != null ? DateFormat('dd/MM/yy').format(resultingDate) : ""}",
-                  );
-                  setState(() {
-                    if (endTimeOfDay != null) {
-                      _endTime = DateTime(
-                        _date.year,
-                        _date.month,
-                        _date.day,
-                        endTimeOfDay.hour,
-                        endTimeOfDay.minute,
-                      );
-                    }
-                  });
-                },
-                label: Text(
-                  "Edit",
-                  style: Theme.of(context).textTheme.labelLarge,
-                ),
-                icon: Icon(
-                  Icons.today,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+                  ),
+                  Text(
+                    DateFormat("dd.MM.yy").format(_date),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  Text(
+                    "${DateFormat(DateFormat.HOUR24_MINUTE).format(_startTime)} - ${DateFormat(DateFormat.HOUR24_MINUTE).format(_endTime)}",
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: _editLogic,
+                        label: Text(
+                          "Edit",
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                        icon: Icon(
+                          Icons.today,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 }
