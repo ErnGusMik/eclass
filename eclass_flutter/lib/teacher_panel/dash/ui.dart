@@ -244,17 +244,14 @@ class TeacherDash extends StatelessWidget {
                                     top: Radius.circular(16.0),
                                   ),
                                 ),
-                                builder:
-                                    (context) => DraggableScrollableSheet(
-                                      expand: false,
-                                      maxChildSize: 0.9,
-                                      builder:
-                                          (context, scrollController) =>
-                                              CreateNoticeModal(
-                                                scrollController:
-                                                    scrollController,
-                                              ),
-                                    ),
+                                builder: (context) => DraggableScrollableSheet(
+                                  expand: false,
+                                  maxChildSize: 0.9,
+                                  builder: (context, scrollController) {
+                                    // Pass the scrollController directly to your modal
+                                    return CreateNoticeModal(scrollController: scrollController);
+                                  },
+                                ),
                               );
                             },
                             style: FilledButton.styleFrom(
@@ -390,107 +387,145 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox.expand(
-      child: Stack(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(bottom: 100),
-            child: SingleChildScrollView(
-              controller: widget.scrollController,
-              child: Column(
-                spacing: 30.0,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    "Create Notice",
-                    style: Theme.of(context).textTheme.headlineLarge,
-                    textAlign: TextAlign.center,
-                  ),
-                  TextField(
-                    maxLines: null,
-                    style: Theme.of(context).textTheme.bodyLarge,
-                    decoration: InputDecoration(
-                      helperText: "By Maggie Smith",
-                      labelText: "Heading",
-                      labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+    bool isBold = _controller.getSelectionStyle().attributes.containsKey(Attribute.bold.key);
+    bool isUnderlined = _controller.getSelectionStyle().attributes.containsKey(Attribute.underline.key);
+    bool isItalicised = _controller.getSelectionStyle().attributes.containsKey(Attribute.italic.key);
+
+    return Stack(
+      children: [
+        Padding(
+          padding: const EdgeInsets.only(bottom: 56, left: 16, right: 16, top: 0),
+          child: SingleChildScrollView(
+            controller: widget.scrollController,
+            child: Column(
+              spacing: 30.0,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  "Create Notice",
+                  style: Theme.of(context).textTheme.headlineLarge,
+                  textAlign: TextAlign.center,
+                ),
+                TextField(
+                  maxLines: null,
+                  style: Theme.of(context).textTheme.bodyLarge,
+                  decoration: InputDecoration(
+                    helperText: "By Maggie Smith",
+                    labelText: "Heading",
+                    labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                    filled: true,
+                    fillColor:
+                        Theme.of(context).colorScheme.surfaceContainerHighest,
+                    border: UnderlineInputBorder(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(8),
                       ),
-                      filled: true,
-                      fillColor:
-                          Theme.of(context).colorScheme.surfaceContainerHighest,
-                      border: UnderlineInputBorder(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(8),
-                        ),
-                      ),
-                      focusedBorder: UnderlineInputBorder(
-                        borderRadius: BorderRadius.vertical(
-                          top: Radius.circular(8),
-                        ),
+                    ),
+                    focusedBorder: UnderlineInputBorder(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(8),
                       ),
                     ),
                   ),
-                  SizedBox(
-                    height: 224,
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: Theme.of(context).colorScheme.surfaceContainerHigh,
-                        borderRadius: BorderRadius.all(Radius.circular(16.0)),
-                      ),
-                      child: QuillEditor.basic(
-                        controller: _controller,
-                        scrollController: ScrollController(),
-                        config: QuillEditorConfig(
-                          placeholder: "Notice",
-                          padding: EdgeInsets.all(16.0),
-                          minHeight: 224.0,
-                          customStyles: DefaultStyles(
-                            paragraph: DefaultTextBlockStyle(
-                              Theme.of(context).textTheme.bodySmall!,
-                              HorizontalSpacing(0, 0),
-                              VerticalSpacing(0, 0),
-                              VerticalSpacing(0, 0),
-                              null,
-                            ),
-                            placeHolder: DefaultTextBlockStyle(
-                              Theme.of(context).textTheme.bodySmall!,
-                              HorizontalSpacing(0, 0),
-                              VerticalSpacing(0, 0),
-                              VerticalSpacing(0, 0),
-                              null,
-                            ),
+                ),
+                SizedBox(
+                  height: 224,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                      borderRadius: BorderRadius.all(Radius.circular(16.0)),
+                    ),
+                    child: QuillEditor.basic(
+                      controller: _controller,
+                      scrollController: ScrollController(),
+                      config: QuillEditorConfig(
+                        placeholder: "Notice",
+                        padding: EdgeInsets.all(16.0),
+                        minHeight: 224.0,
+                        customStyles: DefaultStyles(
+                          paragraph: DefaultTextBlockStyle(
+                            Theme.of(context).textTheme.bodySmall!,
+                            HorizontalSpacing(0, 0),
+                            VerticalSpacing(0, 0),
+                            VerticalSpacing(0, 0),
+                            null,
+                          ),
+                          placeHolder: DefaultTextBlockStyle(
+                            Theme.of(context).textTheme.bodySmall!,
+                            HorizontalSpacing(0, 0),
+                            VerticalSpacing(0, 0),
+                            VerticalSpacing(0, 0),
+                            null,
                           ),
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          Positioned(
-            bottom: 24,
-            left: 24,
-            right: 24,
-            child: Container(
-              height: 56,
-              decoration: BoxDecoration(
+        ),
+    
+        // TOOLBAR
+        Positioned(
+          bottom: 24,
+          left: 24,
+          right: 24,
+          child: Row(
+            spacing: 12.0,
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Material(
+                elevation: 2,
                 color: Theme.of(context).colorScheme.primaryContainer,
-              ),
-              child: Row(
-                children: [
-                  IconButton(
-                    icon: Icon(Icons.format_bold),
-                    onPressed: () => _controller.formatSelection(Attribute.bold),
+                borderRadius: BorderRadius.all(Radius.circular(32.0)),
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
+                  child: Row(
+                    spacing: 4,
+                    children: [
+                      iconToggleButton(isBold, context, Icons.format_bold, Attribute.bold),
+                      iconToggleButton(isUnderlined, context, Icons.format_underline, Attribute.underline),
+                      iconToggleButton(isItalicised, context, Icons.format_italic, Attribute.italic),
+                      IconButton(
+                        icon: Icon(Icons.attach_file),
+                        onPressed: () {},
+                        color: Theme.of(context).colorScheme.onPrimaryContainer,
+                      )
+                    ],
                   ),
-                  Text("Some text goes here"),
-                ],
+                ),
               ),
-            ),
+              FloatingActionButton(
+                backgroundColor: Theme.of(context).colorScheme.primary,
+                foregroundColor: Theme.of(context).colorScheme.onPrimary,
+                onPressed: () {},
+                child: Icon(Icons.send_outlined)
+
+              )
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
+  }
+
+  IconButton iconToggleButton(bool isSelected, BuildContext context, IconData icon, Attribute attribute) {
+    return IconButton(
+                icon: Icon(icon,
+                color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onPrimaryContainer,
+                ),
+                onPressed: () {_controller.formatSelection(isSelected ? Attribute.clone(attribute, null) : attribute); setState(() {});},
+                isSelected: isSelected,
+                style: ButtonStyle(
+                  backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+                    return isSelected ? Theme.of(context).colorScheme.surfaceContainer : null;
+                  })
+                ),
+              );
   }
 
   @override
