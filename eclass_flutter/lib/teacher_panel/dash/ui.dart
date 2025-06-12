@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_quill/flutter_quill.dart';
 import 'package:intl/intl.dart';
 
 class TeacherDash extends StatelessWidget {
@@ -361,8 +362,21 @@ class TeacherDash extends StatelessWidget {
   }
 }
 
-class CreateNoticeModal extends StatelessWidget {
+class CreateNoticeModal extends StatefulWidget {
   const CreateNoticeModal({super.key});
+
+  @override
+  State<CreateNoticeModal> createState() => _CreateNoticeModalState();
+}
+
+class _CreateNoticeModalState extends State<CreateNoticeModal> {
+  late QuillController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = QuillController(document: Document(), selection: const TextSelection.collapsed(offset: 0));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -397,24 +411,49 @@ class CreateNoticeModal extends StatelessWidget {
             ),
             
           ),
-          TextField(
-            maxLines: null,
-            minLines: 8,
-            style: Theme.of(context).textTheme.bodySmall,
-            decoration: InputDecoration(
-              filled: true,
-              fillColor: Theme.of(context).colorScheme.surfaceContainerHigh,
-              labelText: "Notice",
-              border: OutlineInputBorder(
-                borderSide: BorderSide.none,
-                borderRadius: BorderRadius.all(Radius.circular(16.0))
+          Flexible(
+            fit: FlexFit.loose,
+            child: Container(
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                borderRadius: BorderRadius.all(Radius.circular(16.0)),
+                
               ),
-              contentPadding: EdgeInsets.all(16.0)
+              child: QuillEditor.basic(controller: _controller,
+              scrollController: ScrollController(),
+              config: QuillEditorConfig(                
+                placeholder: "Notice",
+                padding: EdgeInsets.all(16.0),
+                minHeight: 224.0,
+                customStyles: DefaultStyles(
+                  paragraph: DefaultTextBlockStyle(
+                    Theme.of(context).textTheme.bodySmall!, // 👈 use bodySmall here
+                    HorizontalSpacing(0, 0), // top/bottom padding
+                    VerticalSpacing(0, 0), // top/bottom margin
+                    VerticalSpacing(0, 0),
+                    null,
+                  ),
+                  placeHolder: DefaultTextBlockStyle(
+                    Theme.of(context).textTheme.bodySmall!, // 👈 use bodySmall here
+                    HorizontalSpacing(0, 0), // top/bottom padding
+                    VerticalSpacing(0, 0), // top/bottom margin
+                    VerticalSpacing(0, 0),
+                    null,
+                  ),
+                ),
+              ),
+              ),
             ),
-          ),
-        ],
+          )
+        ], 
       ),
     );
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
   }
 }
 

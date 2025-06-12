@@ -1,6 +1,8 @@
 import 'package:eclass_flutter/teacher_panel/dash/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 
 void main() {
   runApp(const MyApp());
@@ -82,6 +84,15 @@ class MyApp extends StatelessWidget {
         ),
       ),
       home: const TeacherDash(),
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        FlutterQuillLocalizations.delegate,
+      ],
+      supportedLocales: const [
+        Locale('en'), // Add other locales as needed
+      ],
     );
   }
 }
