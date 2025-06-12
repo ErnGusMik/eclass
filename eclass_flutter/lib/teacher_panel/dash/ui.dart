@@ -200,8 +200,7 @@ class TeacherDash extends StatelessWidget {
                                 ),
                                 showDragHandle: true,
                                 isScrollControlled: true,
-                                builder:
-                                    (context) => CancelLessonModal(),
+                                builder: (context) => CancelLessonModal(),
                               );
                             },
                             style: FilledButton.styleFrom(
@@ -219,7 +218,9 @@ class TeacherDash extends StatelessWidget {
                                 isScrollControlled: true,
                                 showDragHandle: true,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.vertical(top: Radius.circular(16.0))
+                                  borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(16.0),
+                                  ),
                                 ),
                                 builder: (context) => LessonTopicModal(),
                               );
@@ -239,16 +240,21 @@ class TeacherDash extends StatelessWidget {
                                 isScrollControlled: true,
                                 showDragHandle: true,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.vertical(top: Radius.circular(16.0))
-                                ),
-                                builder: (context) => DraggableScrollableSheet(
-                                  expand: false,
-                                  maxChildSize: 0.9,
-                                  builder: (context, scrollController) => SingleChildScrollView(
-                                    controller: scrollController,
-                                    child: CreateNoticeModal(),
+                                  borderRadius: BorderRadius.vertical(
+                                    top: Radius.circular(16.0),
                                   ),
                                 ),
+                                builder:
+                                    (context) => DraggableScrollableSheet(
+                                      expand: false,
+                                      maxChildSize: 0.9,
+                                      builder:
+                                          (context, scrollController) =>
+                                              CreateNoticeModal(
+                                                scrollController:
+                                                    scrollController,
+                                              ),
+                                    ),
                               );
                             },
                             style: FilledButton.styleFrom(
@@ -363,7 +369,8 @@ class TeacherDash extends StatelessWidget {
 }
 
 class CreateNoticeModal extends StatefulWidget {
-  const CreateNoticeModal({super.key});
+  const CreateNoticeModal({super.key, required this.scrollController});
+  final ScrollController scrollController;
 
   @override
   State<CreateNoticeModal> createState() => _CreateNoticeModalState();
@@ -375,77 +382,113 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
   @override
   void initState() {
     super.initState();
-    _controller = QuillController(document: Document(), selection: const TextSelection.collapsed(offset: 0));
+    _controller = QuillController(
+      document: Document(),
+      selection: const TextSelection.collapsed(offset: 0),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: EdgeInsets.symmetric(horizontal: 16.0),
-      child: Column(
-        spacing: 30.0,
-        mainAxisSize: MainAxisSize.min,
+    return SizedBox.expand(
+      child: Stack(
         children: [
-          Text(
-            "Create Notice",
-            style: Theme.of(context).textTheme.headlineLarge,
-            textAlign: TextAlign.center,
-          ),
-          TextField(
-            maxLines: null,
-            style: Theme.of(context).textTheme.bodyLarge,
-            decoration: InputDecoration(
-              helperText: "By Maggie Smith",
-              labelText: "Heading",
-              labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).colorScheme.onSurfaceVariant,
-              ),
-              filled: true,
-              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
-              border: UnderlineInputBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
-              ),
-              focusedBorder: UnderlineInputBorder(
-                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+          Padding(
+            padding: const EdgeInsets.only(bottom: 100),
+            child: SingleChildScrollView(
+              controller: widget.scrollController,
+              child: Column(
+                spacing: 30.0,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    "Create Notice",
+                    style: Theme.of(context).textTheme.headlineLarge,
+                    textAlign: TextAlign.center,
+                  ),
+                  TextField(
+                    maxLines: null,
+                    style: Theme.of(context).textTheme.bodyLarge,
+                    decoration: InputDecoration(
+                      helperText: "By Maggie Smith",
+                      labelText: "Heading",
+                      labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                      filled: true,
+                      fillColor:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                      border: UnderlineInputBorder(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(8),
+                        ),
+                      ),
+                      focusedBorder: UnderlineInputBorder(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                  SizedBox(
+                    height: 224,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHigh,
+                        borderRadius: BorderRadius.all(Radius.circular(16.0)),
+                      ),
+                      child: QuillEditor.basic(
+                        controller: _controller,
+                        scrollController: ScrollController(),
+                        config: QuillEditorConfig(
+                          placeholder: "Notice",
+                          padding: EdgeInsets.all(16.0),
+                          minHeight: 224.0,
+                          customStyles: DefaultStyles(
+                            paragraph: DefaultTextBlockStyle(
+                              Theme.of(context).textTheme.bodySmall!,
+                              HorizontalSpacing(0, 0),
+                              VerticalSpacing(0, 0),
+                              VerticalSpacing(0, 0),
+                              null,
+                            ),
+                            placeHolder: DefaultTextBlockStyle(
+                              Theme.of(context).textTheme.bodySmall!,
+                              HorizontalSpacing(0, 0),
+                              VerticalSpacing(0, 0),
+                              VerticalSpacing(0, 0),
+                              null,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            
           ),
-          Flexible(
-            fit: FlexFit.loose,
+          Positioned(
+            bottom: 24,
+            left: 24,
+            right: 24,
             child: Container(
+              height: 56,
               decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHigh,
-                borderRadius: BorderRadius.all(Radius.circular(16.0)),
-                
+                color: Theme.of(context).colorScheme.primaryContainer,
               ),
-              child: QuillEditor.basic(controller: _controller,
-              scrollController: ScrollController(),
-              config: QuillEditorConfig(                
-                placeholder: "Notice",
-                padding: EdgeInsets.all(16.0),
-                minHeight: 224.0,
-                customStyles: DefaultStyles(
-                  paragraph: DefaultTextBlockStyle(
-                    Theme.of(context).textTheme.bodySmall!, // 👈 use bodySmall here
-                    HorizontalSpacing(0, 0), // top/bottom padding
-                    VerticalSpacing(0, 0), // top/bottom margin
-                    VerticalSpacing(0, 0),
-                    null,
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: Icon(Icons.format_bold),
+                    onPressed: () => _controller.formatSelection(Attribute.bold),
                   ),
-                  placeHolder: DefaultTextBlockStyle(
-                    Theme.of(context).textTheme.bodySmall!, // 👈 use bodySmall here
-                    HorizontalSpacing(0, 0), // top/bottom padding
-                    VerticalSpacing(0, 0), // top/bottom margin
-                    VerticalSpacing(0, 0),
-                    null,
-                  ),
-                ),
-              ),
+                  Text("Some text goes here"),
+                ],
               ),
             ),
-          )
-        ], 
+          ),
+        ],
       ),
     );
   }
