@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:intl/intl.dart';
+import 'package:file_picker/file_picker.dart';
+import 'package:open_filex/open_filex.dart';
 
 class TeacherDash extends StatelessWidget {
   const TeacherDash({super.key});
@@ -244,14 +246,18 @@ class TeacherDash extends StatelessWidget {
                                     top: Radius.circular(16.0),
                                   ),
                                 ),
-                                builder: (context) => DraggableScrollableSheet(
-                                  expand: false,
-                                  maxChildSize: 0.9,
-                                  builder: (context, scrollController) {
-                                    // Pass the scrollController directly to your modal
-                                    return CreateNoticeModal(scrollController: scrollController);
-                                  },
-                                ),
+                                builder:
+                                    (context) => DraggableScrollableSheet(
+                                      expand: false,
+                                      maxChildSize: 0.9,
+                                      initialChildSize: 0.7,
+                                      minChildSize: 0.7,
+                                      builder: (context, scrollController) {
+                                        return CreateNoticeModal(
+                                          scrollController: scrollController,
+                                        );
+                                      },
+                                    ),
                               );
                             },
                             style: FilledButton.styleFrom(
@@ -375,6 +381,13 @@ class CreateNoticeModal extends StatefulWidget {
 
 class _CreateNoticeModalState extends State<CreateNoticeModal> {
   late QuillController _controller;
+  late FocusNode _focusNode;
+
+  late bool isBold;
+  late bool isUnderlined;
+  late bool isItalicised;
+
+  var files = [];
 
   @override
   void initState() {
@@ -383,18 +396,34 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
       document: Document(),
       selection: const TextSelection.collapsed(offset: 0),
     );
+    _focusNode = FocusNode();
+    final attr = _controller.getSelectionStyle().attributes;
+    isBold = attr.containsKey(Attribute.bold.key);
+    isUnderlined = attr.containsKey(Attribute.underline.key);
+    isItalicised = attr.containsKey(Attribute.italic.key);
+    _controller.addListener(_handleQuillChange);
+  }
+
+  void _handleQuillChange() {
+    final attr = _controller.getSelectionStyle().attributes;
+    setState(() {
+      isBold = attr.containsKey(Attribute.bold.key);
+      isUnderlined = attr.containsKey(Attribute.underline.key);
+      isItalicised = attr.containsKey(Attribute.italic.key);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    bool isBold = _controller.getSelectionStyle().attributes.containsKey(Attribute.bold.key);
-    bool isUnderlined = _controller.getSelectionStyle().attributes.containsKey(Attribute.underline.key);
-    bool isItalicised = _controller.getSelectionStyle().attributes.containsKey(Attribute.italic.key);
-
     return Stack(
       children: [
         Padding(
-          padding: const EdgeInsets.only(bottom: 56, left: 16, right: 16, top: 0),
+          padding: const EdgeInsets.only(
+            bottom: 56,
+            left: 16,
+            right: 16,
+            top: 0,
+          ),
           child: SingleChildScrollView(
             controller: widget.scrollController,
             child: Column(
@@ -440,6 +469,7 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
                     child: QuillEditor.basic(
                       controller: _controller,
                       scrollController: ScrollController(),
+                      focusNode: _focusNode,
                       config: QuillEditorConfig(
                         placeholder: "Notice",
                         padding: EdgeInsets.all(16.0),
@@ -464,14 +494,138 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
                     ),
                   ),
                 ),
+                Container(
+                  padding: EdgeInsets.all(12.0),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).colorScheme.tertiaryContainer,
+                    borderRadius: BorderRadius.all(Radius.circular(16.0)),
+                  ),
+                  child: Column(
+                    spacing: 8.0,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        "Uploads",
+                        style: Theme.of(
+                          context,
+                        ).textTheme.labelMedium?.copyWith(
+                          color:
+                              Theme.of(context).colorScheme.onTertiaryContainer,
+                        ),
+                      ),
+
+                      ...files.map((file) {
+                        List<String> parts = file.name.split('.');
+                        String name = parts
+                            .sublist(0, parts.length - 1)
+                            .join('.');
+                        String extension = parts.last;
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Theme.of(context).colorScheme.tertiary,
+                            borderRadius: BorderRadius.vertical(
+                              top: Radius.circular(12.0),
+                            ),
+                          ),
+                          padding: EdgeInsets.symmetric(horizontal: 12.0),
+                          child: Row(
+                            spacing: 0,
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Flexible(
+                                child: Row(
+                                  spacing: 0,
+                                  children: [
+                                    Flexible(
+                                      child: Text(
+                                        name,
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.labelLarge?.copyWith(
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.onTertiary,
+                                        ),
+                                        overflow: TextOverflow.ellipsis,
+                                        maxLines: 1,
+                                        softWrap: false,
+                                      ),
+                                    ),
+                                    Text(
+                                      ".$extension",
+                                      style: Theme.of(
+                                          context,
+                                        ).textTheme.labelLarge?.copyWith(
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.onTertiary,
+                                        ),
+                                    ),
+                                    SizedBox(width: 4.0,)
+                                  ],
+                                ),
+                              ),
+                              Text(
+                                formatFileSize(file.size),
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.labelSmall?.copyWith(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.outlineVariant,
+                                ),
+                              ),
+                              IconButton(
+                                icon: Icon(Icons.remove_circle_outline),
+                                color: Theme.of(context).colorScheme.errorContainer,
+                                onPressed: () {
+                                  setState(() {
+                                    files.remove(file);
+                                  });
+                                },
+                              ),
+                              IconButton(
+                                onPressed: () {
+                                  OpenFilex.open(file.path);
+                                },
+                                icon: Icon(Icons.arrow_forward),
+                                color: Theme.of(context).colorScheme.onTertiary,
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                      
+                      if (files.isEmpty) Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 8.0),
+                        child: RichText(
+                          textAlign: TextAlign.center,
+                          text: TextSpan(
+                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onTertiaryContainer
+                            ),
+                            children: [
+                              TextSpan(text: "Upload a file by pressing "),
+                              WidgetSpan(child: Icon(Icons.attach_file, color: Theme.of(context).colorScheme.onTertiaryContainer), alignment: PlaceholderAlignment.middle),
+                              TextSpan(text: ' in the toolbar.')
+                            ]
+                          ),
+                        ),
+                      )
+                    ],
+                  ),
+                ),
               ],
             ),
           ),
         ),
-    
+
         // TOOLBAR
         Positioned(
-          bottom: 24,
+          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
           left: 24,
           right: 24,
           child: Row(
@@ -483,18 +637,44 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
                 color: Theme.of(context).colorScheme.primaryContainer,
                 borderRadius: BorderRadius.all(Radius.circular(32.0)),
                 child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 12.0),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8.0,
+                    vertical: 12.0,
+                  ),
                   child: Row(
                     spacing: 4,
                     children: [
-                      iconToggleButton(isBold, context, Icons.format_bold, Attribute.bold),
-                      iconToggleButton(isUnderlined, context, Icons.format_underline, Attribute.underline),
-                      iconToggleButton(isItalicised, context, Icons.format_italic, Attribute.italic),
+                      iconToggleButton(
+                        isBold,
+                        context,
+                        Icons.format_bold,
+                        Attribute.bold,
+                      ),
+                      iconToggleButton(
+                        isUnderlined,
+                        context,
+                        Icons.format_underline,
+                        Attribute.underline,
+                      ),
+                      iconToggleButton(
+                        isItalicised,
+                        context,
+                        Icons.format_italic,
+                        Attribute.italic,
+                      ),
                       IconButton(
                         icon: Icon(Icons.attach_file),
-                        onPressed: () {},
+                        onPressed: () async {
+                          final result = await FilePicker.platform.pickFiles();
+
+                          if (result != null) {
+                            setState(() {
+                              files.add(result.files.single);
+                            });
+                          }
+                        },
                         color: Theme.of(context).colorScheme.onPrimaryContainer,
-                      )
+                      ),
                     ],
                   ),
                 ),
@@ -502,10 +682,9 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
               FloatingActionButton(
                 backgroundColor: Theme.of(context).colorScheme.primary,
                 foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                onPressed: () {},
-                child: Icon(Icons.send_outlined)
-
-              )
+                onPressed: () {}, // ! CREATE NOTICE (W/ UPLOADS)
+                child: Icon(Icons.send_outlined),
+              ),
             ],
           ),
         ),
@@ -513,24 +692,41 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
     );
   }
 
-  IconButton iconToggleButton(bool isSelected, BuildContext context, IconData icon, Attribute attribute) {
+  IconButton iconToggleButton(
+    bool isSelected,
+    BuildContext context,
+    IconData icon,
+    Attribute attribute,
+  ) {
     return IconButton(
-                icon: Icon(icon,
-                color: isSelected ? Theme.of(context).colorScheme.onSurface : Theme.of(context).colorScheme.onPrimaryContainer,
-                ),
-                onPressed: () {_controller.formatSelection(isSelected ? Attribute.clone(attribute, null) : attribute); setState(() {});},
-                isSelected: isSelected,
-                style: ButtonStyle(
-                  backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
-                    return isSelected ? Theme.of(context).colorScheme.surfaceContainer : null;
-                  })
-                ),
-              );
+      icon: Icon(
+        icon,
+        color:
+            isSelected
+                ? Theme.of(context).colorScheme.onSurface
+                : Theme.of(context).colorScheme.onPrimaryContainer,
+      ),
+      onPressed: () {
+        _controller.formatSelection(
+          isSelected ? Attribute.clone(attribute, null) : attribute,
+        );
+        setState(() {});
+      },
+      isSelected: isSelected,
+      style: ButtonStyle(
+        backgroundColor: WidgetStateProperty.resolveWith<Color?>((states) {
+          return isSelected
+              ? Theme.of(context).colorScheme.surfaceContainer
+              : null;
+        }),
+      ),
+    );
   }
 
   @override
   void dispose() {
     _controller.dispose();
+    _focusNode.dispose();
     super.dispose();
   }
 }
@@ -1364,6 +1560,7 @@ class LatestNotices extends StatelessWidget {
                 shrinkExtent: MediaQuery.of(context).size.width * 0.8,
                 children: [
                   Container(
+                    
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surfaceBright,
                       border: Border.all(
@@ -1578,5 +1775,19 @@ class AppBarW extends StatelessWidget implements PreferredSizeWidget {
         ),
       ],
     );
+  }
+}
+
+// helper
+String formatFileSize(int bytes) {
+  const int kb = 1024;
+  const int mb = 1024 * kb;
+
+  if (bytes >= mb) {
+    return "${(bytes / mb).toStringAsFixed(1)} MB";
+  } else if (bytes >= kb) {
+    return "${(bytes / kb).toStringAsFixed(1)} KB";
+  } else {
+    return "$bytes B";
   }
 }

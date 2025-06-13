@@ -39,6 +39,8 @@ dependencies:
   flutter_quill: ^11.0.0
   flutter_localizations:
     sdk: flutter
+  file_picker: ^10.2.0
+  open_filex: ^4.7.0
 
 dev_dependencies:
   flutter_test:
