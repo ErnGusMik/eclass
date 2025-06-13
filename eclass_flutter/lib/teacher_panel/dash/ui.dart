@@ -101,15 +101,25 @@ class TeacherDash extends StatelessWidget {
                                     ),
                                     showDragHandle: true,
                                     builder: (BuildContext context) {
-                                      return DraggableScrollableSheet(
-                                        expand: false,
-                                        maxChildSize: 0.9,
-                                        builder: (context, scrollContainer) {
-                                          return SingleChildScrollView(
-                                            controller: scrollContainer,
-                                            child: HomeworkModal(),
-                                          );
-                                        },
+                                      return AnimatedPadding(
+                                        padding: EdgeInsetsGeometry.only(
+                                          bottom:
+                                              MediaQuery.of(
+                                                context,
+                                              ).viewInsets.bottom,
+                                        ),
+                                        duration: Duration(milliseconds: 100),
+                                        curve: Curves.easeOut,
+                                        child: DraggableScrollableSheet(
+                                          expand: false,
+                                          maxChildSize: 0.9,
+                                          builder: (context, scrollContainer) {
+                                            return SingleChildScrollView(
+                                              controller: scrollContainer,
+                                              child: HomeworkModal(),
+                                            );
+                                          },
+                                        ),
                                       );
                                     },
                                     isScrollControlled: true,
@@ -149,16 +159,26 @@ class TeacherDash extends StatelessWidget {
                                     showDragHandle: true,
                                     isScrollControlled: true,
                                     builder:
-                                        (context) => DraggableScrollableSheet(
-                                          expand: false,
-                                          maxChildSize: 0.9,
-                                          builder:
-                                              (context, scrollController) =>
-                                                  SingleChildScrollView(
-                                                    controller:
-                                                        scrollController,
-                                                    child: TestModal(),
-                                                  ),
+                                        (context) => AnimatedPadding(
+                                          duration: Duration(milliseconds: 100),
+                                          curve: Curves.easeOut,
+                                          padding: EdgeInsetsGeometry.only(
+                                            bottom:
+                                                MediaQuery.of(
+                                                  context,
+                                                ).viewInsets.bottom,
+                                          ),
+                                          child: DraggableScrollableSheet(
+                                            expand: false,
+                                            maxChildSize: 0.9,
+                                            builder:
+                                                (context, scrollController) =>
+                                                    SingleChildScrollView(
+                                                      controller:
+                                                          scrollController,
+                                                      child: TestModal(),
+                                                    ),
+                                          ),
                                         ),
                                   ),
                                 },
@@ -224,7 +244,18 @@ class TeacherDash extends StatelessWidget {
                                     top: Radius.circular(16.0),
                                   ),
                                 ),
-                                builder: (context) => LessonTopicModal(),
+                                builder:
+                                    (context) => AnimatedPadding(
+                                      duration: Duration(milliseconds: 100),
+                                      curve: Curves.easeOut,
+                                      padding: EdgeInsetsGeometry.only(
+                                        bottom:
+                                            MediaQuery.of(
+                                              context,
+                                            ).viewInsets.bottom,
+                                      ),
+                                      child: LessonTopicModal(),
+                                    ),
                               );
                             },
                             style: FilledButton.styleFrom(
@@ -247,16 +278,21 @@ class TeacherDash extends StatelessWidget {
                                   ),
                                 ),
                                 builder:
-                                    (context) => DraggableScrollableSheet(
-                                      expand: false,
-                                      maxChildSize: 0.9,
-                                      initialChildSize: 0.7,
-                                      minChildSize: 0.7,
-                                      builder: (context, scrollController) {
-                                        return CreateNoticeModal(
-                                          scrollController: scrollController,
-                                        );
-                                      },
+                                    (context) => AnimatedPadding(
+                                      duration: Duration(milliseconds: 100),
+                                      curve: Curves.easeOut,
+                                      padding: EdgeInsetsGeometry.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+                                      child: DraggableScrollableSheet(
+                                        expand: false,
+                                        maxChildSize: 0.9,
+                                        initialChildSize: 0.7,
+                                        minChildSize: 0.7,
+                                        builder: (context, scrollController) {
+                                          return CreateNoticeModal(
+                                            scrollController: scrollController,
+                                          );
+                                        },
+                                      ),
                                     ),
                               );
                             },
@@ -300,34 +336,61 @@ class TeacherDash extends StatelessWidget {
                       TeacherClass(lesson: "English B SL", classGrade: "MYP5"),
                       TeacherClass(lesson: "English B HL", classGrade: "MYP5"),
                       TeacherClass(lesson: "English B HL", classGrade: "MYP4"),
-                      Card(
-                        elevation: 0.0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(4.0),
-                            topRight: Radius.circular(4.0),
-                            bottomLeft: Radius.circular(12.0),
-                            bottomRight: Radius.circular(12.0),
-                          ),
-                          side: BorderSide(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              IconButton(
-                                onPressed: () => {},
-                                icon: Icon(Icons.add_circle_outline),
+                      GestureDetector(
+                        onTap: () {
+                          showModalBottomSheet(
+                            context: context,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.vertical(
+                                top: Radius.circular(16.0),
                               ),
-                              Text(
-                                "Create new class",
-                                style: Theme.of(context).textTheme.titleMedium,
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
+                            ),
+                            showDragHandle: true,
+                            isScrollControlled: true,
+                            builder:
+                                (context) => AnimatedPadding(
+                                  duration: Duration(milliseconds: 100),
+                                  curve: Curves.easeOut,
+                                  padding: EdgeInsets.only(
+                                    bottom:
+                                        MediaQuery.of(
+                                          context,
+                                        ).viewInsets.bottom,
+                                  ),
+                                  child: NewClassModal(),
+                                ),
+                          );
+                        },
+                        child: Card(
+                          elevation: 0.0,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.only(
+                              topLeft: Radius.circular(4.0),
+                              topRight: Radius.circular(4.0),
+                              bottomLeft: Radius.circular(12.0),
+                              bottomRight: Radius.circular(12.0),
+                            ),
+                            side: BorderSide(
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(12.0),
+                                  child: Icon(Icons.add_circle_outline),
+                                ),
+                                Text(
+                                  "Create new class",
+                                  style:
+                                      Theme.of(context).textTheme.titleMedium,
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
@@ -365,6 +428,63 @@ class TeacherDash extends StatelessWidget {
             selectedIcon: Icon(Icons.inbox),
             enabled: false,
           ),
+        ],
+      ),
+    );
+  }
+}
+
+class NewClassModal extends StatelessWidget {
+  const NewClassModal({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        spacing: 30.0,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            "Create New Class",
+            style: Theme.of(context).textTheme.headlineLarge,
+            textAlign: TextAlign.center,
+          ),
+          TextField(
+            maxLines: null,
+            style: Theme.of(context).textTheme.bodyLarge,
+            decoration: InputDecoration(
+              labelText: "Class name",
+              labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              border: UnderlineInputBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              ),
+            ),
+          ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              FilledButton.icon(
+                onPressed: () {},
+                icon: Icon(Icons.add),
+                label: Text("Create"),
+                style: FilledButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    vertical: 16.0,
+                    horizontal: 24.0,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.0),
         ],
       ),
     );
@@ -418,11 +538,8 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
     return Stack(
       children: [
         Padding(
-          padding: const EdgeInsets.only(
-            bottom: 56,
-            left: 16,
-            right: 16,
-            top: 0,
+          padding: const EdgeInsets.symmetric(
+            horizontal: 16,
           ),
           child: SingleChildScrollView(
             controller: widget.scrollController,
@@ -460,7 +577,7 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
                   ),
                 ),
                 SizedBox(
-                  height: 224,
+                  height: 296,
                   child: Container(
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surfaceContainerHigh,
@@ -473,7 +590,7 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
                       config: QuillEditorConfig(
                         placeholder: "Notice",
                         padding: EdgeInsets.all(16.0),
-                        minHeight: 224.0,
+                        minHeight: 296.0,
                         customStyles: DefaultStyles(
                           paragraph: DefaultTextBlockStyle(
                             Theme.of(context).textTheme.bodySmall!,
@@ -555,15 +672,15 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
                                     Text(
                                       ".$extension",
                                       style: Theme.of(
-                                          context,
-                                        ).textTheme.labelLarge?.copyWith(
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.onTertiary,
-                                        ),
+                                        context,
+                                      ).textTheme.labelLarge?.copyWith(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onTertiary,
+                                      ),
                                     ),
-                                    SizedBox(width: 4.0,)
+                                    SizedBox(width: 4.0),
                                   ],
                                 ),
                               ),
@@ -580,7 +697,10 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
                               ),
                               IconButton(
                                 icon: Icon(Icons.remove_circle_outline),
-                                color: Theme.of(context).colorScheme.errorContainer,
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.errorContainer,
                                 onPressed: () {
                                   setState(() {
                                     files.remove(file);
@@ -598,26 +718,42 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
                           ),
                         );
                       }),
-                      
-                      if (files.isEmpty) Padding(
-                        padding: const EdgeInsets.symmetric(vertical: 8.0),
-                        child: RichText(
-                          textAlign: TextAlign.center,
-                          text: TextSpan(
-                            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onTertiaryContainer
+
+                      if (files.isEmpty)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8.0),
+                          child: RichText(
+                            textAlign: TextAlign.center,
+                            text: TextSpan(
+                              style: Theme.of(
+                                context,
+                              ).textTheme.bodyMedium?.copyWith(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onTertiaryContainer,
+                              ),
+                              children: [
+                                TextSpan(text: "Upload a file by pressing "),
+                                WidgetSpan(
+                                  child: Icon(
+                                    Icons.attach_file,
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onTertiaryContainer,
+                                  ),
+                                  alignment: PlaceholderAlignment.middle,
+                                ),
+                                TextSpan(text: ' in the toolbar.'),
+                              ],
                             ),
-                            children: [
-                              TextSpan(text: "Upload a file by pressing "),
-                              WidgetSpan(child: Icon(Icons.attach_file, color: Theme.of(context).colorScheme.onTertiaryContainer), alignment: PlaceholderAlignment.middle),
-                              TextSpan(text: ' in the toolbar.')
-                            ]
                           ),
                         ),
-                      )
                     ],
                   ),
                 ),
+                SizedBox(height: 80,)
               ],
             ),
           ),
@@ -625,7 +761,7 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
 
         // TOOLBAR
         Positioned(
-          bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+          bottom: 24,
           left: 24,
           right: 24,
           child: Row(
@@ -1386,7 +1522,7 @@ class _TimeSelectorState extends State<TimeSelector> {
   }
 }
 
-class ConnectedButtonGroup extends StatelessWidget {
+class ConnectedButtonGroup extends StatefulWidget {
   const ConnectedButtonGroup({
     super.key,
     this.selected = 0,
@@ -1397,18 +1533,31 @@ class ConnectedButtonGroup extends StatelessWidget {
   final List<String> labels;
 
   @override
+  State<ConnectedButtonGroup> createState() => _ConnectedButtonGroupState();
+}
+
+class _ConnectedButtonGroupState extends State<ConnectedButtonGroup> {
+  late int active;
+
+  @override
+  void initState() {
+    super.initState();
+    active = widget.selected;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       spacing: 2.0,
       children:
-          labels.asMap().entries.map((entry) {
+          widget.labels.asMap().entries.map((entry) {
             final idx = entry.key;
             final label = entry.value;
-            final isSelected = idx == selected;
+            final isSelected = idx == active;
             if (isSelected) {
               return FilledButton(
-                onPressed: () => {},
+                onPressed: () {},
                 style: FilledButton.styleFrom(
                   backgroundColor: Theme.of(context).colorScheme.secondary,
                   foregroundColor: Theme.of(context).colorScheme.onSecondary,
@@ -1417,7 +1566,11 @@ class ConnectedButtonGroup extends StatelessWidget {
               );
             } else {
               return FilledButton.tonal(
-                onPressed: () => {},
+                onPressed: () {
+                  setState(() {
+                    active = idx;
+                  });
+                },
                 style: FilledButton.styleFrom(
                   shape: RoundedRectangleBorder(
                     borderRadius:
@@ -1426,7 +1579,7 @@ class ConnectedButtonGroup extends StatelessWidget {
                               right: Radius.circular(8.0),
                               left: Radius.circular(24.0),
                             )
-                            : idx == labels.length - 1
+                            : idx == widget.labels.length - 1
                             ? BorderRadius.horizontal(
                               left: Radius.circular(8.0),
                               right: Radius.circular(24.0),
@@ -1558,9 +1711,39 @@ class LatestNotices extends StatelessWidget {
                 scrollDirection: Axis.horizontal,
                 itemExtent: MediaQuery.of(context).size.width * 0.8,
                 shrinkExtent: MediaQuery.of(context).size.width * 0.8,
+                onTap: (i) {
+                  if (i == 0) {
+                    showModalBottomSheet(
+                      context: context,
+                      isScrollControlled: true,
+                      showDragHandle: true,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(16.0),
+                        ),
+                      ),
+                      builder:
+                          (context) => AnimatedPadding(
+                            duration: Duration(milliseconds: 100),
+                            curve: Curves.easeOut,
+                            padding: EdgeInsetsGeometry.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+                            child: DraggableScrollableSheet(
+                              expand: false,
+                              maxChildSize: 0.9,
+                              initialChildSize: 0.7,
+                              minChildSize: 0.7,
+                              builder: (context, scrollController) {
+                                return CreateNoticeModal(
+                                  scrollController: scrollController,
+                                );
+                              },
+                            ),
+                          ),
+                    );
+                  }
+                },
                 children: [
                   Container(
-                    
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.surfaceBright,
                       border: Border.all(
