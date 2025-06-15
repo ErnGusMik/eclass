@@ -1,0 +1,379 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+
+class LoginPage extends StatefulWidget {
+  const LoginPage({super.key});
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  final GoogleSignIn _googleSignIn = GoogleSignIn();
+  var account;
+  int tab = 2;
+  String errorText = '';
+  List classes = [
+    // TODO: REPLACE WITH DB
+    {"name": "Theory of Knowledge", "teacher": "Mrs Smith"},
+    {"name": "Mathematics: Analysis & Approaches", "teacher": "Mrs Smith"},
+  ];
+  final classCodeController = TextEditingController();
+  String classCodeError = '';
+
+  Future<void> _handleSignIn() async {
+    try {
+      final signIn = await _googleSignIn.signIn();
+      setState(() {
+        account = signIn;
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        print("Sign in failed: ${e}");
+      }
+      setState(() {
+        errorText =
+            "Sign in with Google failed! Please try again later and if the issue persists contact support.";
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final List<Widget> tabs = [
+      Container(
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.secondaryContainer,
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        padding: EdgeInsets.all(10.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 12.0,
+          children: [
+            Text(
+              "Create your first class",
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSecondaryContainer,
+              ),
+            ),
+            TextField(
+              decoration: InputDecoration(
+                labelText: "Class/course name",
+                labelStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+                ),
+                border: OutlineInputBorder(),
+              ),
+            ),
+            TextField(
+              decoration: InputDecoration(
+                labelText: "Grade name",
+                labelStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+                ),
+                border: OutlineInputBorder(),
+                helperText:
+                    "Enter the grade with the corresponding letters, eg. 11A or DP2",
+                helperMaxLines: 2,
+                helperStyle: TextStyle(
+                  color: Theme.of(context).colorScheme.onSecondaryContainer,
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+      Column(
+        spacing: 16.0,
+        children: [
+          Row(
+            spacing: 12.0,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: classCodeController,
+                  decoration: InputDecoration(
+                    labelText: "Class code",
+                    helperText: "Enter the class code as shown by your teacher",
+                    helperMaxLines: 2,
+                    filled: true,
+                    errorText: classCodeError,
+                    errorMaxLines: 2,
+                  ),
+                ),
+              ),
+              ElevatedButton.icon(
+                onPressed: () {
+                  String classCode = classCodeController.text;
+                  bool found = false; // TODO: ATTACH DB
+                  if (!found) {
+                    setState(() {
+                      classCodeError =
+                          "This class wasn't found. Re-check the code and try again.";
+                    });
+                  }
+                },
+                label: Text("Add class"),
+                icon: Icon(Icons.add),
+              ),
+            ],
+          ),
+          Container(
+            padding: EdgeInsets.all(10.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.secondaryContainer,
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            child: Column(
+              spacing: 4.0,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  "My classes",
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSecondaryContainer,
+                  ),
+                ),
+                ...classes.map(
+                  (lesson) => Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.secondary,
+                      borderRadius: BorderRadius.vertical(
+                        bottom: classes[classes.length - 1] == lesson ? Radius.circular(12.0) : Radius.circular(4.0),
+                        top: classes[0] == lesson ? Radius.circular(12.0) : Radius.circular(4.0),
+                      ),
+                    ),
+                    padding: EdgeInsets.symmetric(horizontal: 8.0),
+                    child: Row(
+                      spacing: 8.0,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            lesson["name"],
+                            style: Theme.of(
+                              context,
+                            ).textTheme.labelMedium?.copyWith(
+                              color: Theme.of(context).colorScheme.onSecondary,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        Text(
+                          lesson["teacher"],
+                          style: Theme.of(
+                            context,
+                          ).textTheme.bodySmall?.copyWith(
+                            color:
+                                Theme.of(
+                                  context,
+                                ).colorScheme.secondaryContainer,
+                          ),
+                        ),
+                        IconButton(
+                          icon: Icon(Icons.delete_outline),
+                          onPressed: () {
+                            setState(() {
+                              classes.remove(lesson);
+                            });
+                          },
+                          color: Theme.of(context).colorScheme.onSecondary,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (classes.isEmpty) Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 8.0),
+                  child: Center(child: Text("Add a class by entering the class code above!", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSecondaryContainer),)),
+                )
+              ],
+            ),
+          ),
+        ],
+      ),
+      Container(),
+    ];
+
+    return Scaffold(
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
+          child: Column(
+            spacing: 36.0,
+            children: [
+              SizedBox(height: 100),
+              Text("Welcome!", style: Theme.of(context).textTheme.displayLarge),
+              SizedBox(height: 2),
+              Column(
+                children: [
+                  FilledButton.tonalIcon(
+                    label: Text("Continue with Google"),
+                    icon: Image.asset("assets/google-logo.png", height: 24.0),
+                    onPressed: _handleSignIn,
+                    style: FilledButton.styleFrom(
+                      backgroundColor:
+                          Theme.of(context).colorScheme.surfaceContainerHigh,
+                      foregroundColor: Theme.of(context).colorScheme.onSurface,
+                    ),
+                  ),
+                  Text(
+                    errorText,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).colorScheme.error,
+                    ),
+                  ),
+                ],
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        tab = 0;
+                      });
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12.0),
+                        border:
+                            tab == 0
+                                ? Border.all(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.primaryContainer,
+                                )
+                                : Border.all(
+                                  color: Theme.of(context).colorScheme.outline,
+                                ),
+                        color:
+                            tab == 0
+                                ? Theme.of(context).colorScheme.primaryContainer
+                                : null,
+                      ),
+                      width: (MediaQuery.of(context).size.width - 16 * 3) / 2,
+                      padding: EdgeInsets.symmetric(vertical: 16.0),
+                      child: Column(
+                        spacing: 10.0,
+                        children: [
+                          Icon(
+                            Icons.person_outline,
+                          ), // TODO: change to person_book
+                          Text(
+                            "Teacher",
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleSmall?.copyWith(
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        tab = 1;
+                      });
+                    },
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12.0),
+                        border:
+                            tab == 1
+                                ? Border.all(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.primaryContainer,
+                                )
+                                : Border.all(
+                                  color: Theme.of(context).colorScheme.outline,
+                                ),
+                        color:
+                            tab == 1
+                                ? Theme.of(context).colorScheme.primaryContainer
+                                : null,
+                      ),
+                      width: (MediaQuery.of(context).size.width - 16 * 3) / 2,
+                      padding: EdgeInsets.symmetric(vertical: 16.0),
+                      child: Column(
+                        spacing: 10.0,
+                        children: [
+                          Icon(Icons.school_outlined),
+                          Text(
+                            "Student",
+                            style: Theme.of(
+                              context,
+                            ).textTheme.titleSmall?.copyWith(
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              tabs[tab],
+
+              Container(
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.tertiaryContainer,
+                  borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                ),
+                padding: EdgeInsets.all(10.0),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  spacing: 10.0,
+                  children: [
+                    Icon(
+                      Icons.lightbulb_outlined,
+                      color: Theme.of(context).colorScheme.onTertiaryContainer,
+                    ),
+                    Expanded(
+                      child: Text(
+                        "Hey!\nThis app is still under development, so expect some bugs. Let me know about anything wrong at github.com/erngusmik",
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color:
+                              Theme.of(context).colorScheme.onTertiaryContainer,
+                        ),
+                        softWrap: true,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  FilledButton(
+                    onPressed: () {},
+                    style: FilledButton.styleFrom(
+                      padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0)
+                    ),
+                    child: Text("Get started"),
+                  ),
+                ],
+              ),
+              SizedBox(width: 1,)
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

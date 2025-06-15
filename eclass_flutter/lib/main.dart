@@ -1,4 +1,6 @@
+import 'package:eclass_flutter/login/ui.dart';
 import 'package:eclass_flutter/teacher_panel/dash/ui.dart';
+import 'package:eclass_flutter/teacher_panel/lesson_page/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -50,6 +52,7 @@ class MyApp extends StatelessWidget {
 
           titleLarge: GoogleFonts.poppins(
             fontSize: 22,
+            fontWeight: FontWeight.w500,
             color: colours.onSurface,
           ),
           titleMedium: GoogleFonts.poppins(
@@ -59,6 +62,7 @@ class MyApp extends StatelessWidget {
           ),
           titleSmall: GoogleFonts.poppins(
             fontSize: 14,
+            fontWeight: FontWeight.w500,
             color: colours.onSurface,
           ),
 

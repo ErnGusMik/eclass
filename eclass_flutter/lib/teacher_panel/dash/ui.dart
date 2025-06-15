@@ -3,6 +3,7 @@ import 'package:flutter_quill/flutter_quill.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:eclass_flutter/teacher_panel/teacherUI.dart';
 
 class TeacherDash extends StatelessWidget {
   const TeacherDash({super.key});
@@ -403,33 +404,7 @@ class TeacherDash extends StatelessWidget {
           ],
         ),
       ),
-      bottomNavigationBar: NavigationBar(
-        backgroundColor: Theme.of(context).colorScheme.surfaceContainer,
-        destinations: [
-          NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            label: "Dashboard",
-            selectedIcon: Icon(Icons.home),
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.school_outlined),
-            label: "Overviews",
-            selectedIcon: Icon(Icons.school),
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.schedule),
-            label: "Schedule",
-            selectedIcon: Icon(Icons.schedule),
-            enabled: false,
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.inbox_outlined),
-            label: "E-mail",
-            selectedIcon: Icon(Icons.inbox),
-            enabled: false,
-          ),
-        ],
-      ),
+      bottomNavigationBar: BottomNavBar(selected: 0),
     );
   }
 }
