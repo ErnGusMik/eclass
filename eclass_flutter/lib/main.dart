@@ -1,6 +1,5 @@
 import 'package:eclass_flutter/login/ui.dart';
-import 'package:eclass_flutter/teacher_panel/dash/ui.dart';
-import 'package:eclass_flutter/teacher_panel/lesson_page/ui.dart';
+import 'package:eclass_flutter/teacher_panel/teacherUI.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_quill/flutter_quill.dart';
@@ -10,7 +9,7 @@ void main() {
   runApp(const MyApp());
 }
 
-ColorScheme colours = ColorScheme.fromSeed(seedColor: Colors.deepPurple);
+ColorScheme colours = ColorScheme.fromSeed(seedColor: Color(0xFF6750A4));
 
 class MyApp extends StatelessWidget {
   const MyApp({super.key});
@@ -87,7 +86,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const TeacherDash(),
+      home: const TeacherUI(),
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
