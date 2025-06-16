@@ -51,7 +51,7 @@ class MyApp extends StatelessWidget {
 
           titleLarge: GoogleFonts.poppins(
             fontSize: 22,
-            fontWeight: FontWeight.w500,
+            fontWeight: FontWeight.w400,
             color: colours.onSurface,
           ),
           titleMedium: GoogleFonts.poppins(

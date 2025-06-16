@@ -213,10 +213,196 @@ class TeacherLesson extends StatelessWidget {
                               Theme.of(context).colorScheme.onPrimaryContainer,
                         ),
                       ),
-                      TroubleStudent(name: "John Smith", reason: "Avg grade 3.1",)
+                      TroubleStudent(
+                        name: "John Smith",
+                        reason: "Avg grade 3.1",
+                      ),
+                      TroubleStudent(name: "John Doe", reason: "12 absences"),
+                      TroubleStudent(
+                        name: "Elizabeth Gonzalez",
+                        reason: "Late 23 times",
+                      ),
+                      TroubleStudent(
+                        name: "Benjamin Dover",
+                        reason: "2 missing assignments",
+                      ),
                     ],
                   ),
                 ),
+              ],
+            ),
+            Column(
+              spacing: 8.0,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  "Upcoming Assessments",
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+                AssessmentCard(
+                  date: 'Thursday',
+                  title: "Knowledge and politics: summative assessment",
+                ),
+                AssessmentCard(
+                  date: "Friday",
+                  title: "Knowledge and science: introduction quiz",
+                  summative: false,
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                  child: GestureDetector(
+                    onTap: () {},
+                    child: Container(
+                      height: 120,
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(12.0),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        spacing: 8.0,
+                        children: [
+                          Icon(Icons.add_circle_outline),
+                          Center(
+                            child: Text(
+                              "Create new assessment",
+                              style: Theme.of(context).textTheme.titleMedium,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            StudentsSection(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class StudentsSection extends StatelessWidget {
+  const StudentsSection({super.key});
+
+  static const List<String> students = [
+    "John Doe1",
+    "John Doe2",
+    "John Doe3",
+    "John Doe4",
+    "John Doe5",
+    "John Doe6",
+    "John Doe7",
+    "John Doe8",
+    "John Doe9",
+    "John Doe0",
+    "John Doe11",
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Students", style: Theme.of(context).textTheme.titleLarge),
+        ...students.map(
+          (student) => Container(
+            
+            child: ListTile(
+              leading: CircleAvatar(
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                child: Text(
+                  student.split(" ")[0].substring(0, 1) +
+                      student
+                          .split(" ")[student.split(" ").length - 1]
+                          .substring(0, 1),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onPrimaryContainer,
+                  ),
+                ),
+              ),
+              title: Text(student, overflow: TextOverflow.ellipsis),
+              trailing: IconButton(
+                onPressed: () {},
+                icon: Icon(Icons.arrow_right_sharp),
+              ),
+              tileColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    students[0] == student
+                        ? BorderRadius.vertical(top: Radius.circular(12.0))
+                        : students[students.length - 1] == student
+                        ? BorderRadius.vertical(bottom: Radius.circular(12.0))
+                        : BorderRadius.zero,
+                
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class AssessmentCard extends StatelessWidget {
+  const AssessmentCard({
+    super.key,
+    required this.date,
+    required this.title,
+    this.summative = true,
+  });
+
+  final String date;
+  final String title;
+  final bool summative;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+      child: Container(
+        padding: EdgeInsets.all(10.0),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          borderRadius: BorderRadius.circular(12.0),
+        ),
+        child: Row(
+          spacing: 10.0,
+          children: [
+            Expanded(
+              child: Column(
+                spacing: 10.0,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(date, style: Theme.of(context).textTheme.labelMedium),
+                  Text(title, style: Theme.of(context).textTheme.titleMedium),
+                  Text(
+                    summative
+                        ? "Summative assessment"
+                        : "Internal school assessment",
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Column(
+              spacing: 10.0,
+              children: [
+                IconButton(
+                  onPressed: () {},
+                  icon: Icon(
+                    Icons.delete_outlined,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
+                ),
+                IconButton(onPressed: () {}, icon: Icon(Icons.edit_outlined)),
               ],
             ),
           ],
@@ -227,11 +413,7 @@ class TeacherLesson extends StatelessWidget {
 }
 
 class TroubleStudent extends StatelessWidget {
-  const TroubleStudent({
-    super.key,
-    required this.name,
-    required this.reason
-  });
+  const TroubleStudent({super.key, required this.name, required this.reason});
 
   final String name;
   final String reason;
@@ -245,7 +427,7 @@ class TroubleStudent extends StatelessWidget {
           child: Text(
             name,
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onPrimaryContainer
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
             ),
             overflow: TextOverflow.ellipsis,
           ),
@@ -253,10 +435,10 @@ class TroubleStudent extends StatelessWidget {
         Text(
           reason,
           style: Theme.of(context).textTheme.labelSmall?.copyWith(
-            color: Theme.of(context).colorScheme.onSurfaceVariant
+            color: Theme.of(context).colorScheme.onSurfaceVariant,
           ),
         ),
-        IconButton(onPressed: () {}, icon: Icon(Icons.chat_bubble_outline))
+        IconButton(onPressed: () {}, icon: Icon(Icons.chat_bubble_outline)),
       ],
     );
   }
