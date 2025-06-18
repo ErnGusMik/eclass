@@ -1,6 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:http/http.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -22,21 +24,26 @@ class _LoginPageState extends State<LoginPage> {
   final classCodeController = TextEditingController();
   String classCodeError = '';
 
+
   Future<void> _handleSignIn() async {
-    try {
-      final signIn = await _googleSignIn.signIn();
-      setState(() {
-        account = signIn;
-      });
-    } catch (e) {
-      if (kDebugMode) {
-        print("Sign in failed: ${e}");
+    final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
+    final GoogleSignInAuthentication googleAuth = await googleUser!.authentication;
+
+    final credential = GoogleAuthProvider.credential(
+      accessToken: googleAuth.accessToken,
+      idToken: googleAuth.idToken
+    );
+
+    await FirebaseAuth.instance.signInWithCredential(credential);
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    print(idToken);
+    final response = await get(
+      Uri.parse("http://192.168.1.106:8080/auth/login"),
+      headers: {
+        "Authorization": "Bearer $idToken"
       }
-      setState(() {
-        errorText =
-            "Sign in with Google failed! Please try again later and if the issue persists contact support.";
-      });
-    }
+    );
+    print(response);
   }
 
   @override
