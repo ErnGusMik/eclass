@@ -280,6 +280,53 @@ class TeacherLesson extends StatelessWidget {
               ],
             ),
             StudentsSection(),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 8.0,
+              children: [
+                Text("Settings", style: Theme.of(context).textTheme.titleLarge),
+                Padding(
+                  padding: EdgeInsetsGeometry.symmetric(horizontal: 10.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      FilledButton.tonalIcon(
+                        onPressed: () {},
+                        label: Text("Rename"),
+                        icon: Icon(Icons.swap_horiz),
+                      ),
+                      FilledButton.tonalIcon(
+                        onPressed: () {},
+                        label: Text("Schedule lessons"),
+                        icon: Icon(Icons.calendar_today),
+                      ),
+                    ],
+                  ),
+                ),
+                Padding(
+                  padding: EdgeInsetsGeometry.symmetric(horizontal: 10.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      FilledButton.tonal(
+                        onPressed: null,
+                        child: Text("Add co-teacher"),
+                      ),
+                      FilledButton.icon(
+                        onPressed: () {},
+                        label: Text("Delete"),
+                        icon: Icon(Icons.delete_outline),
+                        style: FilledButton.styleFrom(
+                          backgroundColor: Theme.of(context).colorScheme.error,
+                          foregroundColor:
+                              Theme.of(context).colorScheme.onError,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ],
         ),
       ),
@@ -310,9 +357,19 @@ class StudentsSection extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text("Students", style: Theme.of(context).textTheme.titleLarge),
+        SizedBox(height: 8.0),
         ...students.map(
           (student) => Container(
-            
+            decoration: BoxDecoration(
+              border:
+                  student == students[students.length - 1]
+                      ? Border()
+                      : Border(
+                        bottom: BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
+            ),
             child: ListTile(
               leading: CircleAvatar(
                 backgroundColor: Theme.of(context).colorScheme.primaryContainer,
@@ -339,7 +396,6 @@ class StudentsSection extends StatelessWidget {
                         : students[students.length - 1] == student
                         ? BorderRadius.vertical(bottom: Radius.circular(12.0))
                         : BorderRadius.zero,
-                
               ),
             ),
           ),
