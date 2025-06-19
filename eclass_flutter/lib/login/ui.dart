@@ -25,7 +25,12 @@ class _LoginPageState extends State<LoginPage> {
   ];
   final classCodeController = TextEditingController();
   String classCodeError = '';
-  String googleText = 'Continue with Google';
+  String googleText =
+      (FirebaseAuth.instance.currentUser?.displayName ??
+          'Continue with Google');
+
+  final classNameController = TextEditingController();
+  final classGradeController = TextEditingController();
 
   Future<void> _handleSignIn() async {
     final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
@@ -53,6 +58,7 @@ class _LoginPageState extends State<LoginPage> {
             (FirebaseAuth.instance.currentUser!.displayName ??
                 "Signed in with Google");
         _isLoading = false;
+        errorText = "";
       });
     } else if (response.statusCode == 200) {
       final prefs = await SharedPreferences.getInstance();
@@ -65,6 +71,45 @@ class _LoginPageState extends State<LoginPage> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _handleSignUp() async {
+    if (FirebaseAuth.instance.currentUser == null) {
+      setState(() {
+        errorText = "Please, sign in with Google first!";
+      });
+      return;
+    }
+    if (tab == 2) return;
+
+    if (classNameController.text.trim().isEmpty && tab == 0 ||
+        classGradeController.text.trim().isEmpty && tab == 0) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Please enter a class/course name and grade")),
+      );
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    print(idToken); 
+    final response = await post(
+      Uri.parse(
+        "http://192.168.1.106:8080/auth/signup?role=${tab == 0 ? 'teacher' : 'student'}",
+      ),
+      body: {
+        "className": classNameController.text.trim(),
+        "classGrade": classGradeController.text.trim(),
+      },
+      headers: {"Authorization": "Bearer $idToken"},
+    );
+    print(response.statusCode);
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   @override
@@ -87,6 +132,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
             TextField(
+              controller: classNameController,
               decoration: InputDecoration(
                 labelText: "Class/course name",
                 labelStyle: TextStyle(
@@ -96,6 +142,7 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
             TextField(
+              controller: classGradeController,
               decoration: InputDecoration(
                 labelText: "Grade name",
                 labelStyle: TextStyle(
@@ -430,7 +477,7 @@ class _LoginPageState extends State<LoginPage> {
                     mainAxisAlignment: MainAxisAlignment.end,
                     children: [
                       FilledButton(
-                        onPressed: () {},
+                        onPressed: _handleSignUp,
                         style: FilledButton.styleFrom(
                           padding: EdgeInsets.symmetric(
                             vertical: 16.0,
