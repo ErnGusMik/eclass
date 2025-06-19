@@ -1,10 +1,12 @@
 import 'package:eclass_flutter/login/ui.dart';
 import 'package:eclass_flutter/teacher_panel/teacherUI.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -14,6 +16,35 @@ void main() async {
   );
   runApp(const MyApp());
 }
+
+// Authentication checker
+//
+// Checks if user is authenticated and shows the according page
+class AuthGate extends StatelessWidget {
+  const AuthGate({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<bool>(
+      future: (() async {
+        final prefs = await SharedPreferences.getInstance();
+        final isLoggedIn = prefs.getBool('loggedIn') ?? false;
+        final user = FirebaseAuth.instance.currentUser;
+        return isLoggedIn && user != null;
+      })(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        } else if (snapshot.hasData && snapshot.data == true) {
+          return TeacherUI();
+        } else {
+          return LoginPage();
+        }
+      },
+    );
+  }
+}
+
 
 ColorScheme colours = ColorScheme.fromSeed(seedColor: Color(0xFF6750A4));
 
@@ -92,7 +123,13 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      home: const LoginPage(), // ! HOME PAGE
+
+      routes: {
+        '/teacher': (context) => TeacherUI(),
+        '/login': (context) => LoginPage()
+      },
+
+      home: const AuthGate(), // ! HOME PAGE
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,

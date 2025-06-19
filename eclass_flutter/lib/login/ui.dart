@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -12,6 +13,7 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  bool _isLoading = false;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   var account;
   int tab = 2;
@@ -23,27 +25,46 @@ class _LoginPageState extends State<LoginPage> {
   ];
   final classCodeController = TextEditingController();
   String classCodeError = '';
-
+  String googleText = 'Continue with Google';
 
   Future<void> _handleSignIn() async {
     final GoogleSignInAccount? googleUser = await _googleSignIn.signIn();
-    final GoogleSignInAuthentication googleAuth = await googleUser!.authentication;
-
+    final GoogleSignInAuthentication googleAuth =
+        await googleUser!.authentication;
+    setState(() {
+      _isLoading = true;
+    });
     final credential = GoogleAuthProvider.credential(
       accessToken: googleAuth.accessToken,
-      idToken: googleAuth.idToken
+      idToken: googleAuth.idToken,
     );
 
     await FirebaseAuth.instance.signInWithCredential(credential);
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
-    print(idToken);
     final response = await get(
       Uri.parse("http://192.168.1.106:8080/auth/login"),
-      headers: {
-        "Authorization": "Bearer $idToken"
-      }
+      headers: {"Authorization": "Bearer $idToken"},
     );
     print(response);
+
+    if (response.statusCode == 404) {
+      setState(() {
+        googleText =
+            (FirebaseAuth.instance.currentUser!.displayName ??
+                "Signed in with Google");
+        _isLoading = false;
+      });
+    } else if (response.statusCode == 200) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('loggedIn', true);
+      Navigator.pushReplacementNamed(context, '/');
+    } else {
+      setState(() {
+        errorText =
+            "Could not sign in with Google. Try again later or contact support.";
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -149,8 +170,14 @@ class _LoginPageState extends State<LoginPage> {
                     decoration: BoxDecoration(
                       color: Theme.of(context).colorScheme.secondary,
                       borderRadius: BorderRadius.vertical(
-                        bottom: classes[classes.length - 1] == lesson ? Radius.circular(12.0) : Radius.circular(4.0),
-                        top: classes[0] == lesson ? Radius.circular(12.0) : Radius.circular(4.0),
+                        bottom:
+                            classes[classes.length - 1] == lesson
+                                ? Radius.circular(12.0)
+                                : Radius.circular(4.0),
+                        top:
+                            classes[0] == lesson
+                                ? Radius.circular(12.0)
+                                : Radius.circular(4.0),
                       ),
                     ),
                     padding: EdgeInsets.symmetric(horizontal: 8.0),
@@ -193,10 +220,21 @@ class _LoginPageState extends State<LoginPage> {
                     ),
                   ),
                 ),
-                if (classes.isEmpty) Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 8.0),
-                  child: Center(child: Text("Add a class by entering the class code above!", style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSecondaryContainer),)),
-                )
+                if (classes.isEmpty)
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Center(
+                      child: Text(
+                        "Add a class by entering the class code above!",
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color:
+                              Theme.of(
+                                context,
+                              ).colorScheme.onSecondaryContainer,
+                        ),
+                      ),
+                    ),
+                  ),
               ],
             ),
           ),
@@ -205,182 +243,225 @@ class _LoginPageState extends State<LoginPage> {
       Container(),
     ];
 
-    return Scaffold(
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 16.0),
-          child: Column(
-            spacing: 36.0,
-            children: [
-              SizedBox(height: 100),
-              Text("Welcome!", style: Theme.of(context).textTheme.displayLarge),
-              SizedBox(height: 2),
-              Column(
+    return Stack(
+      children: [
+        Scaffold(
+          body: SingleChildScrollView(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16.0),
+              child: Column(
+                spacing: 36.0,
                 children: [
-                  FilledButton.tonalIcon(
-                    label: Text("Continue with Google"),
-                    icon: Image.asset("assets/google-logo.png", height: 24.0),
-                    onPressed: _handleSignIn,
-                    style: FilledButton.styleFrom(
-                      backgroundColor:
-                          Theme.of(context).colorScheme.surfaceContainerHigh,
-                      foregroundColor: Theme.of(context).colorScheme.onSurface,
-                    ),
-                  ),
+                  SizedBox(height: 100),
                   Text(
-                    errorText,
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).colorScheme.error,
-                    ),
+                    "Welcome!",
+                    style: Theme.of(context).textTheme.displayLarge,
                   ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        tab = 0;
-                      });
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12.0),
-                        border:
-                            tab == 0
-                                ? Border.all(
+                  SizedBox(height: 2),
+                  Column(
+                    children: [
+                      FilledButton.tonalIcon(
+                        label: Text(googleText),
+                        icon: Image.asset(
+                          "assets/google-logo.png",
+                          height: 24.0,
+                        ),
+                        onPressed: _handleSignIn,
+                        style: FilledButton.styleFrom(
+                          backgroundColor:
+                              Theme.of(
+                                context,
+                              ).colorScheme.surfaceContainerHigh,
+                          foregroundColor:
+                              Theme.of(context).colorScheme.onSurface,
+                        ),
+                      ),
+                      Text(
+                        errorText,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ],
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            tab = 0;
+                          });
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12.0),
+                            border:
+                                tab == 0
+                                    ? Border.all(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.primaryContainer,
+                                    )
+                                    : Border.all(
+                                      color:
+                                          Theme.of(context).colorScheme.outline,
+                                    ),
+                            color:
+                                tab == 0
+                                    ? Theme.of(
+                                      context,
+                                    ).colorScheme.primaryContainer
+                                    : null,
+                          ),
+                          width:
+                              (MediaQuery.of(context).size.width - 16 * 3) / 2,
+                          padding: EdgeInsets.symmetric(vertical: 16.0),
+                          child: Column(
+                            spacing: 10.0,
+                            children: [
+                              Icon(
+                                Icons.person_outline,
+                              ), // TODO: change to person_book
+                              Text(
+                                "Teacher",
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.titleSmall?.copyWith(
                                   color:
                                       Theme.of(
                                         context,
-                                      ).colorScheme.primaryContainer,
-                                )
-                                : Border.all(
-                                  color: Theme.of(context).colorScheme.outline,
+                                      ).colorScheme.onPrimaryContainer,
                                 ),
-                        color:
-                            tab == 0
-                                ? Theme.of(context).colorScheme.primaryContainer
-                                : null,
-                      ),
-                      width: (MediaQuery.of(context).size.width - 16 * 3) / 2,
-                      padding: EdgeInsets.symmetric(vertical: 16.0),
-                      child: Column(
-                        spacing: 10.0,
-                        children: [
-                          Icon(
-                            Icons.person_outline,
-                          ), // TODO: change to person_book
-                          Text(
-                            "Teacher",
-                            style: Theme.of(
-                              context,
-                            ).textTheme.titleSmall?.copyWith(
-                              color:
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.onPrimaryContainer,
-                            ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
-                  ),
-                  GestureDetector(
-                    onTap: () {
-                      setState(() {
-                        tab = 1;
-                      });
-                    },
-                    child: Container(
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12.0),
-                        border:
-                            tab == 1
-                                ? Border.all(
+                      GestureDetector(
+                        onTap: () {
+                          setState(() {
+                            tab = 1;
+                          });
+                        },
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12.0),
+                            border:
+                                tab == 1
+                                    ? Border.all(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.primaryContainer,
+                                    )
+                                    : Border.all(
+                                      color:
+                                          Theme.of(context).colorScheme.outline,
+                                    ),
+                            color:
+                                tab == 1
+                                    ? Theme.of(
+                                      context,
+                                    ).colorScheme.primaryContainer
+                                    : null,
+                          ),
+                          width:
+                              (MediaQuery.of(context).size.width - 16 * 3) / 2,
+                          padding: EdgeInsets.symmetric(vertical: 16.0),
+                          child: Column(
+                            spacing: 10.0,
+                            children: [
+                              Icon(Icons.school_outlined),
+                              Text(
+                                "Student",
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.titleSmall?.copyWith(
                                   color:
                                       Theme.of(
                                         context,
-                                      ).colorScheme.primaryContainer,
-                                )
-                                : Border.all(
-                                  color: Theme.of(context).colorScheme.outline,
+                                      ).colorScheme.onPrimaryContainer,
                                 ),
-                        color:
-                            tab == 1
-                                ? Theme.of(context).colorScheme.primaryContainer
-                                : null,
-                      ),
-                      width: (MediaQuery.of(context).size.width - 16 * 3) / 2,
-                      padding: EdgeInsets.symmetric(vertical: 16.0),
-                      child: Column(
-                        spacing: 10.0,
-                        children: [
-                          Icon(Icons.school_outlined),
-                          Text(
-                            "Student",
-                            style: Theme.of(
-                              context,
-                            ).textTheme.titleSmall?.copyWith(
-                              color:
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.onPrimaryContainer,
-                            ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
-              ),
-              tabs[tab],
+                  tabs[tab],
 
-              Container(
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.tertiaryContainer,
-                  borderRadius: BorderRadius.all(Radius.circular(12.0)),
-                ),
-                padding: EdgeInsets.all(10.0),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  spacing: 10.0,
-                  children: [
-                    Icon(
-                      Icons.lightbulb_outlined,
-                      color: Theme.of(context).colorScheme.onTertiaryContainer,
+                  Container(
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).colorScheme.tertiaryContainer,
+                      borderRadius: BorderRadius.all(Radius.circular(12.0)),
                     ),
-                    Expanded(
-                      child: Text(
-                        "Hey!\nThis app is still under development, so expect some bugs. Let me know about anything wrong at github.com/erngusmik",
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    padding: EdgeInsets.all(10.0),
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      spacing: 10.0,
+                      children: [
+                        Icon(
+                          Icons.lightbulb_outlined,
                           color:
                               Theme.of(context).colorScheme.onTertiaryContainer,
                         ),
-                        softWrap: true,
-                      ),
+                        Expanded(
+                          child: Text(
+                            "Hey!\nThis app is still under development, so expect some bugs. Let me know about anything wrong at github.com/erngusmik",
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onTertiaryContainer,
+                            ),
+                            softWrap: true,
+                          ),
+                        ),
+                      ],
                     ),
-                  ],
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  FilledButton(
-                    onPressed: () {},
-                    style: FilledButton.styleFrom(
-                      padding: EdgeInsets.symmetric(vertical: 16.0, horizontal: 24.0)
-                    ),
-                    child: Text("Get started"),
                   ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      FilledButton(
+                        onPressed: () {},
+                        style: FilledButton.styleFrom(
+                          padding: EdgeInsets.symmetric(
+                            vertical: 16.0,
+                            horizontal: 24.0,
+                          ),
+                        ),
+                        child: Text("Get started"),
+                      ),
+                    ],
+                  ),
+                  SizedBox(width: 1),
                 ],
               ),
-              SizedBox(width: 1,)
-            ],
+            ),
           ),
         ),
-      ),
+
+        // LOADING OVERLAY
+        if (_isLoading)
+          Positioned.fill(
+            child: AbsorbPointer(
+              absorbing: true,
+              child: Stack(
+                children: [
+                  const ModalBarrier(dismissible: false, color: Colors.black54),
+                  const Center(child: CircularProgressIndicator()),
+                ],
+              ),
+            ),
+          ),
+      ],
     );
   }
 }
