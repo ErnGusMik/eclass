@@ -1,9 +1,9 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:http/http.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -18,13 +18,9 @@ class _LoginPageState extends State<LoginPage> {
   var account;
   int tab = 2;
   String errorText = '';
-  List classes = [
-    // TODO: REPLACE WITH DB
-    {"name": "Theory of Knowledge", "teacher": "Mrs Smith"},
-    {"name": "Mathematics: Analysis & Approaches", "teacher": "Mrs Smith"},
-  ];
+  List classes = [];
   final classCodeController = TextEditingController();
-  String classCodeError = '';
+  String? classCodeError;
   String googleText =
       (FirebaseAuth.instance.currentUser?.displayName ??
           'Continue with Google');
@@ -95,7 +91,6 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
-    print(idToken); 
     final response = await post(
       Uri.parse(
         "http://192.168.1.106:8080/auth/signup?role=${tab == 0 ? 'teacher' : 'student'}",
@@ -107,9 +102,70 @@ class _LoginPageState extends State<LoginPage> {
       headers: {"Authorization": "Bearer $idToken"},
     );
     print(response.statusCode);
+
+    if (response.statusCode == 201) {
+      // final prefs = await SharedPreferences.getInstance();
+      // await prefs.setBool('loggedIn', true);
+      // Navigator.pushReplacementNamed(context, '/teacher');
+    }
     setState(() {
       _isLoading = false;
     });
+  }
+
+  Future<void> _addClass() async {
+    final code = classCodeController.text.trim();
+    if (code.isEmpty) {
+      setState(() {
+        classCodeError = 'Enter a class code';
+      });
+      return;
+    }
+
+    if (code.length != 6) {
+      setState(() {
+        classCodeError = 'A class code must be 6 characters long';
+      });
+      return;
+    }
+
+    if (FirebaseAuth.instance.currentUser == null) {
+      setState(() {
+        classCodeError = 'Sign in with Google first';
+      });
+      return;
+    }
+
+    setState(() {
+      _isLoading = true;
+    });
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await get(
+      Uri.parse('http://192.168.1.106:8080/auth/getClass?code=$code'),
+      headers: {"Authorization": "Bearer $idToken"},
+    );
+    if (response.statusCode == 404) {
+      setState(() {
+        classCodeError =
+            "This class wasn't found. Re-check the code and try again.";
+        _isLoading = false;
+      });
+    } else if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      classes.add({
+        "name": data["name"],
+        "teacher": data['teachers'].join(', ')
+      });
+      setState(() {
+        _isLoading = false;
+        classCodeError = null;
+      });
+    } else {
+      setState(() {
+        classCodeError = "There seems to be an error. Try again later.";
+        _isLoading = false;
+      });
+    }
   }
 
   @override
@@ -181,16 +237,7 @@ class _LoginPageState extends State<LoginPage> {
                 ),
               ),
               ElevatedButton.icon(
-                onPressed: () {
-                  String classCode = classCodeController.text;
-                  bool found = false; // TODO: ATTACH DB
-                  if (!found) {
-                    setState(() {
-                      classCodeError =
-                          "This class wasn't found. Re-check the code and try again.";
-                    });
-                  }
-                },
+                onPressed: _addClass,
                 label: Text("Add class"),
                 icon: Icon(Icons.add),
               ),
