@@ -102,29 +102,38 @@ class AppBarW extends StatelessWidget implements PreferredSizeWidget {
           child: CachedNetworkImage(
             imageUrl: imgUrl,
             placeholder:
-                (context, url) => CircleAvatar(
-                  backgroundColor:
-                      Theme.of(context).colorScheme.primaryContainer,
-                  foregroundColor:
-                      Theme.of(context).colorScheme.onPrimaryContainer,
-                  child: Icon(Icons.person),
+                (context, url) => GestureDetector(
+                  onTap: () {Navigator.pushReplacementNamed(context, '/user');},
+                  child: CircleAvatar(
+                    backgroundColor:
+                        Theme.of(context).colorScheme.primaryContainer,
+                    foregroundColor:
+                        Theme.of(context).colorScheme.onPrimaryContainer,
+                    child: Icon(Icons.person),
+                  ),
                 ),
             imageBuilder:
-                (context, imageProvider) => CircleAvatar(
-                  backgroundColor:
-                      Theme.of(context).colorScheme.primaryContainer,
-                  foregroundColor:
-                      Theme.of(context).colorScheme.onPrimaryContainer,
-                  backgroundImage: imgUrl == '' ? null : imageProvider,
-                  child: imgUrl == '' ? Icon(Icons.person) : null,
+                (context, imageProvider) => GestureDetector(
+                  onTap: () {Navigator.pushReplacementNamed(context, '/user');},
+                  child: CircleAvatar(
+                    backgroundColor:
+                        Theme.of(context).colorScheme.primaryContainer,
+                    foregroundColor:
+                        Theme.of(context).colorScheme.onPrimaryContainer,
+                    backgroundImage: imgUrl == '' ? null : imageProvider,
+                    child: imgUrl == '' ? Icon(Icons.person) : null,
+                  ),
                 ),
             errorWidget:
-                (context, url, error) => CircleAvatar(
-                  backgroundColor:
-                      Theme.of(context).colorScheme.primaryContainer,
-                  foregroundColor:
-                      Theme.of(context).colorScheme.onPrimaryContainer,
-                  child: Icon(Icons.error_outline),
+                (context, url, error) => GestureDetector(
+                  onTap: () {Navigator.pushReplacementNamed(context, '/user');},
+                  child: CircleAvatar(
+                    backgroundColor:
+                        Theme.of(context).colorScheme.primaryContainer,
+                    foregroundColor:
+                        Theme.of(context).colorScheme.onPrimaryContainer,
+                    child: Icon(Icons.error_outline),
+                  ),
                 ),
           ),
         ),
