@@ -41,32 +41,34 @@ class _LoginPageState extends State<LoginPage> {
     );
 
     await FirebaseAuth.instance.signInWithCredential(credential);
-    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
-    final response = await get(
-      Uri.parse("http://192.168.1.106:8080/auth/login"),
-      headers: {"Authorization": "Bearer $idToken"},
-    );
-    print(response);
 
-    if (response.statusCode == 404) {
-      setState(() {
-        googleText =
-            (FirebaseAuth.instance.currentUser!.displayName ??
-                "Signed in with Google");
-        _isLoading = false;
-        errorText = "";
-      });
-    } else if (response.statusCode == 200) {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('loggedIn', true);
-      Navigator.pushReplacementNamed(context, '/');
-    } else {
-      setState(() {
-        errorText =
-            "Could not sign in with Google. Try again later or contact support.";
-        _isLoading = false;
-      });
-    }
+    _autoSignIn();
+
+    // final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    // final response = await get(
+    //   Uri.parse("http://192.168.1.106:8080/auth/login"),
+    //   headers: {"Authorization": "Bearer $idToken"},
+    // );
+
+    // if (response.statusCode == 404) {
+    //   setState(() {
+    //     googleText =
+    //         (FirebaseAuth.instance.currentUser!.displayName ??
+    //             "Signed in with Google");
+    //     _isLoading = false;
+    //     errorText = "";
+    //   });
+    // } else if (response.statusCode == 200) {
+    //   final prefs = await SharedPreferences.getInstance();
+    //   await prefs.setBool('loggedIn', true);
+    //   Navigator.pushReplacementNamed(context, '/');
+    // } else {
+    //   setState(() {
+    //     errorText =
+    //         "Could not sign in with Google. Try again later or contact support.";
+    //     _isLoading = false;
+    //   });
+    // }
   }
 
   Future<void> _handleSignUp() async {
@@ -95,18 +97,35 @@ class _LoginPageState extends State<LoginPage> {
       Uri.parse(
         "http://192.168.1.106:8080/auth/signup?role=${tab == 0 ? 'teacher' : 'student'}",
       ),
-      body: {
+      body: jsonEncode({
         "className": classNameController.text.trim(),
         "classGrade": classGradeController.text.trim(),
+        "classes":
+            classes
+                .map((element) => element['code'])
+                .whereType<String>()
+                .toList(),
+      }),
+      headers: {
+        "Authorization": "Bearer $idToken",
+        'Content-Type': "application/json",
       },
-      headers: {"Authorization": "Bearer $idToken"},
     );
     print(response.statusCode);
 
     if (response.statusCode == 201) {
-      // final prefs = await SharedPreferences.getInstance();
-      // await prefs.setBool('loggedIn', true);
-      // Navigator.pushReplacementNamed(context, '/teacher');
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('loggedIn', true);
+      Navigator.pushReplacementNamed(
+        context,
+        '/${tab == 0 ? 'teacher' : 'student'}',
+      );
+    } else {
+      setState(() {
+        _isLoading = false;
+        errorText = 'Sign up failed. Try again later or contact support.';
+      });
+      return;
     }
     setState(() {
       _isLoading = false;
@@ -114,7 +133,7 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _addClass() async {
-    final code = classCodeController.text.trim();
+    final code = classCodeController.text.trim().toUpperCase();
     if (code.isEmpty) {
       setState(() {
         classCodeError = 'Enter a class code';
@@ -152,10 +171,21 @@ class _LoginPageState extends State<LoginPage> {
       });
     } else if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      classes.add({
+      final obj = {
         "name": data["name"],
-        "teacher": data['teachers'].join(', ')
-      });
+        "teacher": data['teachers'].join(', '),
+        "code": code,
+      };
+
+      if (classes.any((element) => element['code'] == obj['code'])) {
+        setState(() {
+          _isLoading = false;
+          classCodeError = "You've already joined this class!";
+        });
+        return;
+      }
+      classes.add(obj);
+      classCodeController.text = '';
       setState(() {
         _isLoading = false;
         classCodeError = null;
@@ -166,6 +196,48 @@ class _LoginPageState extends State<LoginPage> {
         _isLoading = false;
       });
     }
+  }
+
+  Future<void> _autoSignIn() async {
+    if (FirebaseAuth.instance.currentUser == null) {
+      return;
+    }
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await get(
+      Uri.parse("http://192.168.1.106:8080/auth/login"),
+      headers: {"Authorization": "Bearer $idToken"},
+    );
+
+  if (!mounted) {
+    print('wtf');
+    return
+  }
+
+    if (response.statusCode == 404) {
+      setState(() {
+        googleText =
+            (FirebaseAuth.instance.currentUser!.displayName ??
+                "Signed in with Google");
+        _isLoading = false;
+        errorText = "";
+      });
+    } else if (response.statusCode == 200) {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('loggedIn', true);
+      Navigator.pushReplacementNamed(context, '/');
+    } else {
+      setState(() {
+        errorText =
+            "Could not sign in. Try again later or contact support.";
+        _isLoading = false;
+      });
+    }
+  }
+
+
+  @override void initState() {
+    super.initState();
+    Future.microtask(() => _autoSignIn());
   }
 
   @override
