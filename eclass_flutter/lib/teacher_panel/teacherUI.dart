@@ -1,6 +1,8 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:eclass_flutter/teacher_panel/dash/ui.dart';
 import 'package:eclass_flutter/teacher_panel/lesson_page/ui.dart';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 final List<Widget> _pages = [TeacherDash(), TeacherLesson()];
 
@@ -13,6 +15,22 @@ class TeacherUI extends StatefulWidget {
 
 class _TeacherUIState extends State<TeacherUI> {
   int selected = 0;
+  String avatarUrl = '';
+
+  Future<void> _loadAvatar() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      avatarUrl = prefs.getString('picture')!;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadAvatar();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -49,7 +67,7 @@ class _TeacherUIState extends State<TeacherUI> {
           ),
         ],
       ),
-      appBar: AppBarW(),
+      appBar: AppBarW(imgUrl: avatarUrl),
       body: AnimatedSwitcher(
         transitionBuilder:
             (child, animation) =>
@@ -62,7 +80,8 @@ class _TeacherUIState extends State<TeacherUI> {
 }
 
 class AppBarW extends StatelessWidget implements PreferredSizeWidget {
-  const AppBarW({super.key});
+  const AppBarW({super.key, required this.imgUrl});
+  final String imgUrl;
 
   @override
   Size get preferredSize => const Size.fromHeight(kToolbarHeight);
@@ -80,10 +99,33 @@ class AppBarW extends StatelessWidget implements PreferredSizeWidget {
       actions: [
         Padding(
           padding: const EdgeInsets.all(8.0),
-          child: CircleAvatar(
-            backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-            foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
-            child: Icon(Icons.person),
+          child: CachedNetworkImage(
+            imageUrl: imgUrl,
+            placeholder:
+                (context, url) => CircleAvatar(
+                  backgroundColor:
+                      Theme.of(context).colorScheme.primaryContainer,
+                  foregroundColor:
+                      Theme.of(context).colorScheme.onPrimaryContainer,
+                  child: Icon(Icons.person),
+                ),
+            imageBuilder:
+                (context, imageProvider) => CircleAvatar(
+                  backgroundColor:
+                      Theme.of(context).colorScheme.primaryContainer,
+                  foregroundColor:
+                      Theme.of(context).colorScheme.onPrimaryContainer,
+                  backgroundImage: imgUrl == '' ? null : imageProvider,
+                  child: imgUrl == '' ? Icon(Icons.person) : null,
+                ),
+            errorWidget:
+                (context, url, error) => CircleAvatar(
+                  backgroundColor:
+                      Theme.of(context).colorScheme.primaryContainer,
+                  foregroundColor:
+                      Theme.of(context).colorScheme.onPrimaryContainer,
+                  child: Icon(Icons.error_outline),
+                ),
           ),
         ),
       ],

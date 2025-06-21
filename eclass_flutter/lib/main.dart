@@ -30,7 +30,7 @@ class AuthGate extends StatelessWidget {
         final prefs = await SharedPreferences.getInstance();
         final isLoggedIn = prefs.getBool('loggedIn') ?? false;
         final user = FirebaseAuth.instance.currentUser;
-        return isLoggedIn && user != null && false; // ! REMOVE FALSE IN PROD.
+        return isLoggedIn && user != null;
       })(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {

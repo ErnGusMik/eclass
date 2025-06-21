@@ -208,12 +208,7 @@ class _LoginPageState extends State<LoginPage> {
       headers: {"Authorization": "Bearer $idToken"},
     );
 
-  if (!mounted) {
-    print('wtf');
-    return
-  }
-
-    if (response.statusCode == 404) {
+    if (mounted && response.statusCode == 404) {
       setState(() {
         googleText =
             (FirebaseAuth.instance.currentUser!.displayName ??
@@ -221,21 +216,26 @@ class _LoginPageState extends State<LoginPage> {
         _isLoading = false;
         errorText = "";
       });
-    } else if (response.statusCode == 200) {
+    } else if (mounted && response.statusCode == 200) {
+      final res = jsonDecode(response.body);
+      print(res);
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('loggedIn', true);
+      await prefs.setString('name', res['name'] ?? 'User');
+      await prefs.setString('picture', res['picture'] ?? '');
+      await prefs.setString('email', res['email']);
+      await prefs.setString('role', res['role']);
       Navigator.pushReplacementNamed(context, '/');
-    } else {
+    } else if (mounted) {
       setState(() {
-        errorText =
-            "Could not sign in. Try again later or contact support.";
+        errorText = "Could not sign in. Try again later or contact support.";
         _isLoading = false;
       });
     }
   }
 
-
-  @override void initState() {
+  @override
+  void initState() {
     super.initState();
     Future.microtask(() => _autoSignIn());
   }
