@@ -1,152 +1,255 @@
+import 'dart:convert';
+
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class TeacherDash extends StatelessWidget {
+class TeacherDash extends StatefulWidget {
   const TeacherDash({super.key});
 
   @override
+  State<TeacherDash> createState() => _TeacherDashState();
+}
+
+class _TeacherDashState extends State<TeacherDash> {
+  String firstName = '';
+  List notices = [];
+
+  bool isLoading = true;
+
+  Future<void> loadData() async {
+    final prefs = await SharedPreferences.getInstance();
+
+
+    setState(() {
+      firstName = prefs.getString('name')!.split(' ')[0];
+      isLoading = false;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    loadData();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.vertical,
-      child: Column(
-        spacing: 28.0,
-        children: [
-          Header(),
-          LatestNotices(),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 8.0,
-              children: [
-                Text(
-                  "Today's Classes",
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    color: Theme.of(context).colorScheme.onSurface,
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
-                    children: [
-                      TeacherClass(
-                        lesson: "Theory of Knowledge",
-                        classGrade: "DP2",
-                        startTime: TimeOfDay(hour: 8, minute: 20),
-                        endTime: TimeOfDay(hour: 9, minute: 0),
-                        first: true,
-                      ),
-                      TeacherClass(
-                        lesson: "Theory of Knowledge",
-                        classGrade: "DP2",
-                        startTime: TimeOfDay(hour: 9, minute: 10),
-                        endTime: TimeOfDay(hour: 9, minute: 50),
-                      ),
-                      TeacherClass(
-                        lesson: "English B",
-                        classGrade: "MYP5",
-                        startTime: TimeOfDay(hour: 10, minute: 0),
-                        endTime: TimeOfDay(hour: 10, minute: 40),
-                      ),
-                      TeacherClass(
-                        lesson: "English B",
-                        classGrade: "MYP5",
-                        startTime: TimeOfDay(hour: 10, minute: 50),
-                        endTime: TimeOfDay(hour: 11, minute: 30),
-                      ),
-                      TeacherClass(
-                        lesson: "English B",
-                        classGrade: "MYP5",
-                        startTime: TimeOfDay(hour: 11, minute: 40),
-                        endTime: TimeOfDay(hour: 12, minute: 20),
-                        last: true,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              spacing: 8.0,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Quick Actions",
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                Column(
+    return Stack(
+      children: [
+        SingleChildScrollView(
+          scrollDirection: Axis.vertical,
+          child: Column(
+            spacing: 28.0,
+            children: [
+              Header(prefs: firstName),
+              LatestNotices(noticeList: notices),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   spacing: 8.0,
                   children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                    Text(
+                      "Today's Classes",
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          TeacherClass(
+                            lesson: "Theory of Knowledge",
+                            classGrade: "DP2",
+                            startTime: TimeOfDay(hour: 8, minute: 20),
+                            endTime: TimeOfDay(hour: 9, minute: 0),
+                            first: true,
+                          ),
+                          TeacherClass(
+                            lesson: "Theory of Knowledge",
+                            classGrade: "DP2",
+                      startTime: TimeOfDay(hour: 9, minute: 10),
+                            endTime: TimeOfDay(hour: 9, minute: 50),
+                          ),
+                          TeacherClass(
+                            lesson: "English B",
+                            classGrade: "MYP5",
+                            startTime: TimeOfDay(hour: 10, minute: 0),
+                            endTime: TimeOfDay(hour: 10, minute: 40),
+                          ),
+                          TeacherClass(
+                            lesson: "English B",
+                            classGrade: "MYP5",
+                            startTime: TimeOfDay(hour: 10, minute: 50),
+                            endTime: TimeOfDay(hour: 11, minute: 30),
+                          ),
+                          TeacherClass(
+                            lesson: "English B",
+                            classGrade: "MYP5",
+                            startTime: TimeOfDay(hour: 11, minute: 40),
+                            endTime: TimeOfDay(hour: 12, minute: 20),
+                            last: true,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  spacing: 8.0,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Quick Actions",
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    Column(
+                      spacing: 8.0,
                       children: [
-                        FilledButton.icon(
-                          onPressed:
-                              () => {
-                                showModalBottomSheet<dynamic>(
-                                  context: context,
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.vertical(
-                                      top: Radius.circular(16.0),
-                                    ),
-                                  ),
-                                  showDragHandle: true,
-                                  builder: (BuildContext context) {
-                                    return AnimatedPadding(
-                                      padding: EdgeInsetsGeometry.only(
-                                        bottom:
-                                            MediaQuery.of(
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            FilledButton.icon(
+                              onPressed:
+                                  () => {
+                                    showModalBottomSheet<dynamic>(
+                                      context: context,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.vertical(
+                                          top: Radius.circular(16.0),
+                                        ),
+                                      ),
+                                      showDragHandle: true,
+                                      builder: (BuildContext context) {
+                                        return AnimatedPadding(
+                                          padding: EdgeInsetsGeometry.only(
+                                            bottom:
+                                                MediaQuery.of(
+                                                  context,
+                                                ).viewInsets.bottom,
+                                          ),
+                                          duration: Duration(milliseconds: 100),
+                                          curve: Curves.easeOut,
+                                          child: DraggableScrollableSheet(
+                                            expand: false,
+                                            maxChildSize: 0.9,
+                                            builder: (
                                               context,
-                                            ).viewInsets.bottom,
-                                      ),
-                                      duration: Duration(milliseconds: 100),
-                                      curve: Curves.easeOut,
-                                      child: DraggableScrollableSheet(
-                                        expand: false,
-                                        maxChildSize: 0.9,
-                                        builder: (context, scrollContainer) {
-                                          return SingleChildScrollView(
-                                            controller: scrollContainer,
-                                            child: HomeworkModal(),
-                                          );
-                                        },
-                                      ),
-                                    );
+                                              scrollContainer,
+                                            ) {
+                                              return SingleChildScrollView(
+                                                controller: scrollContainer,
+                                                child: HomeworkModal(),
+                                              );
+                                            },
+                                          ),
+                                        );
+                                      },
+                                      isScrollControlled: true,
+                                    ),
                                   },
-                                  isScrollControlled: true,
+                              label: Text(
+                                "Add homework",
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.titleMedium?.copyWith(
+                                  color:
+                                      Theme.of(context).colorScheme.onPrimary,
                                 ),
-                              },
-                          label: Text(
-                            "Add homework",
-                            style: Theme.of(
-                              context,
-                            ).textTheme.titleMedium?.copyWith(
-                              color: Theme.of(context).colorScheme.onPrimary,
+                              ),
+                              icon: Icon(Icons.add_circle_outline),
+                              style: FilledButton.styleFrom(
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.primary,
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.onPrimary,
+                                padding: EdgeInsets.symmetric(
+                                  horizontal: 24.0,
+                                  vertical: 16.0,
+                                ),
+                              ),
                             ),
-                          ),
-                          icon: Icon(Icons.add_circle_outline),
-                          style: FilledButton.styleFrom(
-                            backgroundColor:
-                                Theme.of(context).colorScheme.primary,
-                            foregroundColor:
-                                Theme.of(context).colorScheme.onPrimary,
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 24.0,
-                              vertical: 16.0,
+                            SizedBox(width: 8.0),
+                            FilledButton.tonalIcon(
+                              onPressed:
+                                  () => {
+                                    showModalBottomSheet(
+                                      context: context,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.vertical(
+                                          top: Radius.circular(16.0),
+                                        ),
+                                      ),
+                                      showDragHandle: true,
+                                      isScrollControlled: true,
+                                      builder:
+                                          (context) => AnimatedPadding(
+                                            duration: Duration(
+                                              milliseconds: 100,
+                                            ),
+                                            curve: Curves.easeOut,
+                                            padding: EdgeInsetsGeometry.only(
+                                              bottom:
+                                                  MediaQuery.of(
+                                                    context,
+                                                  ).viewInsets.bottom,
+                                            ),
+                                            child: DraggableScrollableSheet(
+                                              expand: false,
+                                              maxChildSize: 0.9,
+                                              builder:
+                                                  (context, scrollController) =>
+                                                      SingleChildScrollView(
+                                                        controller:
+                                                            scrollController,
+                                                        child: TestModal(),
+                                                      ),
+                                            ),
+                                          ),
+                                    ),
+                                  },
+                              label: Text(
+                                "Add test",
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.titleMedium?.copyWith(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onSecondaryContainer,
+                                ),
+                              ),
+                              icon: Icon(Icons.today_rounded),
+                              style: FilledButton.styleFrom(
+                                padding: EdgeInsets.symmetric(
+                                  vertical: 16.0,
+                                  horizontal: 24.0,
+                                ),
+                              ),
                             ),
-                          ),
+                          ],
                         ),
-                        SizedBox(width: 8.0),
-                        FilledButton.tonalIcon(
-                          onPressed:
-                              () => {
+                        ConnectedButtonGroup(
+                          selected: 0,
+                          labels: ["In school", "Busy", "Sick"],
+                        ),
+                        Wrap(
+                          alignment: WrapAlignment.center,
+                          spacing: 4.0,
+                          children: [
+                            FilledButton.tonal(
+                              onPressed: () {
                                 showModalBottomSheet(
                                   context: context,
                                   shape: RoundedRectangleBorder(
@@ -156,6 +259,61 @@ class TeacherDash extends StatelessWidget {
                                   ),
                                   showDragHandle: true,
                                   isScrollControlled: true,
+                                  builder: (context) => CancelLessonModal(),
+                                );
+                              },
+                              style: FilledButton.styleFrom(
+                                padding: EdgeInsets.symmetric(
+                                  vertical: 6.0,
+                                  horizontal: 12.0,
+                                ),
+                              ),
+                              child: Text("Cancel lesson"),
+                            ),
+                            FilledButton(
+                              onPressed: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  showDragHandle: true,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(16.0),
+                                    ),
+                                  ),
+                                  builder:
+                                      (context) => AnimatedPadding(
+                                        duration: Duration(milliseconds: 100),
+                                        curve: Curves.easeOut,
+                                        padding: EdgeInsetsGeometry.only(
+                                          bottom:
+                                              MediaQuery.of(
+                                                context,
+                                              ).viewInsets.bottom,
+                                        ),
+                                        child: LessonTopicModal(),
+                                      ),
+                                );
+                              },
+                              style: FilledButton.styleFrom(
+                                padding: EdgeInsets.symmetric(
+                                  vertical: 6.0,
+                                  horizontal: 12.0,
+                                ),
+                              ),
+                              child: Text("Add lesson topic"),
+                            ),
+                            FilledButton.tonal(
+                              onPressed: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  isScrollControlled: true,
+                                  showDragHandle: true,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(16.0),
+                                    ),
+                                  ),
                                   builder:
                                       (context) => AnimatedPadding(
                                         duration: Duration(milliseconds: 100),
@@ -169,237 +327,148 @@ class TeacherDash extends StatelessWidget {
                                         child: DraggableScrollableSheet(
                                           expand: false,
                                           maxChildSize: 0.9,
-                                          builder:
-                                              (context, scrollController) =>
-                                                  SingleChildScrollView(
-                                                    controller:
-                                                        scrollController,
-                                                    child: TestModal(),
-                                                  ),
+                                          initialChildSize: 0.7,
+                                          minChildSize: 0.7,
+                                          builder: (context, scrollController) {
+                                            return CreateNoticeModal(
+                                              scrollController:
+                                                  scrollController,
+                                            );
+                                          },
                                         ),
                                       ),
-                                ),
+                                );
                               },
-                          label: Text(
-                            "Add test",
-                            style: Theme.of(
-                              context,
-                            ).textTheme.titleMedium?.copyWith(
-                              color:
-                                  Theme.of(
-                                    context,
-                                  ).colorScheme.onSecondaryContainer,
+                              style: FilledButton.styleFrom(
+                                padding: EdgeInsets.symmetric(
+                                  vertical: 6.0,
+                                  horizontal: 12.0,
+                                ),
+                              ),
+                              child: Text("Add notice"),
                             ),
-                          ),
-                          icon: Icon(Icons.today_rounded),
-                          style: FilledButton.styleFrom(
-                            padding: EdgeInsets.symmetric(
-                              vertical: 16.0,
-                              horizontal: 24.0,
-                            ),
-                          ),
+                          ],
                         ),
                       ],
                     ),
-                    ConnectedButtonGroup(
-                      selected: 0,
-                      labels: ["In school", "Busy", "Sick"],
+                  ],
+                ),
+              ),
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16.0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 8.0,
+                  children: [
+                    Text(
+                      "Your Classes",
+                      style: Theme.of(context).textTheme.titleLarge,
                     ),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 4.0,
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        FilledButton.tonal(
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(16.0),
-                                ),
-                              ),
-                              showDragHandle: true,
-                              isScrollControlled: true,
-                              builder: (context) => CancelLessonModal(),
-                            );
-                          },
-                          style: FilledButton.styleFrom(
-                            padding: EdgeInsets.symmetric(
-                              vertical: 6.0,
-                              horizontal: 12.0,
-                            ),
-                          ),
-                          child: Text("Cancel lesson"),
+                        TeacherClass(
+                          lesson: "Theory of Knowledge",
+                          classGrade: "DP2",
+                          first: true,
                         ),
-                        FilledButton(
-                          onPressed: () {
+                        TeacherClass(
+                          lesson: "Theory of Knowledge",
+                          classGrade: "DP1",
+                        ),
+                        TeacherClass(
+                          lesson: "English B SL",
+                          classGrade: "MYP5",
+                        ),
+                        TeacherClass(
+                          lesson: "English B HL",
+                          classGrade: "MYP5",
+                        ),
+                        TeacherClass(
+                          lesson: "English B HL",
+                          classGrade: "MYP4",
+                        ),
+                        GestureDetector(
+                          onTap: () {
                             showModalBottomSheet(
                               context: context,
-                              isScrollControlled: true,
-                              showDragHandle: true,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.vertical(
                                   top: Radius.circular(16.0),
                                 ),
                               ),
+                              showDragHandle: true,
+                              isScrollControlled: true,
                               builder:
                                   (context) => AnimatedPadding(
                                     duration: Duration(milliseconds: 100),
                                     curve: Curves.easeOut,
-                                    padding: EdgeInsetsGeometry.only(
+                                    padding: EdgeInsets.only(
                                       bottom:
                                           MediaQuery.of(
                                             context,
                                           ).viewInsets.bottom,
                                     ),
-                                    child: LessonTopicModal(),
+                                    child: NewClassModal(),
                                   ),
                             );
                           },
-                          style: FilledButton.styleFrom(
-                            padding: EdgeInsets.symmetric(
-                              vertical: 6.0,
-                              horizontal: 12.0,
-                            ),
-                          ),
-                          child: Text("Add lesson topic"),
-                        ),
-                        FilledButton.tonal(
-                          onPressed: () {
-                            showModalBottomSheet(
-                              context: context,
-                              isScrollControlled: true,
-                              showDragHandle: true,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(16.0),
-                                ),
+                          child: Card(
+                            elevation: 0.0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.only(
+                                topLeft: Radius.circular(4.0),
+                                topRight: Radius.circular(4.0),
+                                bottomLeft: Radius.circular(12.0),
+                                bottomRight: Radius.circular(12.0),
                               ),
-                              builder:
-                                  (context) => AnimatedPadding(
-                                    duration: Duration(milliseconds: 100),
-                                    curve: Curves.easeOut,
-                                    padding: EdgeInsetsGeometry.only(bottom: MediaQuery.of(context).viewInsets.bottom),
-                                    child: DraggableScrollableSheet(
-                                      expand: false,
-                                      maxChildSize: 0.9,
-                                      initialChildSize: 0.7,
-                                      minChildSize: 0.7,
-                                      builder: (context, scrollController) {
-                                        return CreateNoticeModal(
-                                          scrollController: scrollController,
-                                        );
-                                      },
-                                    ),
+                              side: BorderSide(
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [
+                                  Padding(
+                                    padding: const EdgeInsets.all(12.0),
+                                    child: Icon(Icons.add_circle_outline),
                                   ),
-                            );
-                          },
-                          style: FilledButton.styleFrom(
-                            padding: EdgeInsets.symmetric(
-                              vertical: 6.0,
-                              horizontal: 12.0,
+                                  Text(
+                                    "Create new class",
+                                    style:
+                                        Theme.of(context).textTheme.titleMedium,
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              ),
                             ),
                           ),
-                          child: Text("Add notice"),
                         ),
                       ],
                     ),
                   ],
                 ),
-              ],
+              ),
+              SizedBox(height: 8.0),
+            ],
+          ),
+        ),
+
+        if (isLoading)
+          Positioned.fill(
+            child: AbsorbPointer(
+              absorbing: true,
+              child: Stack(
+                children: [
+                  const ModalBarrier(dismissible: false, color: Colors.black54),
+                  const Center(child: CircularProgressIndicator()),
+                ],
+              ),
             ),
           ),
-          Padding(
-            padding: EdgeInsets.symmetric(horizontal: 16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 8.0,
-              children: [
-                Text(
-                  "Your Classes",
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    TeacherClass(
-                      lesson: "Theory of Knowledge",
-                      classGrade: "DP2",
-                      first: true,
-                    ),
-                    TeacherClass(
-                      lesson: "Theory of Knowledge",
-                      classGrade: "DP1",
-                    ),
-                    TeacherClass(lesson: "English B SL", classGrade: "MYP5"),
-                    TeacherClass(lesson: "English B HL", classGrade: "MYP5"),
-                    TeacherClass(lesson: "English B HL", classGrade: "MYP4"),
-                    GestureDetector(
-                      onTap: () {
-                        showModalBottomSheet(
-                          context: context,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.vertical(
-                              top: Radius.circular(16.0),
-                            ),
-                          ),
-                          showDragHandle: true,
-                          isScrollControlled: true,
-                          builder:
-                              (context) => AnimatedPadding(
-                                duration: Duration(milliseconds: 100),
-                                curve: Curves.easeOut,
-                                padding: EdgeInsets.only(
-                                  bottom:
-                                      MediaQuery.of(
-                                        context,
-                                      ).viewInsets.bottom,
-                                ),
-                                child: NewClassModal(),
-                              ),
-                        );
-                      },
-                      child: Card(
-                        elevation: 0.0,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.only(
-                            topLeft: Radius.circular(4.0),
-                            topRight: Radius.circular(4.0),
-                            bottomLeft: Radius.circular(12.0),
-                            bottomRight: Radius.circular(12.0),
-                          ),
-                          side: BorderSide(
-                            color: Theme.of(context).colorScheme.outline,
-                          ),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.stretch,
-                            children: [
-                              Padding(
-                                padding: const EdgeInsets.all(12.0),
-                                child: Icon(Icons.add_circle_outline),
-                              ),
-                              Text(
-                                "Create new class",
-                                style:
-                                    Theme.of(context).textTheme.titleMedium,
-                                textAlign: TextAlign.center,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
-          SizedBox(height: 8.0),
-        ],
-      ),
+      ],
     );
   }
 }
@@ -470,12 +539,18 @@ class CreateNoticeModal extends StatefulWidget {
 }
 
 class _CreateNoticeModalState extends State<CreateNoticeModal> {
+  final TextEditingController titleController = TextEditingController();
   late QuillController _controller;
   late FocusNode _focusNode;
 
   late bool isBold;
   late bool isUnderlined;
   late bool isItalicised;
+
+  bool isSending = false;
+  bool isError = false;
+
+  String? titleError;
 
   var files = [];
 
@@ -503,14 +578,58 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
     });
   }
 
+  Future<void> _handleNoticeCreation() async {
+
+    if (titleController.text.trim().isEmpty || _controller.document.length == 0) {
+      setState(() {
+        titleError = 'Title and content cannot be empty!';
+      });
+    }
+
+    setState(() {
+      isSending = true;
+      isError = false;
+    });
+    final req = MultipartRequest('POST', Uri.parse('http://192.168.1.106:8080/teacher/notices/create'));
+    req.fields['title'] = titleController.text.trim();
+    req.fields['tags'] = jsonEncode(['tag1', 'tag2']);
+    req.fields['content'] = jsonEncode(_controller.document.toDelta().toJson());
+
+    req.headers.addAll({
+      "Authorization": "Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}"
+    });
+
+    for (var file in files) {
+      req.files.add(
+        await MultipartFile.fromPath(
+          'files',
+          file.path!
+        )
+      );
+    }
+
+    final response = await req.send();
+      print(response.statusCode);
+    if (response.statusCode == 201) {
+      setState(() {
+        isError = false;
+        isSending = false;
+      });
+      Navigator.pop(context);
+    } else {
+      setState(() {
+        isSending = false;
+        isError = true;
+      });
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
       children: [
         Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-          ),
+          padding: const EdgeInsets.symmetric(horizontal: 16),
           child: SingleChildScrollView(
             controller: widget.scrollController,
             child: Column(
@@ -523,9 +642,11 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
                   textAlign: TextAlign.center,
                 ),
                 TextField(
+                  controller: titleController,
                   maxLines: null,
                   style: Theme.of(context).textTheme.bodyLarge,
                   decoration: InputDecoration(
+                    errorText: titleError,
                     helperText: "By Maggie Smith",
                     labelText: "Heading",
                     labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -723,7 +844,7 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
                     ],
                   ),
                 ),
-                SizedBox(height: 80,)
+                SizedBox(height: 80),
               ],
             ),
           ),
@@ -786,10 +907,10 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
                 ),
               ),
               FloatingActionButton(
-                backgroundColor: Theme.of(context).colorScheme.primary,
-                foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                onPressed: () {}, // ! CREATE NOTICE (W/ UPLOADS)
-                child: Icon(Icons.send_outlined),
+                backgroundColor: isError ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.primary,
+                foregroundColor: isError ? Theme.of(context).colorScheme.onError : Theme.of(context).colorScheme.onPrimary,
+                onPressed: _handleNoticeCreation,
+                child: isSending ? CircularProgressIndicator(color: Theme.of(context).colorScheme.onPrimary) : isError ? Icon(Icons.error_outline) : Icon(Icons.send_outlined),
               ),
             ],
           ),
@@ -1647,7 +1768,9 @@ class TeacherClass extends StatelessWidget {
 }
 
 class LatestNotices extends StatelessWidget {
-  const LatestNotices({super.key});
+  const LatestNotices({super.key, required this.noticeList});
+
+  final List noticeList;
 
   @override
   Widget build(BuildContext context) {
@@ -1669,7 +1792,7 @@ class LatestNotices extends StatelessWidget {
               ),
             ),
             SizedBox(
-              height: 230,
+              height: 240,
               child: CarouselView(
                 backgroundColor:
                     Theme.of(context).colorScheme.tertiaryContainer,
@@ -1696,7 +1819,9 @@ class LatestNotices extends StatelessWidget {
                           (context) => AnimatedPadding(
                             duration: Duration(milliseconds: 100),
                             curve: Curves.easeOut,
-                            padding: EdgeInsetsGeometry.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+                            padding: EdgeInsetsGeometry.only(
+                              bottom: MediaQuery.of(context).viewInsets.bottom,
+                            ),
                             child: DraggableScrollableSheet(
                               expand: false,
                               maxChildSize: 0.9,
@@ -1873,8 +1998,11 @@ class NoticeTag extends StatelessWidget {
   }
 }
 
+// TODO: class count
 class Header extends StatelessWidget {
-  const Header({super.key});
+  const Header({super.key, required this.prefs});
+
+  final String? prefs;
 
   @override
   Widget build(BuildContext context) {
@@ -1886,7 +2014,9 @@ class Header extends StatelessWidget {
         spacing: 4.0,
         children: [
           Text(
-            'Good Morning, Maggie!',
+            prefs != ''
+                ? 'Good ${TimeOfDay.now().hour < 12 ? 'Morning' : 'Afternoon'}, $prefs!'
+                : 'Good ${TimeOfDay.now().hour < 12 ? 'Morning' : 'Afternoon'}!',
             style: Theme.of(context).textTheme.displayMedium,
           ),
           Text(

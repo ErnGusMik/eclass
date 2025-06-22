@@ -79,8 +79,8 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         //
         textTheme: TextTheme(
-          displayLarge: GoogleFonts.abrilFatface(fontSize: 57, color: colours.onSurface,),
-          displayMedium: GoogleFonts.abrilFatface(fontSize: 45, color: colours.onSurface,),
+          displayLarge: GoogleFonts.abrilFatface(fontSize: 57, color: colours.onSurface,), 
+          displayMedium: GoogleFonts.abrilFatface(fontSize: 43, color: colours.onSurface,), // 45 originally
           displaySmall: GoogleFonts.abrilFatface(fontSize: 36, color: colours.onSurface,),
 
           headlineLarge: GoogleFonts.abrilFatface(fontSize: 32, color: colours.onSurface,),
