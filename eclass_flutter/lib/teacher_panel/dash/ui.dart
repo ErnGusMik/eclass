@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
+import 'package:flutter_quill/quill_delta.dart';
 import 'package:http/http.dart';
 import 'package:intl/intl.dart';
 import 'package:file_picker/file_picker.dart';
@@ -22,10 +23,27 @@ class _TeacherDashState extends State<TeacherDash> {
 
   bool isLoading = true;
 
+
+  Future<void> loadNotices() async {
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await get(
+      Uri.parse('http://192.168.1.106:8080/teacher/notices/getAll'),
+      headers: {
+        "Authorization": "Bearer $idToken"
+      }
+    );
+    Map body = jsonDecode(response.body);
+    if (!mounted) return;
+    setState(() {
+      notices = body['notices'];
+    });
+  }
+
   Future<void> loadData() async {
     final prefs = await SharedPreferences.getInstance();
+    await loadNotices();
 
-
+    if (!mounted) return;
     setState(() {
       firstName = prefs.getString('name')!.split(' ')[0];
       isLoading = false;
@@ -609,7 +627,6 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
     }
 
     final response = await req.send();
-      print(response.statusCode);
     if (response.statusCode == 201) {
       setState(() {
         isError = false;
@@ -1835,6 +1852,8 @@ class LatestNotices extends StatelessWidget {
                             ),
                           ),
                     );
+                  } else {
+                    Navigator.pushReplacementNamed(context, '/notice');
                   }
                 },
                 children: [
@@ -1865,20 +1884,13 @@ class LatestNotices extends StatelessWidget {
                       ],
                     ),
                   ),
-                  Notice(
-                    title: "Exam Schedule for MYP5 & DP2",
-                    author: "Jonathan Stevenson",
-                    date: DateTime(2025, 5, 27),
-                    content:
-                        "Hi all!\nAttached is the exam schedule for MYP Year 5 and DP Year 2. Please note, this stuff won't be seen.",
-                    tags: [
-                      "Exam",
-                      "Schedule changes",
-                      "Important",
-                      "MYP5",
-                      "DP2",
-                    ],
-                  ),
+                  ...noticeList.map((notice) => Notice(
+                    title: notice['title'],
+                    author: notice['author'],
+                    content: notice['content'],
+                    date: DateTime.parse(notice['createdAt']),
+                    tags: notice['tags'],
+                  ))
                 ],
               ),
             ),
@@ -1903,7 +1915,7 @@ class Notice extends StatelessWidget {
   final String author;
   final DateTime date;
   final String content;
-  final List<String> tags;
+  final List tags;
 
   @override
   Widget build(BuildContext context) {
@@ -1918,48 +1930,57 @@ class Notice extends StatelessWidget {
       daysAgoText = "$daysAgo days ago";
     }
 
+    final Delta delta = Delta.fromJson(jsonDecode(content));
+    final Document document = Document.fromDelta(delta);
+
     return Padding(
       padding: EdgeInsets.fromLTRB(16.0, 16.0, 16.0, 8.0),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            title,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.labelLarge?.copyWith(
-              color: Theme.of(context).colorScheme.onTertiaryContainer,
-            ),
-          ),
-          Text(
-            "$author \u2022	$daysAgoText",
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).colorScheme.onSurfaceVariant,
-            ),
-          ),
-          Text(
-            content,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).colorScheme.onTertiaryContainer,
-            ),
-            maxLines: 3,
-            overflow: TextOverflow.ellipsis,
-          ),
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-
-            child: Row(
-              children:
-                  tags
-                      .map(
-                        (tag) => Row(
-                          children: [NoticeTag(tag: tag), SizedBox(width: 8.0)],
-                        ),
-                      )
-                      .toList(),
-            ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: Theme.of(context).colorScheme.onTertiaryContainer,
+                ),
+              ),
+              Text(
+                "$author \u2022	$daysAgoText",
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+              Text(
+                document.toPlainText(),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: Theme.of(context).colorScheme.onTertiaryContainer,
+                ),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+              
+                child: Row(
+                  children:
+                      tags
+                          .map(
+                            (tag) => Row(
+                              children: [NoticeTag(tag: tag), SizedBox(width: 8.0)],
+                            ),
+                          )
+                          .toList(),
+                ),
+              ),
+            ],
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,

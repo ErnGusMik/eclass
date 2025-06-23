@@ -111,7 +111,6 @@ class _LoginPageState extends State<LoginPage> {
         'Content-Type': "application/json",
       },
     );
-    print(response.statusCode);
 
     if (response.statusCode == 201) {
       final prefs = await SharedPreferences.getInstance();
