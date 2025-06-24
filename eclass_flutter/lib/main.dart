@@ -133,6 +133,13 @@ class MyApp extends StatelessWidget {
         '/notice': (context) => NoticePage(),
       },
 
+      // onGenerateRoute: (settings) {
+      //   if (settings.name == '/notice') {
+      //     final id = settings.arguments as String;
+      //     return MaterialPageRoute(builder: (context) => NoticePage(id: id));
+      //   }
+      // },
+
       home: const AuthGate(), // ! HOME PAGE
       localizationsDelegates: const [
         GlobalMaterialLocalizations.delegate,

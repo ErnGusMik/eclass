@@ -1853,7 +1853,7 @@ class LatestNotices extends StatelessWidget {
                           ),
                     );
                   } else {
-                    Navigator.pushReplacementNamed(context, '/notice');
+                    Navigator.pushNamed(context, '/notice', arguments: noticeList[i-1]['id']);
                   }
                 },
                 children: [
