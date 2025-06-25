@@ -103,7 +103,7 @@ class AppBarW extends StatelessWidget implements PreferredSizeWidget {
             imageUrl: imgUrl,
             placeholder:
                 (context, url) => GestureDetector(
-                  onTap: () {Navigator.pushReplacementNamed(context, '/user');},
+                  onTap: () {Navigator.pushNamed(context, '/user');},
                   child: CircleAvatar(
                     backgroundColor:
                         Theme.of(context).colorScheme.primaryContainer,
@@ -114,7 +114,7 @@ class AppBarW extends StatelessWidget implements PreferredSizeWidget {
                 ),
             imageBuilder:
                 (context, imageProvider) => GestureDetector(
-                  onTap: () {Navigator.pushReplacementNamed(context, '/user');},
+                  onTap: () {Navigator.pushNamed(context, '/user');},
                   child: CircleAvatar(
                     backgroundColor:
                         Theme.of(context).colorScheme.primaryContainer,
@@ -126,7 +126,7 @@ class AppBarW extends StatelessWidget implements PreferredSizeWidget {
                 ),
             errorWidget:
                 (context, url, error) => GestureDetector(
-                  onTap: () {Navigator.pushReplacementNamed(context, '/user');},
+                  onTap: () {Navigator.pushNamed(context, '/user');},
                   child: CircleAvatar(
                     backgroundColor:
                         Theme.of(context).colorScheme.primaryContainer,

@@ -20,17 +20,15 @@ class TeacherDash extends StatefulWidget {
 class _TeacherDashState extends State<TeacherDash> {
   String firstName = '';
   List notices = [];
+  List classes = [];
 
   bool isLoading = true;
-
 
   Future<void> loadNotices() async {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
-      Uri.parse('http://10.173.158.188:8080/teacher/notices/getAll'),
-      headers: {
-        "Authorization": "Bearer $idToken"
-      }
+      Uri.parse('http://192.168.1.106:8080/teacher/notices/getAll'),
+      headers: {"Authorization": "Bearer $idToken"},
     );
     Map body = jsonDecode(response.body);
     if (!mounted) return;
@@ -39,9 +37,26 @@ class _TeacherDashState extends State<TeacherDash> {
     });
   }
 
+  Future<void> loadClasses() async {
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await get(
+      Uri.parse('http://192.168.1.106:8080/teacher/class/get/all'),
+      headers: {
+        'Authorization': 'Bearer $idToken'
+      }
+    );
+
+    if (response.statusCode == 200 && mounted) {
+      setState(() {
+        classes = jsonDecode(response.body);
+      });
+    }
+  }
+
   Future<void> loadData() async {
     final prefs = await SharedPreferences.getInstance();
     await loadNotices();
+    await loadClasses();
 
     if (!mounted) return;
     setState(() {
@@ -94,7 +109,7 @@ class _TeacherDashState extends State<TeacherDash> {
                           TeacherClass(
                             lesson: "Theory of Knowledge",
                             classGrade: "DP2",
-                      startTime: TimeOfDay(hour: 9, minute: 10),
+                            startTime: TimeOfDay(hour: 9, minute: 10),
                             endTime: TimeOfDay(hour: 9, minute: 50),
                           ),
                           TeacherClass(
@@ -385,27 +400,13 @@ class _TeacherDashState extends State<TeacherDash> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.center,
                       children: [
-                        TeacherClass(
-                          lesson: "Theory of Knowledge",
-                          classGrade: "DP2",
-                          first: true,
-                        ),
-                        TeacherClass(
-                          lesson: "Theory of Knowledge",
-                          classGrade: "DP1",
-                        ),
-                        TeacherClass(
-                          lesson: "English B SL",
-                          classGrade: "MYP5",
-                        ),
-                        TeacherClass(
-                          lesson: "English B HL",
-                          classGrade: "MYP5",
-                        ),
-                        TeacherClass(
-                          lesson: "English B HL",
-                          classGrade: "MYP4",
-                        ),
+                        ...classes.map((e) {
+                          return TeacherClass(
+                            lesson: e['name'],
+                            classGrade: e['grade'],
+                            first: e == classes[0] ? true : false,
+                          );
+                        }),
                         GestureDetector(
                           onTap: () {
                             showModalBottomSheet(
@@ -491,8 +492,60 @@ class _TeacherDashState extends State<TeacherDash> {
   }
 }
 
-class NewClassModal extends StatelessWidget {
+class NewClassModal extends StatefulWidget {
   const NewClassModal({super.key});
+
+  @override
+  State<NewClassModal> createState() => _NewClassModalState();
+}
+
+class _NewClassModalState extends State<NewClassModal> {
+  final TextEditingController nameController = TextEditingController();
+  final TextEditingController gradeController = TextEditingController();
+
+  String? nameError;
+  String? gradeError;
+
+  bool created = false;
+
+  Future<void> createNewClassHandler() async {
+    if (nameController.text.trim().isEmpty) {
+      setState(() {
+        nameError = 'Class/course name cannot be empty!';
+      });
+      return;
+    }
+    if (gradeController.text.trim().isEmpty) {
+      setState(() {
+        gradeError = 'Grade name cannot be empty!';
+      });
+      return;
+    }
+
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await post(
+      Uri.parse('http://192.168.1.106:8080/teacher/class/new'),
+      headers: {'Authorization': 'Bearer $idToken'},
+      body: {
+        'name': nameController.text.trim(),
+        'grade': gradeController.text.trim(),
+      },
+    );
+
+    if (response.statusCode == 201) {
+      setState(() {
+        created = true;
+      });
+      Future.delayed(Duration(seconds: 1), () {
+        Navigator.pop(context);
+      });
+    } else {
+      setState(() {
+        nameError =
+            'Failed to create class (${response.statusCode}). Try again later or contact support.';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -508,14 +561,47 @@ class NewClassModal extends StatelessWidget {
             textAlign: TextAlign.center,
           ),
           TextField(
+            controller: nameController,
             maxLines: null,
             style: Theme.of(context).textTheme.bodyLarge,
             decoration: InputDecoration(
-              labelText: "Class name",
+              labelText: "Class/course name",
               labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
+              errorText: nameError,
+              errorMaxLines: 2,
+              errorStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.error,
+              ),
               filled: true,
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              border: UnderlineInputBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              ),
+            ),
+          ),
+          TextField(
+            controller: gradeController,
+            maxLines: null,
+            style: Theme.of(context).textTheme.bodyLarge,
+            decoration: InputDecoration(
+              labelText: "Class grade",
+              labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              helperText:
+                  "Enter the grade with the corresponding letters, eg. 11A or DP2",
+              helperMaxLines: 2,
+              filled: true,
+              errorText: gradeError,
+              errorMaxLines: 2,
+              errorStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.error,
+              ),
               fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
               border: UnderlineInputBorder(
                 borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
@@ -529,9 +615,9 @@ class NewClassModal extends StatelessWidget {
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               FilledButton.icon(
-                onPressed: () {},
-                icon: Icon(Icons.add),
-                label: Text("Create"),
+                onPressed: createNewClassHandler,
+                icon: Icon(created ? Icons.check : Icons.add),
+                label: Text(created ? 'Created' : "Create"),
                 style: FilledButton.styleFrom(
                   padding: EdgeInsets.symmetric(
                     vertical: 16.0,
@@ -597,8 +683,8 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
   }
 
   Future<void> _handleNoticeCreation() async {
-
-    if (titleController.text.trim().isEmpty || _controller.document.length == 0) {
+    if (titleController.text.trim().isEmpty ||
+        _controller.document.length == 0) {
       setState(() {
         titleError = 'Title and content cannot be empty!';
       });
@@ -608,22 +694,21 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
       isSending = true;
       isError = false;
     });
-    final req = MultipartRequest('POST', Uri.parse('http://10.173.158.188:8080/teacher/notices/create'));
+    final req = MultipartRequest(
+      'POST',
+      Uri.parse('http://192.168.1.106:8080/teacher/notices/create'),
+    );
     req.fields['title'] = titleController.text.trim();
     req.fields['tags'] = jsonEncode(['tag1', 'tag2']);
     req.fields['content'] = jsonEncode(_controller.document.toDelta().toJson());
 
     req.headers.addAll({
-      "Authorization": "Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}"
+      "Authorization":
+          "Bearer ${await FirebaseAuth.instance.currentUser?.getIdToken()}",
     });
 
     for (var file in files) {
-      req.files.add(
-        await MultipartFile.fromPath(
-          'files',
-          file.path!
-        )
-      );
+      req.files.add(await MultipartFile.fromPath('files', file.path!));
     }
 
     final response = await req.send();
@@ -924,10 +1009,23 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
                 ),
               ),
               FloatingActionButton(
-                backgroundColor: isError ? Theme.of(context).colorScheme.error : Theme.of(context).colorScheme.primary,
-                foregroundColor: isError ? Theme.of(context).colorScheme.onError : Theme.of(context).colorScheme.onPrimary,
+                backgroundColor:
+                    isError
+                        ? Theme.of(context).colorScheme.error
+                        : Theme.of(context).colorScheme.primary,
+                foregroundColor:
+                    isError
+                        ? Theme.of(context).colorScheme.onError
+                        : Theme.of(context).colorScheme.onPrimary,
                 onPressed: _handleNoticeCreation,
-                child: isSending ? CircularProgressIndicator(color: Theme.of(context).colorScheme.onPrimary) : isError ? Icon(Icons.error_outline) : Icon(Icons.send_outlined),
+                child:
+                    isSending
+                        ? CircularProgressIndicator(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        )
+                        : isError
+                        ? Icon(Icons.error_outline)
+                        : Icon(Icons.send_outlined),
               ),
             ],
           ),
@@ -1792,7 +1890,9 @@ class LatestNotices extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     noticeList.sort((a, b) {
-      final sorted = DateTime.parse(a['createdAt']).compareTo(DateTime.parse(b['createdAt']));
+      final sorted = DateTime.parse(
+        a['createdAt'],
+      ).compareTo(DateTime.parse(b['createdAt']));
       return sorted.isNegative ? 1 : -1;
     });
     return Container(
@@ -1857,7 +1957,11 @@ class LatestNotices extends StatelessWidget {
                           ),
                     );
                   } else {
-                    Navigator.pushNamed(context, '/notice', arguments: noticeList[i-1]['id']);
+                    Navigator.pushNamed(
+                      context,
+                      '/notice',
+                      arguments: noticeList[i - 1]['id'],
+                    );
                   }
                 },
                 children: [
@@ -1888,13 +1992,15 @@ class LatestNotices extends StatelessWidget {
                       ],
                     ),
                   ),
-                  ...noticeList.map((notice) => Notice(
-                    title: notice['title'],
-                    author: notice['author'],
-                    content: notice['content'],
-                    date: DateTime.parse(notice['createdAt']),
-                    tags: notice['tags'],
-                  ))
+                  ...noticeList.map(
+                    (notice) => Notice(
+                      title: notice['title'],
+                      author: notice['author'],
+                      content: notice['content'],
+                      date: DateTime.parse(notice['createdAt']),
+                      tags: notice['tags'],
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -1972,13 +2078,16 @@ class Notice extends StatelessWidget {
               ),
               SingleChildScrollView(
                 scrollDirection: Axis.horizontal,
-              
+
                 child: Row(
                   children:
                       tags
                           .map(
                             (tag) => Row(
-                              children: [NoticeTag(tag: tag), SizedBox(width: 8.0)],
+                              children: [
+                                NoticeTag(tag: tag),
+                                SizedBox(width: 8.0),
+                              ],
                             ),
                           )
                           .toList(),

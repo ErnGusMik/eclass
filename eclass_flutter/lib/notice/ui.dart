@@ -34,21 +34,19 @@ class _NoticePageState extends State<NoticePage> {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
 
     final response = await get(
-      Uri.parse('http://10.173.158.188:8080/notices/get?id=$id'),
+      Uri.parse('http://192.168.1.106:8080/notices/get?id=$id'),
       headers: {'Authorization': 'Bearer $idToken'},
     );
 
     if (response.statusCode == 200) {
       final body = jsonDecode(response.body);
-      Future.delayed(Duration(seconds: 2), () {
-        setState(() {
-          title = body['title'];
-          author = body['author'];
-          date = DateTime.parse(body['date']);
-          content = body['content'];
-          files = body['uploads'];
-          _isLoading = false;
-        });
+      setState(() {
+        title = body['title'];
+        author = body['author'];
+        date = DateTime.parse(body['date']);
+        content = body['content'];
+        files = body['uploads'];
+        _isLoading = false;
       });
     }
   }
@@ -72,7 +70,7 @@ class _NoticePageState extends State<NoticePage> {
       return file;
     }
     try {
-      final response = await get(Uri.parse('http://10.173.158.188:8080$url'));
+      final response = await get(Uri.parse('http://192.168.1.106:8080$url'));
       print(response.statusCode);
 
       await file.writeAsBytes(response.bodyBytes);
@@ -84,7 +82,6 @@ class _NoticePageState extends State<NoticePage> {
 
   @override
   Widget build(BuildContext context) {
-
     var daysAgo = DateTime.now().difference(date).inDays;
     String daysAgoText;
 
@@ -109,6 +106,7 @@ class _NoticePageState extends State<NoticePage> {
       selection: TextSelection.collapsed(offset: 0),
       readOnly: true,
     );
+
     return Scaffold(
       body: SingleChildScrollView(
         child: Column(
@@ -172,35 +170,57 @@ class _NoticePageState extends State<NoticePage> {
                 child: Column(
                   children: [
                     SizedBox(height: 32),
-                    _isLoading ? SizedBox(
-                      height: calculateFreeSpace(context, files.length, title),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          loadingBlocks(Theme.of(context).textTheme.bodyLarge!, 400, onPrimary: true),
-                          loadingBlocks(Theme.of(context).textTheme.bodyLarge!, 250, onPrimary: true),
-                          loadingBlocks(Theme.of(context).textTheme.bodyLarge!, 100, onPrimary: true),
-                          loadingBlocks(Theme.of(context).textTheme.bodyLarge!, 200, onPrimary: true)
-                        ],
-                      ),
-                    ) : QuillEditor.basic(
-                      controller: controller,
-                      config: QuillEditorConfig(
-                        autoFocus: false,
-                        expands: false,
-                        maxHeight: calculateFreeSpace(
-                          context,
-                          files.length,
-                          title,
+                    _isLoading
+                        ? SizedBox(
+                          height: calculateFreeSpace(
+                            context,
+                            files.length,
+                            title,
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              loadingBlocks(
+                                Theme.of(context).textTheme.bodyLarge!,
+                                400,
+                                onPrimary: true,
+                              ),
+                              loadingBlocks(
+                                Theme.of(context).textTheme.bodyLarge!,
+                                250,
+                                onPrimary: true,
+                              ),
+                              loadingBlocks(
+                                Theme.of(context).textTheme.bodyLarge!,
+                                100,
+                                onPrimary: true,
+                              ),
+                              loadingBlocks(
+                                Theme.of(context).textTheme.bodyLarge!,
+                                200,
+                                onPrimary: true,
+                              ),
+                            ],
+                          ),
+                        )
+                        : QuillEditor.basic(
+                          controller: controller,
+                          config: QuillEditorConfig(
+                            autoFocus: false,
+                            expands: false,
+                            maxHeight: calculateFreeSpace(
+                              context,
+                              files.length,
+                              title,
+                            ),
+                            minHeight: calculateFreeSpace(
+                              context,
+                              files.length,
+                              title,
+                            ),
+                            padding: EdgeInsets.zero,
+                          ),
                         ),
-                        minHeight: calculateFreeSpace(
-                          context,
-                          files.length,
-                          title,
-                        ),
-                        padding: EdgeInsets.zero,
-                      ),
-                    ),
                     SizedBox(height: 20),
                     Padding(
                       padding: EdgeInsets.all(12.0),
@@ -310,22 +330,39 @@ class _NoticePageState extends State<NoticePage> {
                             );
                           }),
                           if (files.isEmpty)
-                            _isLoading ? loadingBlocks(TextStyle(height: (Theme.of(context).textTheme.bodySmall!.height ?? 1.0), fontSize: (Theme.of(context).textTheme.bodySmall!.fontSize ?? 12) + 8), 400) : Padding(
-                              padding: EdgeInsets.symmetric(vertical: 8.0),
-                              child: Center(
-                                child: Text(
-                                  "The author didn't upload any file",
-                                  style: Theme.of(
-                                    context,
-                                  ).textTheme.bodySmall?.copyWith(
-                                    color:
-                                        Theme.of(
-                                          context,
-                                        ).colorScheme.onPrimaryContainer,
+                            _isLoading
+                                ? loadingBlocks(
+                                  TextStyle(
+                                    height:
+                                        (Theme.of(
+                                              context,
+                                            ).textTheme.bodySmall!.height ??
+                                            1.0),
+                                    fontSize:
+                                        (Theme.of(
+                                              context,
+                                            ).textTheme.bodySmall!.fontSize ??
+                                            12) +
+                                        8,
+                                  ),
+                                  400,
+                                )
+                                : Padding(
+                                  padding: EdgeInsets.symmetric(vertical: 8.0),
+                                  child: Center(
+                                    child: Text(
+                                      "The author didn't upload any file",
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall?.copyWith(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimaryContainer,
+                                      ),
+                                    ),
                                   ),
                                 ),
-                              ),
-                            ),
                         ],
                       ),
                     ),
@@ -366,11 +403,14 @@ double calculateFreeSpace(
   final mediaQuery = MediaQuery.of(context);
   final theme = Theme.of(context);
 
-  int titleLines = max(1, calculateNumberOfLines(
-    text: titleText,
-    style: theme.textTheme.displaySmall ?? TextStyle(fontSize: 36),
-    maxWidth: mediaQuery.size.width,
-  ));
+  int titleLines = max(
+    1,
+    calculateNumberOfLines(
+      text: titleText,
+      style: theme.textTheme.displaySmall ?? TextStyle(fontSize: 36),
+      maxWidth: mediaQuery.size.width,
+    ),
+  );
 
   double appBarHeight = 56.0; // or 64.0 for web/desktop
   double statusBarHeight = mediaQuery.padding.top;
