@@ -27,7 +27,7 @@ class _TeacherDashState extends State<TeacherDash> {
   Future<void> loadNotices() async {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
-      Uri.parse('http://192.168.1.106:8080/teacher/notices/getAll'),
+      Uri.parse('http://10.173.158.188:8080/teacher/notices/getAll'),
       headers: {
         "Authorization": "Bearer $idToken"
       }
@@ -608,7 +608,7 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
       isSending = true;
       isError = false;
     });
-    final req = MultipartRequest('POST', Uri.parse('http://192.168.1.106:8080/teacher/notices/create'));
+    final req = MultipartRequest('POST', Uri.parse('http://10.173.158.188:8080/teacher/notices/create'));
     req.fields['title'] = titleController.text.trim();
     req.fields['tags'] = jsonEncode(['tag1', 'tag2']);
     req.fields['content'] = jsonEncode(_controller.document.toDelta().toJson());
@@ -1791,6 +1791,10 @@ class LatestNotices extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    noticeList.sort((a, b) {
+      final sorted = DateTime.parse(a['createdAt']).compareTo(DateTime.parse(b['createdAt']));
+      return sorted.isNegative ? 1 : -1;
+    });
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(

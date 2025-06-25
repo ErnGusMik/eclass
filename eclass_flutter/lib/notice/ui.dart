@@ -1,13 +1,16 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math';
 
-import 'package:eclass_flutter/teacher_panel/dash/ui.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:http/http.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
+import 'package:shimmer/shimmer.dart';
 
 class NoticePage extends StatefulWidget {
   const NoticePage({super.key});
@@ -30,7 +33,7 @@ class _NoticePageState extends State<NoticePage> {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
 
     final response = await get(
-      Uri.parse('http://192.168.1.106:8080/notices/get?id=$id'),
+      Uri.parse('http://10.173.158.188:8080/notices/get?id=$id'),
       headers: {'Authorization': 'Bearer $idToken'},
     );
 
@@ -41,7 +44,9 @@ class _NoticePageState extends State<NoticePage> {
         author = body['author'];
         date = DateTime.parse(body['date']);
         content = body['content'];
+        files = body['uploads'];
       });
+      print(body['uploads']);
     }
   }
 
@@ -54,22 +59,29 @@ class _NoticePageState extends State<NoticePage> {
     }
   }
 
+  Future<File> getFile(String url, String filename) async {
+    final dir = await getApplicationDocumentsDirectory();
+    final filePath = path.join(dir.path, filename);
+    final file = File(filePath);
+
+    if (await file.exists()) {
+      // TODO: set state?
+      return file;
+    }
+    try {
+      final response = await get(Uri.parse('http://10.173.158.188:8080$url'));
+      print(response.statusCode);
+
+      await file.writeAsBytes(response.bodyBytes);
+      return file;
+    } catch (e) {
+      throw Exception('Failed to download file: $e');
+    }
+
+  }
+
   @override
   Widget build(BuildContext context) {
-    // double freeSpace = MediaQuery.of(context).size.height
-    //     - (Theme.of(context).textTheme.displaySmall?.height ?? 0.0) * calculateNumberOfLines(text: title, style: Theme.of(context).textTheme.displaySmall ?? TextStyle(fontSize: 36), maxWidth: MediaQuery.of(context).size.width)
-    //     - (Theme.of(context).textTheme.titleMedium?.height ?? 0.0)
-    //     - 56 // app bar height
-    //     - 8 * 3 // spacing parent column
-    //     - 8 // space between title & author
-    //     - 8 // sized box
-    //     - 16 * 2 //container padding  
-    //     - 32 // sized box
-    //     - 20 // sized box
-    //     - 12 * 2 // uploads padding
-    //     - (Theme.of(context).textTheme.labelMedium?.height ?? 0.0);
-
-    // print(freeSpace);
     final Delta delta = Delta.fromJson(
       content != ''
           ? jsonDecode(content)
@@ -136,14 +148,24 @@ class _NoticePageState extends State<NoticePage> {
                       config: QuillEditorConfig(
                         autoFocus: false,
                         expands: false,
-                        maxHeight: calculateFreeSpace(context),
-                        minHeight: calculateFreeSpace(context)
+                        maxHeight: calculateFreeSpace(
+                          context,
+                          files.length,
+                          title,
+                        ),
+                        minHeight: calculateFreeSpace(
+                          context,
+                          files.length,
+                          title,
+                        ),
+                        padding: EdgeInsets.zero,
                       ),
                     ),
                     SizedBox(height: 20),
                     Padding(
                       padding: EdgeInsets.all(12.0),
                       child: Column(
+                        spacing: 4.0,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
                           Text(
@@ -158,16 +180,23 @@ class _NoticePageState extends State<NoticePage> {
                             ),
                           ),
                           ...files.map((file) {
-                            List<String> parts = file.name.split('.');
+                            List<String> parts = file['name'].split('.');
                             String name = parts
                                 .sublist(0, parts.length - 1)
                                 .join('.');
                             String extension = parts.last;
                             return Container(
                               decoration: BoxDecoration(
-                                color: Theme.of(context).colorScheme.tertiary,
+                                color: Theme.of(context).colorScheme.primary,
                                 borderRadius: BorderRadius.vertical(
-                                  top: Radius.circular(12.0),
+                                  top:
+                                      file == files[0]
+                                          ? Radius.circular(12.0)
+                                          : Radius.circular(4.0),
+                                  bottom:
+                                      file == files[files.length - 1]
+                                          ? Radius.circular(12.0)
+                                          : Radius.circular(4.0),
                                 ),
                               ),
                               padding: EdgeInsets.symmetric(horizontal: 12.0),
@@ -189,7 +218,7 @@ class _NoticePageState extends State<NoticePage> {
                                               color:
                                                   Theme.of(
                                                     context,
-                                                  ).colorScheme.onTertiary,
+                                                  ).colorScheme.onPrimary,
                                             ),
                                             overflow: TextOverflow.ellipsis,
                                             maxLines: 1,
@@ -204,7 +233,7 @@ class _NoticePageState extends State<NoticePage> {
                                             color:
                                                 Theme.of(
                                                   context,
-                                                ).colorScheme.onTertiary,
+                                                ).colorScheme.onPrimary,
                                           ),
                                         ),
                                         SizedBox(width: 4.0),
@@ -212,7 +241,9 @@ class _NoticePageState extends State<NoticePage> {
                                     ),
                                   ),
                                   Text(
-                                    formatFileSize(file.size),
+                                    formatFileSize(
+                                      int.tryParse(file['size'] ?? '0') ?? 0,
+                                    ),
                                     style: Theme.of(
                                       context,
                                     ).textTheme.labelSmall?.copyWith(
@@ -223,31 +254,38 @@ class _NoticePageState extends State<NoticePage> {
                                     ),
                                   ),
                                   IconButton(
-                                    icon: Icon(Icons.remove_circle_outline),
-                                    color:
-                                        Theme.of(
-                                          context,
-                                        ).colorScheme.errorContainer,
-                                    onPressed: () {
-                                      setState(() {
-                                        files.remove(file);
-                                      });
-                                    },
-                                  ),
-                                  IconButton(
-                                    onPressed: () {
-                                      OpenFilex.open(file.path);
+                                    onPressed: () async {
+                                      final downloadedFile = await getFile(
+                                        file['location'],
+                                        file['name'],
+                                      );
+                                      OpenFilex.open(downloadedFile.path);
                                     },
                                     icon: Icon(Icons.arrow_forward),
                                     color:
-                                        Theme.of(
-                                          context,
-                                        ).colorScheme.onTertiary,
+                                        Theme.of(context).colorScheme.onPrimary,
                                   ),
                                 ],
                               ),
                             );
                           }),
+                          if (files.isEmpty)
+                            Padding(
+                              padding: EdgeInsets.symmetric(vertical: 8.0),
+                              child: Center(
+                                child: Text(
+                                  "The author didn't upload any file",
+                                  style: Theme.of(
+                                    context,
+                                  ).textTheme.bodySmall?.copyWith(
+                                    color:
+                                        Theme.of(
+                                          context,
+                                        ).colorScheme.onPrimaryContainer,
+                                  ),
+                                ),
+                              ),
+                            ),
                         ],
                       ),
                     ),
@@ -262,8 +300,8 @@ class _NoticePageState extends State<NoticePage> {
   }
 }
 
-
 // helper
+
 int calculateNumberOfLines({
   required String text,
   required TextStyle style,
@@ -280,9 +318,19 @@ int calculateNumberOfLines({
   return tp.computeLineMetrics().length;
 }
 
-double calculateFreeSpace(BuildContext context) {
+double calculateFreeSpace(
+  BuildContext context,
+  int fileLength,
+  String titleText,
+) {
   final mediaQuery = MediaQuery.of(context);
   final theme = Theme.of(context);
+
+  int titleLines = calculateNumberOfLines(
+    text: titleText,
+    style: theme.textTheme.displaySmall ?? TextStyle(fontSize: 36),
+    maxWidth: mediaQuery.size.width,
+  );
 
   double appBarHeight = 56.0; // or 64.0 for web/desktop
   double statusBarHeight = mediaQuery.padding.top;
@@ -290,7 +338,7 @@ double calculateFreeSpace(BuildContext context) {
 
   double titleFontSize = theme.textTheme.displaySmall?.fontSize ?? 0.0;
   double titleLineHeight = theme.textTheme.displaySmall?.height ?? 1.0;
-  double titleHeight = titleFontSize * titleLineHeight;
+  double titleHeight = titleFontSize * titleLineHeight * titleLines;
 
   double authorFontSize = theme.textTheme.titleMedium?.fontSize ?? 0.0;
   double authorLineHeight = theme.textTheme.titleMedium?.height ?? 1.0;
@@ -304,7 +352,18 @@ double calculateFreeSpace(BuildContext context) {
   double containerPadding = 16.0 * 2;
   double sizedBoxHeight = 32.0 + 20.0 + 8.0;
 
-  double totalUsedSpace = appBarHeight +
+  double filesHeight = fileLength * 48 + 4;
+
+  double noFilesTextFontSize = theme.textTheme.bodySmall?.fontSize ?? 0.0;
+  double noFilesTextLineHeight = theme.textTheme.bodySmall?.height ?? 1.0;
+  double noFilesTextHeight = noFilesTextLineHeight * noFilesTextFontSize;
+  double noFilesHeight =
+      fileLength == 0
+          ? 8 * 2 + noFilesTextHeight + 2
+          : 0; // the +2 is literally an error or smth.
+
+  double totalUsedSpace =
+      appBarHeight +
       statusBarHeight +
       bottomPadding +
       titleHeight +
@@ -312,7 +371,23 @@ double calculateFreeSpace(BuildContext context) {
       uploadsPadding +
       containerPadding +
       sizedBoxHeight +
+      filesHeight +
+      noFilesHeight +
+      22 +
       labelHeight;
 
-  return mediaQuery.size.height - totalUsedSpace;
+  return max(0, mediaQuery.size.height - totalUsedSpace);
+}
+
+String formatFileSize(int bytes) {
+  const int kb = 1024;
+  const int mb = 1024 * kb;
+
+  if (bytes >= mb) {
+    return "${(bytes / mb).toStringAsFixed(1)} MB";
+  } else if (bytes >= kb) {
+    return "${(bytes / kb).toStringAsFixed(1)} KB";
+  } else {
+    return "$bytes B";
+  }
 }
