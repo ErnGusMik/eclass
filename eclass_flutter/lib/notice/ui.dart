@@ -22,6 +22,7 @@ class NoticePage extends StatefulWidget {
 class _NoticePageState extends State<NoticePage> {
   List files = [];
   bool _hasLoaded = false;
+  bool _isLoading = true;
 
   String title = '';
   String author = '';
@@ -39,14 +40,16 @@ class _NoticePageState extends State<NoticePage> {
 
     if (response.statusCode == 200) {
       final body = jsonDecode(response.body);
-      setState(() {
-        title = body['title'];
-        author = body['author'];
-        date = DateTime.parse(body['date']);
-        content = body['content'];
-        files = body['uploads'];
+      Future.delayed(Duration(seconds: 2), () {
+        setState(() {
+          title = body['title'];
+          author = body['author'];
+          date = DateTime.parse(body['date']);
+          content = body['content'];
+          files = body['uploads'];
+          _isLoading = false;
+        });
       });
-      print(body['uploads']);
     }
   }
 
@@ -77,11 +80,22 @@ class _NoticePageState extends State<NoticePage> {
     } catch (e) {
       throw Exception('Failed to download file: $e');
     }
-
   }
 
   @override
   Widget build(BuildContext context) {
+
+    var daysAgo = DateTime.now().difference(date).inDays;
+    String daysAgoText;
+
+    if (daysAgo == 0) {
+      daysAgoText = "Today";
+    } else if (daysAgo == 1) {
+      daysAgoText = "1 day ago";
+    } else {
+      daysAgoText = "$daysAgo days ago";
+    }
+
     final Delta delta = Delta.fromJson(
       content != ''
           ? jsonDecode(content)
@@ -121,13 +135,28 @@ class _NoticePageState extends State<NoticePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 spacing: 8.0,
                 children: [
-                  Text(title, style: Theme.of(context).textTheme.displaySmall),
-                  Text(
-                    "$author \u2022 1 day ago",
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    ),
-                  ),
+                  _isLoading
+                      ? loadingBlocks(
+                        Theme.of(context).textTheme.displaySmall!,
+                        300,
+                      )
+                      : Text(
+                        title,
+                        style: Theme.of(context).textTheme.displaySmall,
+                      ),
+                  _isLoading
+                      ? loadingBlocks(
+                        Theme.of(context).textTheme.titleMedium!,
+                        200,
+                      )
+                      : Text(
+                        "$author \u2022 $daysAgoText",
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
                 ],
               ),
             ),
@@ -143,7 +172,18 @@ class _NoticePageState extends State<NoticePage> {
                 child: Column(
                   children: [
                     SizedBox(height: 32),
-                    QuillEditor.basic(
+                    _isLoading ? SizedBox(
+                      height: calculateFreeSpace(context, files.length, title),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          loadingBlocks(Theme.of(context).textTheme.bodyLarge!, 400, onPrimary: true),
+                          loadingBlocks(Theme.of(context).textTheme.bodyLarge!, 250, onPrimary: true),
+                          loadingBlocks(Theme.of(context).textTheme.bodyLarge!, 100, onPrimary: true),
+                          loadingBlocks(Theme.of(context).textTheme.bodyLarge!, 200, onPrimary: true)
+                        ],
+                      ),
+                    ) : QuillEditor.basic(
                       controller: controller,
                       config: QuillEditorConfig(
                         autoFocus: false,
@@ -270,7 +310,7 @@ class _NoticePageState extends State<NoticePage> {
                             );
                           }),
                           if (files.isEmpty)
-                            Padding(
+                            _isLoading ? loadingBlocks(TextStyle(height: (Theme.of(context).textTheme.bodySmall!.height ?? 1.0), fontSize: (Theme.of(context).textTheme.bodySmall!.fontSize ?? 12) + 8), 400) : Padding(
                               padding: EdgeInsets.symmetric(vertical: 8.0),
                               child: Center(
                                 child: Text(
@@ -326,11 +366,11 @@ double calculateFreeSpace(
   final mediaQuery = MediaQuery.of(context);
   final theme = Theme.of(context);
 
-  int titleLines = calculateNumberOfLines(
+  int titleLines = max(1, calculateNumberOfLines(
     text: titleText,
     style: theme.textTheme.displaySmall ?? TextStyle(fontSize: 36),
     maxWidth: mediaQuery.size.width,
-  );
+  ));
 
   double appBarHeight = 56.0; // or 64.0 for web/desktop
   double statusBarHeight = mediaQuery.padding.top;
@@ -390,4 +430,20 @@ String formatFileSize(int bytes) {
   } else {
     return "$bytes B";
   }
+}
+
+Widget loadingBlocks(TextStyle theme, double width, {bool onPrimary = false}) {
+  final height = theme.height! * theme.fontSize!;
+
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 3.0),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(4.0),
+      child: Shimmer.fromColors(
+        baseColor: onPrimary ? Colors.grey[350]! : Colors.grey[300]!,
+        highlightColor: onPrimary ? Colors.grey[200]! : Colors.grey[100]!,
+        child: Container(color: Colors.white, height: height, width: width),
+      ),
+    ),
+  );
 }
