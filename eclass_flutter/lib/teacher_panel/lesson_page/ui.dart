@@ -1,5 +1,6 @@
 import 'dart:convert';
-
+import 'package:animations/animations.dart';
+import 'package:eclass_flutter/teacher_panel/dash/ui.dart';
 import 'package:eclass_flutter/teacher_panel/teacherUI.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -16,7 +17,6 @@ class TeacherLesson extends StatefulWidget {
 }
 
 class _TeacherLessonState extends State<TeacherLesson> {
-
   String imgUrl = '';
   String className = '';
   String gradeName = '';
@@ -27,10 +27,8 @@ class _TeacherLessonState extends State<TeacherLesson> {
     final classID = ModalRoute.of(context)?.settings.arguments as int;
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
-      Uri.parse('http://192.168.88.171:8080/teacher/class/get?id=$classID'),
-      headers: {
-        'Authorization': 'Bearer $idToken'
-      }
+      Uri.parse('http://10.173.158.188:8080/teacher/class/get?id=$classID'),
+      headers: {'Authorization': 'Bearer $idToken'},
     );
     final body = jsonDecode(response.body);
     setState(() {
@@ -57,7 +55,6 @@ class _TeacherLessonState extends State<TeacherLesson> {
       _isLoading = false;
     });
   }
-  
 
   @override
   Widget build(BuildContext context) {
@@ -136,7 +133,9 @@ class _TeacherLessonState extends State<TeacherLesson> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   color:
-                                      Theme.of(context).colorScheme.tertiaryContainer,
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.tertiaryContainer,
                                   borderRadius: BorderRadius.circular(12.0),
                                 ),
                                 padding: EdgeInsets.all(10.0),
@@ -182,7 +181,9 @@ class _TeacherLessonState extends State<TeacherLesson> {
                               child: Container(
                                 decoration: BoxDecoration(
                                   color:
-                                      Theme.of(context).colorScheme.tertiaryContainer,
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.tertiaryContainer,
                                   borderRadius: BorderRadius.circular(12.0),
                                 ),
                                 padding: EdgeInsets.all(10.0),
@@ -274,14 +275,19 @@ class _TeacherLessonState extends State<TeacherLesson> {
                                 context,
                               ).textTheme.labelMedium?.copyWith(
                                 color:
-                                    Theme.of(context).colorScheme.onPrimaryContainer,
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimaryContainer,
                               ),
                             ),
                             TroubleStudent(
                               name: "John Smith",
                               reason: "Avg grade 3.1",
                             ),
-                            TroubleStudent(name: "John Doe", reason: "12 absences"),
+                            TroubleStudent(
+                              name: "John Doe",
+                              reason: "12 absences",
+                            ),
                             TroubleStudent(
                               name: "Elizabeth Gonzalez",
                               reason: "Late 23 times",
@@ -333,7 +339,8 @@ class _TeacherLessonState extends State<TeacherLesson> {
                                 Center(
                                   child: Text(
                                     "Create new assessment",
-                                    style: Theme.of(context).textTheme.titleMedium,
+                                    style:
+                                        Theme.of(context).textTheme.titleMedium,
                                   ),
                                 ),
                               ],
@@ -348,7 +355,10 @@ class _TeacherLessonState extends State<TeacherLesson> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     spacing: 8.0,
                     children: [
-                      Text("Settings", style: Theme.of(context).textTheme.titleLarge),
+                      Text(
+                        "Settings",
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
                       Padding(
                         padding: EdgeInsetsGeometry.symmetric(horizontal: 10.0),
                         child: Row(
@@ -360,7 +370,40 @@ class _TeacherLessonState extends State<TeacherLesson> {
                               icon: Icon(Icons.swap_horiz),
                             ),
                             FilledButton.tonalIcon(
-                              onPressed: () {},
+                              onPressed: () {
+                                showModalBottomSheet(
+                                  context: context,
+                                  showDragHandle: true,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.vertical(
+                                      top: Radius.circular(16.0),
+                                    ),
+                                  ),
+                                  builder:
+                                      (context) => AnimatedPadding(
+                                        padding: EdgeInsetsGeometry.only(
+                                          bottom:
+                                              MediaQuery.of(
+                                                context,
+                                              ).viewInsets.bottom,
+                                        ),
+                                        duration: Duration(milliseconds: 100),
+                                        curve: Curves.easeOut,
+                                        child: DraggableScrollableSheet(
+                                          maxChildSize: 0.9,
+                                          expand: false,
+                                          builder:
+                                              (
+                                                context,
+                                                scrollController,
+                                              ) => SingleChildScrollView(
+                                                controller: scrollController,
+                                                child: ScheduleLessonsModal(),
+                                              ),
+                                        ),
+                                      ),
+                                );
+                              },
                               label: Text("Schedule lessons"),
                               icon: Icon(Icons.calendar_today),
                             ),
@@ -381,7 +424,8 @@ class _TeacherLessonState extends State<TeacherLesson> {
                               label: Text("Delete"),
                               icon: Icon(Icons.delete_outline),
                               style: FilledButton.styleFrom(
-                                backgroundColor: Theme.of(context).colorScheme.error,
+                                backgroundColor:
+                                    Theme.of(context).colorScheme.error,
                                 foregroundColor:
                                     Theme.of(context).colorScheme.onError,
                               ),
@@ -391,6 +435,255 @@ class _TeacherLessonState extends State<TeacherLesson> {
                       ),
                     ],
                   ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class ScheduleLessonsModal extends StatefulWidget {
+  const ScheduleLessonsModal({super.key});
+
+  @override
+  State<ScheduleLessonsModal> createState() => _ScheduleLessonsModalState();
+}
+
+class _ScheduleLessonsModalState extends State<ScheduleLessonsModal> {
+  List schedules = [];
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsetsGeometry.all(26.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Column(
+              children: [
+                Text(
+                  'Schedule Lessons',
+                  style: Theme.of(context).textTheme.headlineLarge,
+                ),
+                Text(' \u2022 '),
+                // TODO: YOU LEFT HERE. finish the modal (look at others) then do full-screen dialog below
+              ],
+            ),
+          ),
+          OpenContainer(
+            openColor: Theme.of(context).colorScheme.surfaceContainerLow,
+            closedColor: Theme.of(context).colorScheme.surfaceContainerLow,
+            transitionType: ContainerTransitionType.fadeThrough,
+            closedElevation: 0.0,
+            openBuilder: (context, _) => NewScheduleDialog(),
+            closedBuilder:
+                (context, openContainer) => GestureDetector(
+                  onTap: openContainer,
+                  child: Container(
+                    padding: EdgeInsets.all(10.0),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(4.0),
+                        bottom: Radius.circular(12.0),
+                      ),
+                      border: Border.all(
+                        color: Theme.of(context).colorScheme.outline,
+                      ),
+                    ),
+                    child: Column(
+                      spacing: 16,
+                      children: [
+                        Icon(Icons.add_circle),
+                        Text(
+                          'Schedule more lessons',
+                          style: Theme.of(context).textTheme.titleSmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class NewScheduleDialog extends StatelessWidget {
+  const NewScheduleDialog({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Dialog.fullscreen(
+      backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+      child: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 8.0),
+              child: Row(
+                children: [
+                  IconButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    icon: Icon(Icons.close),
+                  ),
+                  SizedBox(width: 8.0),
+                  Text(
+                    "Schedule lessons",
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
+                  Spacer(),
+                  TextButton(onPressed: () {}, child: Text("Save")),
+                ],
+              ),
+            ),
+            Padding(
+              padding: EdgeInsets.symmetric(horizontal: 26.0, vertical: 32.0),
+              child: Column(
+                spacing: 16.0,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(
+                    style: Theme.of(context).textTheme.bodyLarge,
+                    decoration: InputDecoration(
+                      labelText: "Schedule name",
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                    ),
+                  ),
+                  TextFormField(
+                    readOnly: true,
+                    controller: TextEditingController(
+                      text: '11.sb Theory of knowledge',
+                    ),
+                    decoration: InputDecoration(
+                      labelText: "Class/course",
+                      border: OutlineInputBorder(
+                        borderSide: BorderSide(
+                          color: Theme.of(context).colorScheme.outline,
+                        ),
+                      ),
+                      enabled: false,
+                    ),
+                  ),
+                  Divider(color: Theme.of(context).colorScheme.outlineVariant),
+                  DropdownMenu(
+                    width: double.infinity,
+                    initialSelection: 'null',
+                    label: Text('Day of week'),
+                    textStyle: Theme.of(context).textTheme.bodyLarge,
+                    trailingIcon: Icon(Icons.arrow_drop_down),
+                    menuStyle: MenuStyle(
+                      backgroundColor: WidgetStatePropertyAll(
+                        Theme.of(context).colorScheme.surfaceContainer,
+                      ),
+                      shape: WidgetStatePropertyAll(
+                        RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12.0),
+                        ),
+                      ),
+                      elevation: WidgetStatePropertyAll(2),
+                      shadowColor: WidgetStatePropertyAll(
+                        Theme.of(context).colorScheme.shadow,
+                      ),
+                      minimumSize: WidgetStatePropertyAll(
+                        Size(MediaQuery.of(context).size.width - 26 * 2, 0),
+                      ),
+                      maximumSize: WidgetStatePropertyAll(
+                        Size(
+                          MediaQuery.of(context).size.width - 26 * 2,
+                          double.infinity,
+                        ),
+                      ),
+                    ),
+                    dropdownMenuEntries: [
+                      DropdownMenuEntry(value: 'null', label: 'Select one'),
+                      DropdownMenuEntry(value: 'mon', label: 'Monday'),
+                      DropdownMenuEntry(value: 'tue', label: 'Tuesday'),
+                      DropdownMenuEntry(value: 'wed', label: 'Wednesday'),
+                      DropdownMenuEntry(value: 'thu', label: 'Thursday'),
+                      DropdownMenuEntry(value: 'fri', label: 'Friday'),
+                      DropdownMenuEntry(value: 'sat', label: 'Saturday'),
+                      DropdownMenuEntry(value: 'sun', label: 'Sunday'),
+                    ],
+                  ),
+                  Row(
+                    spacing: 16.0,
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          onTap: () {
+                            showTimePicker(
+                              context: context,
+                              initialTime: TimeOfDay(hour: 0, minute: 0),
+                              helpText: "Select start time",
+                            );
+                          },
+                          readOnly: true,
+                          controller: TextEditingController(text: '00:00'),
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                            ),
+                            labelText: "Start time",
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: TextFormField(
+                          controller: TextEditingController(text: '40'),
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                            ),
+                            labelText: "Duration",
+                            suffixText: 'min',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  Divider(color: Theme.of(context).colorScheme.outlineVariant),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 8.0,
+                    children: [
+                      Expanded(
+                        child: TextFormField(
+                          controller: TextEditingController(text: DateFormat(DateFormat.YEAR_MONTH_DAY).format(DateTime.now())),
+                          keyboardType: TextInputType.number,
+                          decoration: InputDecoration(
+                            border: OutlineInputBorder(
+                              borderSide: BorderSide(
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                            ),
+                            labelText: "Exception",
+                            helperText: 'Lessons won\'t be added on this day, e.g school holidays.',
+                            helperMaxLines: 3,
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.only(top: 8.0),
+                        child: FilledButton.tonalIcon(onPressed: (){}, label: Text('Add'), icon: Icon(Icons.add),),
+                      )
+                    ],
+                  )
                 ],
               ),
             ),
@@ -984,7 +1277,13 @@ class _LessonCardState extends State<LessonCard> {
 }
 
 class Header extends StatelessWidget {
-  const Header({super.key, required this.name, required this.grade, required this.code, required this.isLoading});
+  const Header({
+    super.key,
+    required this.name,
+    required this.grade,
+    required this.code,
+    required this.isLoading,
+  });
 
   final bool isLoading;
   final String name;
@@ -998,19 +1297,19 @@ class Header extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: 4.0,
       children: [
-        isLoading ? loadingBlocks(Theme.of(context).textTheme.displayMedium!, 200) : Text(
-          name,
-          style: Theme.of(context).textTheme.displayMedium,
-        ),
-        isLoading ? loadingBlocks(Theme.of(context).textTheme.titleMedium!, 150) : Text(
-          'Class $grade \u2022 Code: $code',
-          style: Theme.of(context).textTheme.titleMedium,
-        ),
+        isLoading
+            ? loadingBlocks(Theme.of(context).textTheme.displayMedium!, 200)
+            : Text(name, style: Theme.of(context).textTheme.displayMedium),
+        isLoading
+            ? loadingBlocks(Theme.of(context).textTheme.titleMedium!, 150)
+            : Text(
+              'Class $grade \u2022 Code: $code',
+              style: Theme.of(context).textTheme.titleMedium,
+            ),
       ],
     );
   }
 }
-
 
 // helper
 Widget loadingBlocks(TextStyle theme, double width, {bool onPrimary = false}) {
