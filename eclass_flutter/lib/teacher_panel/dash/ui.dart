@@ -27,7 +27,7 @@ class _TeacherDashState extends State<TeacherDash> {
   Future<void> loadNotices() async {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
-      Uri.parse('http://192.168.1.106:8080/teacher/notices/getAll'),
+      Uri.parse('http://192.168.88.171:8080/teacher/notices/getAll'),
       headers: {"Authorization": "Bearer $idToken"},
     );
     Map body = jsonDecode(response.body);
@@ -40,10 +40,8 @@ class _TeacherDashState extends State<TeacherDash> {
   Future<void> loadClasses() async {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
-      Uri.parse('http://192.168.1.106:8080/teacher/class/get/all'),
-      headers: {
-        'Authorization': 'Bearer $idToken'
-      }
+      Uri.parse('http://192.168.88.171:8080/teacher/class/get/all'),
+      headers: {'Authorization': 'Bearer $idToken'},
     );
 
     if (response.statusCode == 200 && mounted) {
@@ -183,7 +181,9 @@ class _TeacherDashState extends State<TeacherDash> {
                                             ) {
                                               return SingleChildScrollView(
                                                 controller: scrollContainer,
-                                                child: HomeworkModal(),
+                                                child: HomeworkModal(
+                                                  classes: classes,
+                                                ),
                                               );
                                             },
                                           ),
@@ -246,7 +246,9 @@ class _TeacherDashState extends State<TeacherDash> {
                                                       SingleChildScrollView(
                                                         controller:
                                                             scrollController,
-                                                        child: TestModal(),
+                                                        child: TestModal(
+                                                          classes: classes,
+                                                        ),
                                                       ),
                                             ),
                                           ),
@@ -405,6 +407,9 @@ class _TeacherDashState extends State<TeacherDash> {
                             lesson: e['name'],
                             classGrade: e['grade'],
                             first: e == classes[0] ? true : false,
+                            onTap: () {
+                              Navigator.pushNamed(context, '/class', arguments: e['id']);
+                            },
                           );
                         }),
                         GestureDetector(
@@ -524,7 +529,7 @@ class _NewClassModalState extends State<NewClassModal> {
 
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await post(
-      Uri.parse('http://192.168.1.106:8080/teacher/class/new'),
+      Uri.parse('http://192.168.88.171:8080/teacher/class/new'),
       headers: {'Authorization': 'Bearer $idToken'},
       body: {
         'name': nameController.text.trim(),
@@ -696,7 +701,7 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
     });
     final req = MultipartRequest(
       'POST',
-      Uri.parse('http://192.168.1.106:8080/teacher/notices/create'),
+      Uri.parse('http://192.168.88.171:8080/teacher/notices/create'),
     );
     req.fields['title'] = titleController.text.trim();
     req.fields['tags'] = jsonEncode(['tag1', 'tag2']);
@@ -1185,7 +1190,9 @@ class CancelLessonModal extends StatelessWidget {
 }
 
 class TestModal extends StatelessWidget {
-  const TestModal({super.key});
+  const TestModal({super.key, required this.classes});
+
+  final List classes;
 
   @override
   Widget build(BuildContext context) {
@@ -1241,7 +1248,9 @@ class TestModal extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text("Class", style: Theme.of(context).textTheme.labelMedium),
-                ClassGroup(),
+                ClassGroup(
+                  classes: classes,
+                ),
               ],
             ),
           ),
@@ -1360,7 +1369,9 @@ class _GradingSysSelectorState extends State<GradingSysSelector> {
 }
 
 class HomeworkModal extends StatelessWidget {
-  const HomeworkModal({super.key});
+  const HomeworkModal({super.key, required this.classes});
+
+  final List classes;
 
   @override
   Widget build(BuildContext context) {
@@ -1402,7 +1413,7 @@ class HomeworkModal extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text("Class", style: Theme.of(context).textTheme.labelMedium),
-                ClassGroup(),
+                ClassGroup(classes: classes),
               ],
             ),
           ),
@@ -1437,8 +1448,8 @@ class HomeworkModal extends StatelessWidget {
 }
 
 class ClassGroup extends StatefulWidget {
-  const ClassGroup({super.key});
-
+  const ClassGroup({super.key, required this.classes});
+  final List classes;
   @override
   State<ClassGroup> createState() => _ClassGroupState();
 }
@@ -1450,41 +1461,15 @@ class _ClassGroupState extends State<ClassGroup> {
     return Column(
       spacing: 6.0,
       children: [
-        ClassTile(
-          value: "DP2E",
-          headline: "DP2 English",
-          groupValue: _selectedValue,
-          onChanged: _handleStateChange,
-        ),
-        ClassTile(
-          value: "DP1E",
-          headline: "DP1 English",
-          groupValue: _selectedValue,
-          onChanged: _handleStateChange,
-        ),
-        ClassTile(
-          value: "MYP5E",
-          headline: "MYP5 English",
-          groupValue: _selectedValue,
-          onChanged: _handleStateChange,
-        ),
-        ClassTile(
-          value: "MYP4E",
-          headline: "MYP4 English",
-          groupValue: _selectedValue,
-          onChanged: _handleStateChange,
-        ),
-        ClassTile(
-          value: "MYP3E",
-          headline: "MYP3 English",
-          groupValue: _selectedValue,
-          onChanged: _handleStateChange,
-        ),
-        ClassTile(
-          value: "MYP2E",
-          headline: "MYP2 English",
-          groupValue: _selectedValue,
-          onChanged: _handleStateChange,
+        ...widget.classes.map(
+          (e) => ClassTile(
+            onChanged: _handleStateChange,
+            groupValue: _selectedValue,
+            headline: '${e['grade']} ${e['name']}',
+            value:
+                e['grade'].toString().substring(0, 3) +
+                e['name'].toString().substring(0, 1),
+          ),
         ),
       ],
     );
@@ -1810,6 +1795,7 @@ class TeacherClass extends StatelessWidget {
     this.endTime,
     this.first = false,
     this.last = false,
+    this.onTap,
   });
 
   final String lesson;
@@ -1818,64 +1804,68 @@ class TeacherClass extends StatelessWidget {
   final TimeOfDay? endTime;
   final bool first;
   final bool last;
+  final GestureTapCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     var startTimeStr = startTime?.format(context).toString();
 
     var endTimeStr = endTime?.format(context).toString();
-    return Card(
-      elevation: 0.0,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(first ? 12.0 : 4.0),
-          topRight: Radius.circular(first ? 12.0 : 4.0),
-          bottomLeft: Radius.circular(last ? 12.0 : 4.0),
-          bottomRight: Radius.circular(last ? 12.0 : 4.0),
+    return GestureDetector(
+      onTap: onTap ?? () {},
+      child: Card(
+        elevation: 0.0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.only(
+            topLeft: Radius.circular(first ? 12.0 : 4.0),
+            topRight: Radius.circular(first ? 12.0 : 4.0),
+            bottomLeft: Radius.circular(last ? 12.0 : 4.0),
+            bottomRight: Radius.circular(last ? 12.0 : 4.0),
+          ),
         ),
-      ),
-      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  child: Text(
-                    classGrade.substring(0, 2) +
-                        classGrade.substring(classGrade.length - 1),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        child: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  CircleAvatar(
+                    child: Text(
+                      classGrade.substring(0, 2) +
+                          classGrade.substring(classGrade.length - 1),
+                    ),
                   ),
-                ),
-                SizedBox(width: 16.0),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      lesson,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
+                  SizedBox(width: 16.0),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        lesson,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
-                    ),
-                    Text(
-                      (startTime != null && endTime != null)
-                          ? "$classGrade \u2022 $startTimeStr - $endTimeStr"
-                          : classGrade,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
+                      Text(
+                        (startTime != null && endTime != null)
+                            ? "$classGrade \u2022 $startTimeStr - $endTimeStr"
+                            : classGrade,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-            IconButton(onPressed: () => {}, icon: Icon(Icons.arrow_right)),
-          ],
+                    ],
+                  ),
+                ],
+              ),
+              IconButton(onPressed: () => {}, icon: Icon(Icons.arrow_right)),
+            ],
+          ),
         ),
       ),
     );

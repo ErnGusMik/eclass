@@ -1,5 +1,6 @@
 import 'package:eclass_flutter/login/ui.dart';
 import 'package:eclass_flutter/notice/ui.dart';
+import 'package:eclass_flutter/teacher_panel/lesson_page/ui.dart';
 import 'package:eclass_flutter/teacher_panel/teacherUI.dart';
 import 'package:eclass_flutter/user/ui.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -131,6 +132,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => LoginPage(),
         '/user': (context) => UserPage(),
         '/notice': (context) => NoticePage(),
+        '/class': (context) => TeacherLesson(),
       },
 
       home: const AuthGate(), // ! HOME PAGE

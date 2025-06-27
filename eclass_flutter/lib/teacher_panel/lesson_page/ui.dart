@@ -1,331 +1,398 @@
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
+import 'dart:convert';
 
-class TeacherLesson extends StatelessWidget {
+import 'package:eclass_flutter/teacher_panel/teacherUI.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart';
+import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shimmer/shimmer.dart';
+
+class TeacherLesson extends StatefulWidget {
   const TeacherLesson({super.key});
 
   @override
+  State<TeacherLesson> createState() => _TeacherLessonState();
+}
+
+class _TeacherLessonState extends State<TeacherLesson> {
+
+  String imgUrl = '';
+  String className = '';
+  String gradeName = '';
+  String classCode = '';
+  bool _isLoading = true;
+
+  Future<void> getClassData() async {
+    final classID = ModalRoute.of(context)?.settings.arguments as int;
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await get(
+      Uri.parse('http://192.168.88.171:8080/teacher/class/get?id=$classID'),
+      headers: {
+        'Authorization': 'Bearer $idToken'
+      }
+    );
+    final body = jsonDecode(response.body);
+    setState(() {
+      className = body['name'];
+      gradeName = body['grade'];
+      classCode = body['code'];
+    });
+  }
+
+  Future<void> _loadAvatar() async {
+    final prefs = await SharedPreferences.getInstance();
+    if (!mounted) return;
+    setState(() {
+      imgUrl = prefs.getString('picture')!;
+    });
+  }
+
+  @override
+  void didChangeDependencies() async {
+    super.didChangeDependencies();
+    await _loadAvatar();
+    await getClassData();
+    setState(() {
+      _isLoading = false;
+    });
+  }
+  
+
+  @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
-      child: Padding(
-        padding: EdgeInsetsGeometry.all(16.0),
+    return Material(
+      child: SingleChildScrollView(
         child: Column(
-          spacing: 32.0,
-          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Header(),
-            LessonsSection(),
-            Column(
-              spacing: 16.0,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Class Overview",
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    spacing: 16,
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color:
-                                Theme.of(
-                                  context,
-                                ).colorScheme.secondaryContainer,
-                            borderRadius: BorderRadius.circular(12.0),
-                          ),
-                          padding: EdgeInsets.all(10.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            spacing: 10,
-                            children: [
-                              Text(
-                                "Total no. of lessons",
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.labelSmall?.copyWith(
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.onSecondaryContainer,
-                                ),
-                              ),
-                              Text(
-                                "325",
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.headlineLarge?.copyWith(
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.onSecondaryContainer,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color:
-                                Theme.of(context).colorScheme.tertiaryContainer,
-                            borderRadius: BorderRadius.circular(12.0),
-                          ),
-                          padding: EdgeInsets.all(10.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            spacing: 10,
-                            children: [
-                              Text(
-                                "Avg. attendance rate",
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.labelSmall?.copyWith(
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.onTertiaryContainer,
-                                ),
-                              ),
-                              Text(
-                                "91.7%",
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.headlineLarge?.copyWith(
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.onTertiaryContainer,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
+            AppBarW(imgUrl: imgUrl),
+            Padding(
+              padding: EdgeInsetsGeometry.all(16.0),
+              child: Column(
+                spacing: 32.0,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Header(
+                    name: className,
+                    grade: gradeName,
+                    code: classCode,
+                    isLoading: _isLoading,
                   ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  child: Row(
-                    spacing: 16,
-                    children: [
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color:
-                                Theme.of(context).colorScheme.tertiaryContainer,
-                            borderRadius: BorderRadius.circular(12.0),
-                          ),
-                          padding: EdgeInsets.all(10.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            spacing: 10,
-                            children: [
-                              Text(
-                                "Avg. grade",
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.labelSmall?.copyWith(
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.onTertiaryContainer,
-                                ),
-                              ),
-                              Text(
-                                "6.5",
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.headlineLarge?.copyWith(
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.onTertiaryContainer,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      Expanded(
-                        child: Container(
-                          decoration: BoxDecoration(
-                            color:
-                                Theme.of(
-                                  context,
-                                ).colorScheme.secondaryContainer,
-                            borderRadius: BorderRadius.circular(12.0),
-                          ),
-                          padding: EdgeInsets.all(10.0),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            spacing: 10,
-                            children: [
-                              Text(
-                                "Avg. score",
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.labelSmall?.copyWith(
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.onSecondaryContainer,
-                                ),
-                              ),
-                              Text(
-                                "60.0%",
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.headlineLarge?.copyWith(
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.onSecondaryContainer,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Container(
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).colorScheme.primaryContainer,
-                    borderRadius: BorderRadius.circular(16.0),
-                  ),
-                  padding: EdgeInsets.all(10.0),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                  LessonsSection(),
+                  Column(
+                    spacing: 16.0,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        "Students requiring attention",
-                        style: Theme.of(
-                          context,
-                        ).textTheme.labelMedium?.copyWith(
-                          color:
-                              Theme.of(context).colorScheme.onPrimaryContainer,
+                        "Class Overview",
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          spacing: 16,
+                          children: [
+                            Expanded(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.secondaryContainer,
+                                  borderRadius: BorderRadius.circular(12.0),
+                                ),
+                                padding: EdgeInsets.all(10.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  spacing: 10,
+                                  children: [
+                                    Text(
+                                      "Total no. of lessons",
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.labelSmall?.copyWith(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onSecondaryContainer,
+                                      ),
+                                    ),
+                                    Text(
+                                      "325",
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.headlineLarge?.copyWith(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onSecondaryContainer,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color:
+                                      Theme.of(context).colorScheme.tertiaryContainer,
+                                  borderRadius: BorderRadius.circular(12.0),
+                                ),
+                                padding: EdgeInsets.all(10.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  spacing: 10,
+                                  children: [
+                                    Text(
+                                      "Avg. attendance rate",
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.labelSmall?.copyWith(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onTertiaryContainer,
+                                      ),
+                                    ),
+                                    Text(
+                                      "91.7%",
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.headlineLarge?.copyWith(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onTertiaryContainer,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      TroubleStudent(
-                        name: "John Smith",
-                        reason: "Avg grade 3.1",
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Row(
+                          spacing: 16,
+                          children: [
+                            Expanded(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color:
+                                      Theme.of(context).colorScheme.tertiaryContainer,
+                                  borderRadius: BorderRadius.circular(12.0),
+                                ),
+                                padding: EdgeInsets.all(10.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  spacing: 10,
+                                  children: [
+                                    Text(
+                                      "Avg. grade",
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.labelSmall?.copyWith(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onTertiaryContainer,
+                                      ),
+                                    ),
+                                    Text(
+                                      "6.5",
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.headlineLarge?.copyWith(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onTertiaryContainer,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.secondaryContainer,
+                                  borderRadius: BorderRadius.circular(12.0),
+                                ),
+                                padding: EdgeInsets.all(10.0),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  spacing: 10,
+                                  children: [
+                                    Text(
+                                      "Avg. score",
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.labelSmall?.copyWith(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onSecondaryContainer,
+                                      ),
+                                    ),
+                                    Text(
+                                      "60.0%",
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.headlineLarge?.copyWith(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onSecondaryContainer,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                      TroubleStudent(name: "John Doe", reason: "12 absences"),
-                      TroubleStudent(
-                        name: "Elizabeth Gonzalez",
-                        reason: "Late 23 times",
-                      ),
-                      TroubleStudent(
-                        name: "Benjamin Dover",
-                        reason: "2 missing assignments",
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(16.0),
+                        ),
+                        padding: EdgeInsets.all(10.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                          children: [
+                            Text(
+                              "Students requiring attention",
+                              style: Theme.of(
+                                context,
+                              ).textTheme.labelMedium?.copyWith(
+                                color:
+                                    Theme.of(context).colorScheme.onPrimaryContainer,
+                              ),
+                            ),
+                            TroubleStudent(
+                              name: "John Smith",
+                              reason: "Avg grade 3.1",
+                            ),
+                            TroubleStudent(name: "John Doe", reason: "12 absences"),
+                            TroubleStudent(
+                              name: "Elizabeth Gonzalez",
+                              reason: "Late 23 times",
+                            ),
+                            TroubleStudent(
+                              name: "Benjamin Dover",
+                              reason: "2 missing assignments",
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
-            Column(
-              spacing: 8.0,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  "Upcoming Assessments",
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-                AssessmentCard(
-                  date: 'Thursday',
-                  title: "Knowledge and politics: summative assessment",
-                ),
-                AssessmentCard(
-                  date: "Friday",
-                  title: "Knowledge and science: introduction quiz",
-                  summative: false,
-                ),
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                  child: GestureDetector(
-                    onTap: () {},
-                    child: Container(
-                      height: 120,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12.0),
-                        border: Border.all(
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
+                  Column(
+                    spacing: 8.0,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "Upcoming Assessments",
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        spacing: 8.0,
-                        children: [
-                          Icon(Icons.add_circle_outline),
-                          Center(
-                            child: Text(
-                              "Create new assessment",
-                              style: Theme.of(context).textTheme.titleMedium,
+                      AssessmentCard(
+                        date: 'Thursday',
+                        title: "Knowledge and politics: summative assessment",
+                      ),
+                      AssessmentCard(
+                        date: "Friday",
+                        title: "Knowledge and science: introduction quiz",
+                        summative: false,
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                        child: GestureDetector(
+                          onTap: () {},
+                          child: Container(
+                            height: 120,
+                            decoration: BoxDecoration(
+                              borderRadius: BorderRadius.circular(12.0),
+                              border: Border.all(
+                                color: Theme.of(context).colorScheme.outline,
+                              ),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.stretch,
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              spacing: 8.0,
+                              children: [
+                                Icon(Icons.add_circle_outline),
+                                Center(
+                                  child: Text(
+                                    "Create new assessment",
+                                    style: Theme.of(context).textTheme.titleMedium,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            StudentsSection(),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: 8.0,
-              children: [
-                Text("Settings", style: Theme.of(context).textTheme.titleLarge),
-                Padding(
-                  padding: EdgeInsetsGeometry.symmetric(horizontal: 10.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      FilledButton.tonalIcon(
-                        onPressed: () {},
-                        label: Text("Rename"),
-                        icon: Icon(Icons.swap_horiz),
-                      ),
-                      FilledButton.tonalIcon(
-                        onPressed: () {},
-                        label: Text("Schedule lessons"),
-                        icon: Icon(Icons.calendar_today),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsetsGeometry.symmetric(horizontal: 10.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      FilledButton.tonal(
-                        onPressed: null,
-                        child: Text("Add co-teacher"),
-                      ),
-                      FilledButton.icon(
-                        onPressed: () {},
-                        label: Text("Delete"),
-                        icon: Icon(Icons.delete_outline),
-                        style: FilledButton.styleFrom(
-                          backgroundColor: Theme.of(context).colorScheme.error,
-                          foregroundColor:
-                              Theme.of(context).colorScheme.onError,
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
+                  StudentsSection(),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 8.0,
+                    children: [
+                      Text("Settings", style: Theme.of(context).textTheme.titleLarge),
+                      Padding(
+                        padding: EdgeInsetsGeometry.symmetric(horizontal: 10.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            FilledButton.tonalIcon(
+                              onPressed: () {},
+                              label: Text("Rename"),
+                              icon: Icon(Icons.swap_horiz),
+                            ),
+                            FilledButton.tonalIcon(
+                              onPressed: () {},
+                              label: Text("Schedule lessons"),
+                              icon: Icon(Icons.calendar_today),
+                            ),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: EdgeInsetsGeometry.symmetric(horizontal: 10.0),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            FilledButton.tonal(
+                              onPressed: null,
+                              child: Text("Add co-teacher"),
+                            ),
+                            FilledButton.icon(
+                              onPressed: () {},
+                              label: Text("Delete"),
+                              icon: Icon(Icons.delete_outline),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: Theme.of(context).colorScheme.error,
+                                foregroundColor:
+                                    Theme.of(context).colorScheme.onError,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
             ),
           ],
         ),
@@ -917,7 +984,12 @@ class _LessonCardState extends State<LessonCard> {
 }
 
 class Header extends StatelessWidget {
-  const Header({super.key});
+  const Header({super.key, required this.name, required this.grade, required this.code, required this.isLoading});
+
+  final bool isLoading;
+  final String name;
+  final String grade;
+  final String code;
 
   @override
   Widget build(BuildContext context) {
@@ -926,15 +998,33 @@ class Header extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       spacing: 4.0,
       children: [
-        Text(
-          'Theory of Knowledge',
+        isLoading ? loadingBlocks(Theme.of(context).textTheme.displayMedium!, 200) : Text(
+          name,
           style: Theme.of(context).textTheme.displayMedium,
         ),
-        Text(
-          'Class DP2 \u2022 Code: XYZ123',
+        isLoading ? loadingBlocks(Theme.of(context).textTheme.titleMedium!, 150) : Text(
+          'Class $grade \u2022 Code: $code',
           style: Theme.of(context).textTheme.titleMedium,
         ),
       ],
     );
   }
+}
+
+
+// helper
+Widget loadingBlocks(TextStyle theme, double width, {bool onPrimary = false}) {
+  final height = theme.height! * theme.fontSize!;
+
+  return Padding(
+    padding: const EdgeInsets.symmetric(vertical: 3.0),
+    child: ClipRRect(
+      borderRadius: BorderRadius.circular(4.0),
+      child: Shimmer.fromColors(
+        baseColor: onPrimary ? Colors.grey[350]! : Colors.grey[300]!,
+        highlightColor: onPrimary ? Colors.grey[200]! : Colors.grey[100]!,
+        child: Container(color: Colors.white, height: height, width: width),
+      ),
+    ),
+  );
 }

@@ -4,7 +4,7 @@ import 'package:eclass_flutter/teacher_panel/lesson_page/ui.dart';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-final List<Widget> _pages = [TeacherDash(), TeacherLesson()];
+final List _pages = [TeacherDash(), TeacherLesson()];
 
 class TeacherUI extends StatefulWidget {
   const TeacherUI({super.key});
@@ -74,6 +74,7 @@ class _TeacherUIState extends State<TeacherUI> {
                 FadeTransition(opacity: animation, child: child),
         duration: Duration(milliseconds: 50),
         child: _pages[selected],
+        
       ),
     );
   }
