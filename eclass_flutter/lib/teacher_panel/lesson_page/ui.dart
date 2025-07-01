@@ -541,7 +541,7 @@ class NewScheduleDialog extends StatefulWidget {
 }
 
 class _NewScheduleDialogState extends State<NewScheduleDialog> {
-  final GlobalKey _formKey = GlobalKey<FormState>();
+  final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   String name = '';
   TextEditingController dayController = TextEditingController();
@@ -550,6 +550,14 @@ class _NewScheduleDialogState extends State<NewScheduleDialog> {
   Duration duration = Duration(minutes: 40);
   List<DateTimeRange> exceptions = [];
   DateTimeRange? editingRange;
+  String? rangeError;
+
+  Future<void> handleSubmit() async {
+    final idToken = await FirebaseAuth.instance.currentUser!.getIdToken();
+    final response = await post(
+      Uri.parse('') // TODO: YOU LEFT HERE. do the server now.
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -563,21 +571,34 @@ class _NewScheduleDialogState extends State<NewScheduleDialog> {
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 8.0),
-                  child: Row(
-                    children: [
-                      IconButton(
+                  child: AppBar(
+                    backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
+                    leading: IconButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                      },
+                      icon: Icon(Icons.close),
+                    ),
+                    title: Text(
+                      "Schedule lessons",
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    actions: [
+                      TextButton(
                         onPressed: () {
-                          Navigator.pop(context);
+                          if (_formKey.currentState!.validate()) {
+                            if (dayController.text == 'null') {
+                              setState(() {
+                                dayError = 'Select a day of the week';
+                              });
+                              return;
+                            }
+                            _formKey.currentState!.save();
+                            handleSubmit();
+                          }
                         },
-                        icon: Icon(Icons.close),
+                        child: Text("Save"),
                       ),
-                      SizedBox(width: 8.0),
-                      Text(
-                        "Schedule lessons",
-                        style: Theme.of(context).textTheme.titleLarge,
-                      ),
-                      Spacer(),
-                      TextButton(onPressed: () {}, child: Text("Save")),
                     ],
                   ),
                 ),
@@ -595,7 +616,7 @@ class _NewScheduleDialogState extends State<NewScheduleDialog> {
                         decoration: InputDecoration(
                           labelText: "Schedule name",
                           helperText:
-                              'This schedule will be generated until this year\'s June 31st.',
+                              'This schedule will be generated until June 31st.',
                           helperMaxLines: 2,
                           border: OutlineInputBorder(
                             borderSide: BorderSide(
@@ -774,7 +795,7 @@ class _NewScheduleDialogState extends State<NewScheduleDialog> {
                                   helpText: "Select exception date range",
                                 );
                                 setState(() {
-                                  editingRange = newDateRange!;
+                                  editingRange = newDateRange;
                                 });
                               },
                               decoration: InputDecoration(
@@ -788,13 +809,32 @@ class _NewScheduleDialogState extends State<NewScheduleDialog> {
                                 helperText:
                                     'Lessons won\'t be added on these days, e.g school holidays.',
                                 helperMaxLines: 3,
+                                errorText: rangeError,
                               ),
                             ),
                           ),
                           Padding(
                             padding: const EdgeInsets.only(top: 8.0),
                             child: FilledButton.tonalIcon(
-                              onPressed: () {},
+                              onPressed: () {
+                                if (editingRange == null) {
+                                  setState(() {
+                                    rangeError = 'Enter a valid date range';
+                                  });
+                                  return;
+                                } else if (exceptions.contains(editingRange)) {
+                                  setState(() {
+                                    rangeError =
+                                        'This exception already exists';
+                                  });
+                                  return;
+                                }
+
+                                setState(() {
+                                  rangeError = null;
+                                });
+                                exceptions.add(editingRange!);
+                              },
                               label: Text('Add'),
                               icon: Icon(Icons.add),
                             ),
@@ -807,22 +847,96 @@ class _NewScheduleDialogState extends State<NewScheduleDialog> {
                           color: Theme.of(context).colorScheme.primaryContainer,
                           borderRadius: BorderRadius.circular(16.0),
                         ),
-                        child: Column(
-                          spacing: 4.0,
-                          children: [
-                            Text(
-                              'Exceptions',
-                              style: Theme.of(
-                                context,
-                              ).textTheme.labelSmall?.copyWith(
-                                color:
-                                    Theme.of(
-                                      context,
-                                    ).colorScheme.onPrimaryContainer,
+                        child: Padding(
+                          padding: const EdgeInsets.all(12.0),
+                          child: Column(
+                            spacing: 8.0,
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Exceptions',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.labelSmall?.copyWith(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onPrimaryContainer,
+                                ),
                               ),
-                            ),
-                            
-                          ],
+                              ...exceptions.map((exception) {
+                                return Container(
+                                  decoration: BoxDecoration(
+                                    color:
+                                        Theme.of(context).colorScheme.primary,
+                                    borderRadius: BorderRadius.vertical(
+                                      top:
+                                          exception == exceptions[0]
+                                              ? Radius.circular(12.0)
+                                              : Radius.circular(4.0),
+                                      bottom:
+                                          exception ==
+                                                  exceptions[exceptions.length -
+                                                      1]
+                                              ? Radius.circular(12.0)
+                                              : Radius.circular(4.0),
+                                    ),
+                                  ),
+                                  child: Padding(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12.0,
+                                    ),
+                                    child: Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.spaceBetween,
+                                      children: [
+                                        Text(
+                                          '${DateFormat(DateFormat.YEAR_ABBR_MONTH_DAY).format(exception.start)} - ${DateFormat(DateFormat.YEAR_ABBR_MONTH_DAY).format(exception.end)}',
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.labelLarge?.copyWith(
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.onPrimary,
+                                          ),
+                                        ),
+                                        IconButton(
+                                          onPressed: () {
+                                            setState(() {
+                                              exceptions.remove(exception);
+                                            });
+                                          },
+                                          icon: Icon(Icons.delete_outline),
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.onPrimary,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                );
+                              }),
+                              if (exceptions.isEmpty)
+                                Padding(
+                                  padding: EdgeInsetsGeometry.all(16.0),
+                                  child: Center(
+                                    child: Text(
+                                      'You haven\'t added any exceptions yet!',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall?.copyWith(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimaryContainer,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
                         ),
                       ),
                     ],
