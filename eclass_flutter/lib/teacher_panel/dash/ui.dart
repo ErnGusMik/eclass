@@ -408,7 +408,11 @@ class _TeacherDashState extends State<TeacherDash> {
                             classGrade: e['grade'],
                             first: e == classes[0] ? true : false,
                             onTap: () {
-                              Navigator.pushNamed(context, '/class', arguments: e['id']);
+                              Navigator.pushNamed(
+                                context,
+                                '/class',
+                                arguments: e['id'],
+                              );
                             },
                           );
                         }),
@@ -1248,9 +1252,7 @@ class TestModal extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text("Class", style: Theme.of(context).textTheme.labelMedium),
-                ClassGroup(
-                  classes: classes,
-                ),
+                ClassGroup(classes: classes),
               ],
             ),
           ),
@@ -1845,7 +1847,9 @@ class TeacherClass extends StatelessWidget {
                         lesson,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onSurface,
                         ),
                       ),
@@ -1863,7 +1867,10 @@ class TeacherClass extends StatelessWidget {
                   ),
                 ],
               ),
-              IconButton(onPressed: () => {}, icon: Icon(Icons.arrow_right)),
+              Padding(
+                padding: const EdgeInsets.all(8.0),
+                child: Icon(Icons.arrow_right),
+              ),
             ],
           ),
         ),

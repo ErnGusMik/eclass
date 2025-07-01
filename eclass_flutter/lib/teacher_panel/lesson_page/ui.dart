@@ -393,13 +393,15 @@ class _TeacherLessonState extends State<TeacherLesson> {
                                           maxChildSize: 0.9,
                                           expand: false,
                                           builder:
-                                              (
-                                                context,
-                                                scrollController,
-                                              ) => SingleChildScrollView(
-                                                controller: scrollController,
-                                                child: ScheduleLessonsModal(),
-                                              ),
+                                              (context, scrollController) =>
+                                                  SingleChildScrollView(
+                                                    controller:
+                                                        scrollController,
+                                                    child: ScheduleLessonsModal(
+                                                      className: className,
+                                                      gradeName: gradeName,
+                                                    ),
+                                                  ),
                                         ),
                                       ),
                                 );
@@ -446,7 +448,14 @@ class _TeacherLessonState extends State<TeacherLesson> {
 }
 
 class ScheduleLessonsModal extends StatefulWidget {
-  const ScheduleLessonsModal({super.key});
+  const ScheduleLessonsModal({
+    super.key,
+    required this.className,
+    required this.gradeName,
+  });
+
+  final String className;
+  final String gradeName;
 
   @override
   State<ScheduleLessonsModal> createState() => _ScheduleLessonsModalState();
@@ -470,7 +479,7 @@ class _ScheduleLessonsModalState extends State<ScheduleLessonsModal> {
                   style: Theme.of(context).textTheme.headlineLarge,
                 ),
                 Text(' \u2022 '),
-                // TODO: YOU LEFT HERE. finish the modal (look at others) then do full-screen dialog below
+                // TODO: YOU LEFT HERE. do full-screen dialog below
               ],
             ),
           ),
@@ -479,7 +488,11 @@ class _ScheduleLessonsModalState extends State<ScheduleLessonsModal> {
             closedColor: Theme.of(context).colorScheme.surfaceContainerLow,
             transitionType: ContainerTransitionType.fadeThrough,
             closedElevation: 0.0,
-            openBuilder: (context, _) => NewScheduleDialog(),
+            openBuilder:
+                (context, _) => NewScheduleDialog(
+                  className: widget.className,
+                  gradeName: widget.gradeName,
+                ),
             closedBuilder:
                 (context, openContainer) => GestureDetector(
                   onTap: openContainer,
@@ -513,181 +526,311 @@ class _ScheduleLessonsModalState extends State<ScheduleLessonsModal> {
   }
 }
 
-class NewScheduleDialog extends StatelessWidget {
-  const NewScheduleDialog({super.key});
+class NewScheduleDialog extends StatefulWidget {
+  const NewScheduleDialog({
+    super.key,
+    required this.className,
+    required this.gradeName,
+  });
+
+  final String className;
+  final String gradeName;
+
+  @override
+  State<NewScheduleDialog> createState() => _NewScheduleDialogState();
+}
+
+class _NewScheduleDialogState extends State<NewScheduleDialog> {
+  final GlobalKey _formKey = GlobalKey<FormState>();
+
+  String name = '';
+  TextEditingController dayController = TextEditingController();
+  String? dayError;
+  TimeOfDay startTime = TimeOfDay(hour: 8, minute: 0);
+  Duration duration = Duration(minutes: 40);
+  List<DateTimeRange> exceptions = [];
+  DateTimeRange? editingRange;
 
   @override
   Widget build(BuildContext context) {
     return Dialog.fullscreen(
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
       child: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 8.0),
-              child: Row(
-                children: [
-                  IconButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    icon: Icon(Icons.close),
-                  ),
-                  SizedBox(width: 8.0),
-                  Text(
-                    "Schedule lessons",
-                    style: Theme.of(context).textTheme.titleLarge,
-                  ),
-                  Spacer(),
-                  TextButton(onPressed: () {}, child: Text("Save")),
-                ],
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.symmetric(horizontal: 26.0, vertical: 32.0),
-              child: Column(
-                spacing: 16.0,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  TextFormField(
-                    style: Theme.of(context).textTheme.bodyLarge,
-                    decoration: InputDecoration(
-                      labelText: "Schedule name",
-                      border: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
+        child: SingleChildScrollView(
+          child: Form(
+            key: _formKey,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 8.0),
+                  child: Row(
+                    children: [
+                      IconButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        icon: Icon(Icons.close),
                       ),
-                    ),
-                  ),
-                  TextFormField(
-                    readOnly: true,
-                    controller: TextEditingController(
-                      text: '11.sb Theory of knowledge',
-                    ),
-                    decoration: InputDecoration(
-                      labelText: "Class/course",
-                      border: OutlineInputBorder(
-                        borderSide: BorderSide(
-                          color: Theme.of(context).colorScheme.outline,
-                        ),
+                      SizedBox(width: 8.0),
+                      Text(
+                        "Schedule lessons",
+                        style: Theme.of(context).textTheme.titleLarge,
                       ),
-                      enabled: false,
-                    ),
-                  ),
-                  Divider(color: Theme.of(context).colorScheme.outlineVariant),
-                  DropdownMenu(
-                    width: double.infinity,
-                    initialSelection: 'null',
-                    label: Text('Day of week'),
-                    textStyle: Theme.of(context).textTheme.bodyLarge,
-                    trailingIcon: Icon(Icons.arrow_drop_down),
-                    menuStyle: MenuStyle(
-                      backgroundColor: WidgetStatePropertyAll(
-                        Theme.of(context).colorScheme.surfaceContainer,
-                      ),
-                      shape: WidgetStatePropertyAll(
-                        RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12.0),
-                        ),
-                      ),
-                      elevation: WidgetStatePropertyAll(2),
-                      shadowColor: WidgetStatePropertyAll(
-                        Theme.of(context).colorScheme.shadow,
-                      ),
-                      minimumSize: WidgetStatePropertyAll(
-                        Size(MediaQuery.of(context).size.width - 26 * 2, 0),
-                      ),
-                      maximumSize: WidgetStatePropertyAll(
-                        Size(
-                          MediaQuery.of(context).size.width - 26 * 2,
-                          double.infinity,
-                        ),
-                      ),
-                    ),
-                    dropdownMenuEntries: [
-                      DropdownMenuEntry(value: 'null', label: 'Select one'),
-                      DropdownMenuEntry(value: 'mon', label: 'Monday'),
-                      DropdownMenuEntry(value: 'tue', label: 'Tuesday'),
-                      DropdownMenuEntry(value: 'wed', label: 'Wednesday'),
-                      DropdownMenuEntry(value: 'thu', label: 'Thursday'),
-                      DropdownMenuEntry(value: 'fri', label: 'Friday'),
-                      DropdownMenuEntry(value: 'sat', label: 'Saturday'),
-                      DropdownMenuEntry(value: 'sun', label: 'Sunday'),
+                      Spacer(),
+                      TextButton(onPressed: () {}, child: Text("Save")),
                     ],
                   ),
-                  Row(
+                ),
+                Padding(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: 26.0,
+                    vertical: 32.0,
+                  ),
+                  child: Column(
                     spacing: 16.0,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Expanded(
-                        child: TextFormField(
-                          onTap: () {
-                            showTimePicker(
-                              context: context,
-                              initialTime: TimeOfDay(hour: 0, minute: 0),
-                              helpText: "Select start time",
-                            );
-                          },
-                          readOnly: true,
-                          controller: TextEditingController(text: '00:00'),
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Theme.of(context).colorScheme.outline,
-                              ),
+                      TextFormField(
+                        style: Theme.of(context).textTheme.bodyLarge,
+                        decoration: InputDecoration(
+                          labelText: "Schedule name",
+                          helperText:
+                              'This schedule will be generated until this year\'s June 31st.',
+                          helperMaxLines: 2,
+                          border: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.outline,
                             ),
-                            labelText: "Start time",
                           ),
                         ),
+                        validator: (val) {
+                          if (val!.isEmpty) {
+                            return "Enter a schedule name";
+                          }
+                        },
+                        onSaved: (newValue) {
+                          setState(() {
+                            name = newValue!;
+                          });
+                        },
                       ),
-                      Expanded(
-                        child: TextFormField(
-                          controller: TextEditingController(text: '40'),
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Theme.of(context).colorScheme.outline,
+                      TextFormField(
+                        readOnly: true,
+                        controller: TextEditingController(
+                          text: '${widget.gradeName} ${widget.className}',
+                        ),
+                        decoration: InputDecoration(
+                          labelText: "Class/course",
+                          border: OutlineInputBorder(
+                            borderSide: BorderSide(
+                              color: Theme.of(context).colorScheme.outline,
+                            ),
+                          ),
+                          enabled: false,
+                        ),
+                      ),
+                      Divider(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                      DropdownMenu(
+                        helperText:
+                            "You will be able to add more schedules later.",
+                        width: double.infinity,
+                        initialSelection: 'null',
+                        label: Text('Day of week'),
+                        textStyle: Theme.of(context).textTheme.bodyLarge,
+                        trailingIcon: Icon(Icons.arrow_drop_down),
+                        menuStyle: MenuStyle(
+                          backgroundColor: WidgetStatePropertyAll(
+                            Theme.of(context).colorScheme.surfaceContainer,
+                          ),
+                          shape: WidgetStatePropertyAll(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12.0),
+                            ),
+                          ),
+                          elevation: WidgetStatePropertyAll(2),
+                          shadowColor: WidgetStatePropertyAll(
+                            Theme.of(context).colorScheme.shadow,
+                          ),
+                          minimumSize: WidgetStatePropertyAll(
+                            Size(MediaQuery.of(context).size.width - 26 * 2, 0),
+                          ),
+                          maximumSize: WidgetStatePropertyAll(
+                            Size(
+                              MediaQuery.of(context).size.width - 26 * 2,
+                              double.infinity,
+                            ),
+                          ),
+                        ),
+                        dropdownMenuEntries: [
+                          DropdownMenuEntry(value: 'null', label: 'Select one'),
+                          DropdownMenuEntry(value: 'mon', label: 'Monday'),
+                          DropdownMenuEntry(value: 'tue', label: 'Tuesday'),
+                          DropdownMenuEntry(value: 'wed', label: 'Wednesday'),
+                          DropdownMenuEntry(value: 'thu', label: 'Thursday'),
+                          DropdownMenuEntry(value: 'fri', label: 'Friday'),
+                          DropdownMenuEntry(value: 'sat', label: 'Saturday'),
+                          DropdownMenuEntry(value: 'sun', label: 'Sunday'),
+                        ],
+                        controller: dayController,
+                        errorText: dayError,
+                      ),
+                      Row(
+                        spacing: 16.0,
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              onTap: () async {
+                                final newTime = await showTimePicker(
+                                  context: context,
+                                  initialTime: TimeOfDay(hour: 0, minute: 0),
+                                  helpText: "Select start time",
+                                );
+                                setState(() {
+                                  startTime = newTime!;
+                                });
+                              },
+                              readOnly: true,
+                              controller: TextEditingController(
+                                text: startTime.format(context),
+                              ),
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color:
+                                        Theme.of(context).colorScheme.outline,
+                                  ),
+                                ),
+                                labelText: "Start time",
+                              ),
+                              validator: (value) {
+                                if (value!.isEmpty) {
+                                  return 'Select a lesson start time!';
+                                }
+                              },
+                            ),
+                          ),
+                          Expanded(
+                            child: TextFormField(
+                              controller: TextEditingController(text: '40'),
+                              keyboardType: TextInputType.number,
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color:
+                                        Theme.of(context).colorScheme.outline,
+                                  ),
+                                ),
+                                labelText: "Duration",
+                                suffixText: 'min',
+                              ),
+                              validator: (value) {
+                                if (value!.isEmpty) {
+                                  return 'Enter a lesson duration';
+                                }
+
+                                try {
+                                  if (int.parse(value!) < 1) {
+                                    return 'Enter a valid lesson duration';
+                                  }
+                                } catch (e) {
+                                  return 'Did you enter a valid duration?';
+                                }
+                              },
+                              onSaved: (newValue) {
+                                setState(() {
+                                  duration = Duration(
+                                    minutes: int.parse(newValue!),
+                                  );
+                                });
+                              },
+                            ),
+                          ),
+                        ],
+                      ),
+                      Divider(
+                        color: Theme.of(context).colorScheme.outlineVariant,
+                      ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 8.0,
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller:
+                                  editingRange == null
+                                      ? null
+                                      : TextEditingController(
+                                        text:
+                                            '${DateFormat(DateFormat.YEAR_ABBR_MONTH_DAY).format(editingRange!.start)} - ${DateFormat(DateFormat.YEAR_ABBR_MONTH_DAY).format(editingRange!.end)}',
+                                      ),
+                              readOnly: true,
+                              onTap: () async {
+                                final newDateRange = await showDateRangePicker(
+                                  context: context,
+                                  firstDate: DateTime.now(),
+                                  lastDate: DateTime(2030),
+                                  helpText: "Select exception date range",
+                                );
+                                setState(() {
+                                  editingRange = newDateRange!;
+                                });
+                              },
+                              decoration: InputDecoration(
+                                border: OutlineInputBorder(
+                                  borderSide: BorderSide(
+                                    color:
+                                        Theme.of(context).colorScheme.outline,
+                                  ),
+                                ),
+                                labelText: "Exception",
+                                helperText:
+                                    'Lessons won\'t be added on these days, e.g school holidays.',
+                                helperMaxLines: 3,
                               ),
                             ),
-                            labelText: "Duration",
-                            suffixText: 'min',
                           ),
+                          Padding(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            child: FilledButton.tonalIcon(
+                              onPressed: () {},
+                              label: Text('Add'),
+                              icon: Icon(Icons.add),
+                            ),
+                          ),
+                        ],
+                      ),
+
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(16.0),
+                        ),
+                        child: Column(
+                          spacing: 4.0,
+                          children: [
+                            Text(
+                              'Exceptions',
+                              style: Theme.of(
+                                context,
+                              ).textTheme.labelSmall?.copyWith(
+                                color:
+                                    Theme.of(
+                                      context,
+                                    ).colorScheme.onPrimaryContainer,
+                              ),
+                            ),
+                            
+                          ],
                         ),
                       ),
                     ],
                   ),
-                  Divider(color: Theme.of(context).colorScheme.outlineVariant),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    spacing: 8.0,
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: TextEditingController(text: DateFormat(DateFormat.YEAR_MONTH_DAY).format(DateTime.now())),
-                          keyboardType: TextInputType.number,
-                          decoration: InputDecoration(
-                            border: OutlineInputBorder(
-                              borderSide: BorderSide(
-                                color: Theme.of(context).colorScheme.outline,
-                              ),
-                            ),
-                            labelText: "Exception",
-                            helperText: 'Lessons won\'t be added on this day, e.g school holidays.',
-                            helperMaxLines: 3,
-                          ),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.only(top: 8.0),
-                        child: FilledButton.tonalIcon(onPressed: (){}, label: Text('Add'), icon: Icon(Icons.add),),
-                      )
-                    ],
-                  )
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
       ),
     );
