@@ -22,12 +22,13 @@ class _TeacherLessonState extends State<TeacherLesson> {
   String gradeName = '';
   String classCode = '';
   bool _isLoading = true;
+  int? classId;
 
   Future<void> getClassData() async {
     final classID = ModalRoute.of(context)?.settings.arguments as int;
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
-      Uri.parse('http://10.173.158.188:8080/teacher/class/get?id=$classID'),
+      Uri.parse('http://192.168.1.106:8080/teacher/class/get?id=$classID'),
       headers: {'Authorization': 'Bearer $idToken'},
     );
     final body = jsonDecode(response.body);
@@ -35,6 +36,7 @@ class _TeacherLessonState extends State<TeacherLesson> {
       className = body['name'];
       gradeName = body['grade'];
       classCode = body['code'];
+      classId = body['id'];
     });
   }
 
@@ -400,6 +402,7 @@ class _TeacherLessonState extends State<TeacherLesson> {
                                                     child: ScheduleLessonsModal(
                                                       className: className,
                                                       gradeName: gradeName,
+                                                      classId: classId ?? 0,
                                                     ),
                                                   ),
                                         ),
@@ -452,10 +455,12 @@ class ScheduleLessonsModal extends StatefulWidget {
     super.key,
     required this.className,
     required this.gradeName,
+    required this.classId,
   });
 
   final String className;
   final String gradeName;
+  final int classId;
 
   @override
   State<ScheduleLessonsModal> createState() => _ScheduleLessonsModalState();
@@ -467,19 +472,22 @@ class _ScheduleLessonsModalState extends State<ScheduleLessonsModal> {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsetsGeometry.all(26.0),
+      padding: EdgeInsetsGeometry.symmetric(horizontal: 16.0),
       child: Column(
+        spacing: 16.0,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Center(
             child: Column(
+              spacing: 4.0,
               children: [
                 Text(
                   'Schedule Lessons',
                   style: Theme.of(context).textTheme.headlineLarge,
                 ),
-                Text(' \u2022 '),
-                // TODO: YOU LEFT HERE. do full-screen dialog below
+                Text(
+                  '${widget.className} \u2022 ${widget.gradeName}',
+                ), // TODO: must modify
               ],
             ),
           ),
@@ -492,6 +500,7 @@ class _ScheduleLessonsModalState extends State<ScheduleLessonsModal> {
                 (context, _) => NewScheduleDialog(
                   className: widget.className,
                   gradeName: widget.gradeName,
+                  classId: widget.classId,
                 ),
             closedBuilder:
                 (context, openContainer) => GestureDetector(
@@ -531,10 +540,12 @@ class NewScheduleDialog extends StatefulWidget {
     super.key,
     required this.className,
     required this.gradeName,
+    required this.classId,
   });
 
   final String className;
   final String gradeName;
+  final int classId;
 
   @override
   State<NewScheduleDialog> createState() => _NewScheduleDialogState();
@@ -544,408 +555,531 @@ class _NewScheduleDialogState extends State<NewScheduleDialog> {
   final GlobalKey<FormState> _formKey = GlobalKey<FormState>();
 
   String name = '';
-  TextEditingController dayController = TextEditingController();
+  int? dayOfWeek;
   String? dayError;
   TimeOfDay startTime = TimeOfDay(hour: 8, minute: 0);
   Duration duration = Duration(minutes: 40);
   List<DateTimeRange> exceptions = [];
   DateTimeRange? editingRange;
   String? rangeError;
+  String room = '';
+
+  bool _isLoading = false;
 
   Future<void> handleSubmit() async {
+    setState(() {
+      _isLoading = true;
+    });
     final idToken = await FirebaseAuth.instance.currentUser!.getIdToken();
     final response = await post(
-      Uri.parse('') // TODO: YOU LEFT HERE. do the server now.
+      Uri.parse('http://192.168.1.106:8080/schedules/new?generate=true'),
+      headers: {'Authorization': 'Bearer $idToken'},
+      body: {
+        'classId': jsonEncode(widget.classId),
+        'weekday': jsonEncode(dayOfWeek),
+        'time': jsonEncode([startTime.hour, startTime.minute]),
+        'name': name,
+        'exceptions': jsonEncode(exceptions),
+        'duration': jsonEncode(duration.inMinutes),
+        'room': room,
+      },
     );
+    setState(() {
+      _isLoading = false;
+    });
+    if (response.statusCode == 201) {
+      Navigator.pop(context);
+    } else {
+      showDialog(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: Text("Failed to save"),
+              titleTextStyle: Theme.of(context).textTheme.headlineSmall,
+              content: Text(
+                "Something went wrong. Try again shortly.\nError: ${response.statusCode}",
+              ),
+              contentTextStyle: Theme.of(
+                context,
+              ).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text("Close"),
+                ),
+              ],
+            ),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Dialog.fullscreen(
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-      child: SafeArea(
-        child: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 8.0),
-                  child: AppBar(
-                    backgroundColor: Theme.of(context).colorScheme.surfaceContainerLow,
-                    leading: IconButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                      },
-                      icon: Icon(Icons.close),
-                    ),
-                    title: Text(
-                      "Schedule lessons",
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    actions: [
-                      TextButton(
-                        onPressed: () {
-                          if (_formKey.currentState!.validate()) {
-                            if (dayController.text == 'null') {
-                              setState(() {
-                                dayError = 'Select a day of the week';
-                              });
-                              return;
-                            }
-                            _formKey.currentState!.save();
-                            handleSubmit();
-                          }
-                        },
-                        child: Text("Save"),
-                      ),
-                    ],
-                  ),
-                ),
-                Padding(
-                  padding: EdgeInsets.symmetric(
-                    horizontal: 26.0,
-                    vertical: 32.0,
-                  ),
-                  child: Column(
-                    spacing: 16.0,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      TextFormField(
-                        style: Theme.of(context).textTheme.bodyLarge,
-                        decoration: InputDecoration(
-                          labelText: "Schedule name",
-                          helperText:
-                              'This schedule will be generated until June 31st.',
-                          helperMaxLines: 2,
-                          border: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
-                          ),
+      child: Stack(
+        children: [
+          SafeArea(
+            child: SingleChildScrollView(
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(8.0, 0.0, 8.0, 8.0),
+                      child: AppBar(
+                        backgroundColor:
+                            Theme.of(context).colorScheme.surfaceContainerLow,
+                        leading: IconButton(
+                          onPressed: () {
+                            Navigator.pop(context);
+                          },
+                          icon: Icon(Icons.close),
                         ),
-                        validator: (val) {
-                          if (val!.isEmpty) {
-                            return "Enter a schedule name";
-                          }
-                        },
-                        onSaved: (newValue) {
-                          setState(() {
-                            name = newValue!;
-                          });
-                        },
-                      ),
-                      TextFormField(
-                        readOnly: true,
-                        controller: TextEditingController(
-                          text: '${widget.gradeName} ${widget.className}',
+                        title: Text(
+                          "Schedule lessons",
+                          style: Theme.of(context).textTheme.titleLarge,
                         ),
-                        decoration: InputDecoration(
-                          labelText: "Class/course",
-                          border: OutlineInputBorder(
-                            borderSide: BorderSide(
-                              color: Theme.of(context).colorScheme.outline,
-                            ),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              if (_formKey.currentState!.validate()) {
+                                if (dayOfWeek == null) {
+                                  setState(() {
+                                    dayError = 'Select a day of the week';
+                                  });
+                                  return;
+                                }
+                                _formKey.currentState!.save();
+                                handleSubmit();
+                              } else {
+                                if (dayOfWeek == null) {
+                                  setState(() {
+                                    dayError = 'Select a day of the week';
+                                  });
+                                }
+                              }
+                            },
+                            child: Text("Save"),
                           ),
-                          enabled: false,
-                        ),
-                      ),
-                      Divider(
-                        color: Theme.of(context).colorScheme.outlineVariant,
-                      ),
-                      DropdownMenu(
-                        helperText:
-                            "You will be able to add more schedules later.",
-                        width: double.infinity,
-                        initialSelection: 'null',
-                        label: Text('Day of week'),
-                        textStyle: Theme.of(context).textTheme.bodyLarge,
-                        trailingIcon: Icon(Icons.arrow_drop_down),
-                        menuStyle: MenuStyle(
-                          backgroundColor: WidgetStatePropertyAll(
-                            Theme.of(context).colorScheme.surfaceContainer,
-                          ),
-                          shape: WidgetStatePropertyAll(
-                            RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12.0),
-                            ),
-                          ),
-                          elevation: WidgetStatePropertyAll(2),
-                          shadowColor: WidgetStatePropertyAll(
-                            Theme.of(context).colorScheme.shadow,
-                          ),
-                          minimumSize: WidgetStatePropertyAll(
-                            Size(MediaQuery.of(context).size.width - 26 * 2, 0),
-                          ),
-                          maximumSize: WidgetStatePropertyAll(
-                            Size(
-                              MediaQuery.of(context).size.width - 26 * 2,
-                              double.infinity,
-                            ),
-                          ),
-                        ),
-                        dropdownMenuEntries: [
-                          DropdownMenuEntry(value: 'null', label: 'Select one'),
-                          DropdownMenuEntry(value: 'mon', label: 'Monday'),
-                          DropdownMenuEntry(value: 'tue', label: 'Tuesday'),
-                          DropdownMenuEntry(value: 'wed', label: 'Wednesday'),
-                          DropdownMenuEntry(value: 'thu', label: 'Thursday'),
-                          DropdownMenuEntry(value: 'fri', label: 'Friday'),
-                          DropdownMenuEntry(value: 'sat', label: 'Saturday'),
-                          DropdownMenuEntry(value: 'sun', label: 'Sunday'),
                         ],
-                        controller: dayController,
-                        errorText: dayError,
                       ),
-                      Row(
+                    ),
+                    Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: 26.0,
+                        vertical: 32.0,
+                      ),
+                      child: Column(
                         spacing: 16.0,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
                         children: [
-                          Expanded(
-                            child: TextFormField(
-                              onTap: () async {
-                                final newTime = await showTimePicker(
-                                  context: context,
-                                  initialTime: TimeOfDay(hour: 0, minute: 0),
-                                  helpText: "Select start time",
-                                );
-                                setState(() {
-                                  startTime = newTime!;
-                                });
-                              },
-                              readOnly: true,
-                              controller: TextEditingController(
-                                text: startTime.format(context),
-                              ),
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color:
-                                        Theme.of(context).colorScheme.outline,
-                                  ),
+                          TextFormField(
+                            style: Theme.of(context).textTheme.bodyLarge,
+                            decoration: InputDecoration(
+                              labelText: "Schedule name",
+                              helperText:
+                                  'This schedule will be generated until June 31st.',
+                              helperMaxLines: 2,
+                              border: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Theme.of(context).colorScheme.outline,
                                 ),
-                                labelText: "Start time",
                               ),
-                              validator: (value) {
-                                if (value!.isEmpty) {
-                                  return 'Select a lesson start time!';
-                                }
-                              },
                             ),
+                            validator: (val) {
+                              if (val!.isEmpty) {
+                                return "Enter a schedule name";
+                              }
+                            },
+                            onSaved: (newValue) {
+                              setState(() {
+                                name = newValue!;
+                              });
+                            },
                           ),
-                          Expanded(
-                            child: TextFormField(
-                              controller: TextEditingController(text: '40'),
-                              keyboardType: TextInputType.number,
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color:
-                                        Theme.of(context).colorScheme.outline,
-                                  ),
+                          TextFormField(
+                            readOnly: true,
+                            controller: TextEditingController(
+                              text: '${widget.gradeName} ${widget.className}',
+                            ),
+                            decoration: InputDecoration(
+                              labelText: "Class/course",
+                              border: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Theme.of(context).colorScheme.outline,
                                 ),
-                                labelText: "Duration",
-                                suffixText: 'min',
                               ),
-                              validator: (value) {
-                                if (value!.isEmpty) {
-                                  return 'Enter a lesson duration';
-                                }
-
-                                try {
-                                  if (int.parse(value!) < 1) {
-                                    return 'Enter a valid lesson duration';
-                                  }
-                                } catch (e) {
-                                  return 'Did you enter a valid duration?';
-                                }
-                              },
-                              onSaved: (newValue) {
-                                setState(() {
-                                  duration = Duration(
-                                    minutes: int.parse(newValue!),
-                                  );
-                                });
-                              },
+                              enabled: false,
                             ),
                           ),
-                        ],
-                      ),
-                      Divider(
-                        color: Theme.of(context).colorScheme.outlineVariant,
-                      ),
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: 8.0,
-                        children: [
-                          Expanded(
-                            child: TextFormField(
-                              controller:
-                                  editingRange == null
-                                      ? null
-                                      : TextEditingController(
-                                        text:
-                                            '${DateFormat(DateFormat.YEAR_ABBR_MONTH_DAY).format(editingRange!.start)} - ${DateFormat(DateFormat.YEAR_ABBR_MONTH_DAY).format(editingRange!.end)}',
-                                      ),
-                              readOnly: true,
-                              onTap: () async {
-                                final newDateRange = await showDateRangePicker(
-                                  context: context,
-                                  firstDate: DateTime.now(),
-                                  lastDate: DateTime(2030),
-                                  helpText: "Select exception date range",
-                                );
-                                setState(() {
-                                  editingRange = newDateRange;
-                                });
-                              },
-                              decoration: InputDecoration(
-                                border: OutlineInputBorder(
-                                  borderSide: BorderSide(
-                                    color:
-                                        Theme.of(context).colorScheme.outline,
-                                  ),
+                          Divider(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                          DropdownMenu(
+                            helperText:
+                                "You will be able to add more schedules later.",
+                            width: double.infinity,
+                            initialSelection: 'null',
+                            label: Text('Day of week'),
+                            textStyle: Theme.of(context).textTheme.bodyLarge,
+                            trailingIcon: Icon(Icons.arrow_drop_down),
+                            menuStyle: MenuStyle(
+                              backgroundColor: WidgetStatePropertyAll(
+                                Theme.of(context).colorScheme.surfaceContainer,
+                              ),
+                              shape: WidgetStatePropertyAll(
+                                RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12.0),
                                 ),
-                                labelText: "Exception",
-                                helperText:
-                                    'Lessons won\'t be added on these days, e.g school holidays.',
-                                helperMaxLines: 3,
-                                errorText: rangeError,
+                              ),
+                              elevation: WidgetStatePropertyAll(2),
+                              shadowColor: WidgetStatePropertyAll(
+                                Theme.of(context).colorScheme.shadow,
+                              ),
+                              minimumSize: WidgetStatePropertyAll(
+                                Size(
+                                  MediaQuery.of(context).size.width - 26 * 2,
+                                  0,
+                                ),
+                              ),
+                              maximumSize: WidgetStatePropertyAll(
+                                Size(
+                                  MediaQuery.of(context).size.width - 26 * 2,
+                                  double.infinity,
+                                ),
                               ),
                             ),
+                            dropdownMenuEntries: [
+                              DropdownMenuEntry(
+                                value: null,
+                                label: 'Select one',
+                              ),
+                              DropdownMenuEntry(value: 1, label: 'Monday'),
+                              DropdownMenuEntry(value: 2, label: 'Tuesday'),
+                              DropdownMenuEntry(value: 3, label: 'Wednesday'),
+                              DropdownMenuEntry(value: 4, label: 'Thursday'),
+                              DropdownMenuEntry(value: 5, label: 'Friday'),
+                              DropdownMenuEntry(value: 6, label: 'Saturday'),
+                              DropdownMenuEntry(value: 0, label: 'Sunday'),
+                            ],
+                            onSelected: (value) {
+                              setState(() {
+                                dayOfWeek = value as int?;
+                                dayError = null;
+                              });
+                            },
+                            errorText: dayError,
                           ),
-                          Padding(
-                            padding: const EdgeInsets.only(top: 8.0),
-                            child: FilledButton.tonalIcon(
-                              onPressed: () {
-                                if (editingRange == null) {
-                                  setState(() {
-                                    rangeError = 'Enter a valid date range';
-                                  });
-                                  return;
-                                } else if (exceptions.contains(editingRange)) {
-                                  setState(() {
-                                    rangeError =
-                                        'This exception already exists';
-                                  });
-                                  return;
-                                }
-
-                                setState(() {
-                                  rangeError = null;
-                                });
-                                exceptions.add(editingRange!);
-                              },
-                              label: Text('Add'),
-                              icon: Icon(Icons.add),
-                            ),
-                          ),
-                        ],
-                      ),
-
-                      Container(
-                        decoration: BoxDecoration(
-                          color: Theme.of(context).colorScheme.primaryContainer,
-                          borderRadius: BorderRadius.circular(16.0),
-                        ),
-                        child: Padding(
-                          padding: const EdgeInsets.all(12.0),
-                          child: Column(
-                            spacing: 8.0,
+                          Row(
+                            spacing: 16.0,
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Text(
-                                'Exceptions',
-                                style: Theme.of(
-                                  context,
-                                ).textTheme.labelSmall?.copyWith(
-                                  color:
-                                      Theme.of(
-                                        context,
-                                      ).colorScheme.onPrimaryContainer,
-                                ),
-                              ),
-                              ...exceptions.map((exception) {
-                                return Container(
-                                  decoration: BoxDecoration(
-                                    color:
-                                        Theme.of(context).colorScheme.primary,
-                                    borderRadius: BorderRadius.vertical(
-                                      top:
-                                          exception == exceptions[0]
-                                              ? Radius.circular(12.0)
-                                              : Radius.circular(4.0),
-                                      bottom:
-                                          exception ==
-                                                  exceptions[exceptions.length -
-                                                      1]
-                                              ? Radius.circular(12.0)
-                                              : Radius.circular(4.0),
-                                    ),
+                              Expanded(
+                                child: TextFormField(
+                                  onTap: () async {
+                                    final newTime = await showTimePicker(
+                                      context: context,
+                                      initialTime: startTime,
+                                      helpText: "Select start time",
+                                    );
+                                    if (newTime == null) return;
+                                    setState(() {
+                                      startTime = newTime;
+                                    });
+                                  },
+                                  readOnly: true,
+                                  controller: TextEditingController(
+                                    text: startTime.format(context),
                                   ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 12.0,
-                                    ),
-                                    child: Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.spaceBetween,
-                                      children: [
-                                        Text(
-                                          '${DateFormat(DateFormat.YEAR_ABBR_MONTH_DAY).format(exception.start)} - ${DateFormat(DateFormat.YEAR_ABBR_MONTH_DAY).format(exception.end)}',
-                                          style: Theme.of(
-                                            context,
-                                          ).textTheme.labelLarge?.copyWith(
-                                            color:
-                                                Theme.of(
-                                                  context,
-                                                ).colorScheme.onPrimary,
-                                          ),
-                                        ),
-                                        IconButton(
-                                          onPressed: () {
-                                            setState(() {
-                                              exceptions.remove(exception);
-                                            });
-                                          },
-                                          icon: Icon(Icons.delete_outline),
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.onPrimary,
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                );
-                              }),
-                              if (exceptions.isEmpty)
-                                Padding(
-                                  padding: EdgeInsetsGeometry.all(16.0),
-                                  child: Center(
-                                    child: Text(
-                                      'You haven\'t added any exceptions yet!',
-                                      style: Theme.of(
-                                        context,
-                                      ).textTheme.bodySmall?.copyWith(
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                      borderSide: BorderSide(
                                         color:
                                             Theme.of(
                                               context,
-                                            ).colorScheme.onPrimaryContainer,
+                                            ).colorScheme.outline,
                                       ),
                                     ),
+                                    labelText: "Start time",
                                   ),
+                                  validator: (value) {
+                                    if (value!.isEmpty) {
+                                      return 'Select a lesson start time!';
+                                    }
+                                  },
                                 ),
+                              ),
+                              Expanded(
+                                child: TextFormField(
+                                  keyboardType: TextInputType.number,
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.outline,
+                                      ),
+                                    ),
+                                    labelText: "Duration",
+                                    suffixText: 'min',
+                                  ),
+                                  validator: (value) {
+                                    if (value!.isEmpty) {
+                                      return 'Enter a lesson duration';
+                                    }
+
+                                    try {
+                                      if (int.parse(value!) < 1) {
+                                        return 'Enter a valid lesson duration';
+                                      }
+                                    } catch (e) {
+                                      return 'Did you enter a valid duration?';
+                                    }
+                                  },
+                                  onSaved: (newValue) {
+                                    setState(() {
+                                      duration = Duration(
+                                        minutes: int.parse(newValue!),
+                                      );
+                                    });
+                                  },
+                                ),
+                              ),
                             ],
                           ),
-                        ),
+                          TextFormField(
+                            style: Theme.of(context).textTheme.bodyLarge,
+                            decoration: InputDecoration(
+                              labelText: "Room name/number",
+                              border: OutlineInputBorder(
+                                borderSide: BorderSide(
+                                  color: Theme.of(context).colorScheme.outline,
+                                ),
+                              ),
+                            ),
+                            validator: (val) {
+                              if (val!.isEmpty) {
+                                return "Enter a room name or number";
+                              }
+                            },
+                            onSaved: (newValue) {
+                              setState(() {
+                                room = newValue!;
+                              });
+                            },
+                          ),
+                          Divider(
+                            color: Theme.of(context).colorScheme.outlineVariant,
+                          ),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            spacing: 8.0,
+                            children: [
+                              Expanded(
+                                child: TextFormField(
+                                  controller:
+                                      editingRange == null
+                                          ? null
+                                          : TextEditingController(
+                                            text:
+                                                '${DateFormat(DateFormat.YEAR_ABBR_MONTH_DAY).format(editingRange!.start)} - ${DateFormat(DateFormat.YEAR_ABBR_MONTH_DAY).format(editingRange!.end)}',
+                                          ),
+                                  readOnly: true,
+                                  onTap: () async {
+                                    final newDateRange =
+                                        await showDateRangePicker(
+                                          context: context,
+                                          firstDate: DateTime.now(),
+                                          lastDate: DateTime(2030),
+                                          helpText:
+                                              "Select exception date range",
+                                        );
+                                    setState(() {
+                                      editingRange = newDateRange;
+                                    });
+                                  },
+                                  decoration: InputDecoration(
+                                    border: OutlineInputBorder(
+                                      borderSide: BorderSide(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.outline,
+                                      ),
+                                    ),
+                                    labelText: "Exception",
+                                    helperText:
+                                        'Lessons won\'t be added on these days, e.g school holidays.',
+                                    helperMaxLines: 3,
+                                    errorText: rangeError,
+                                  ),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8.0),
+                                child: FilledButton.tonalIcon(
+                                  onPressed: () {
+                                    if (editingRange == null) {
+                                      setState(() {
+                                        rangeError = 'Enter a valid date range';
+                                      });
+                                      return;
+                                    } else if (exceptions.contains(
+                                      editingRange,
+                                    )) {
+                                      setState(() {
+                                        rangeError =
+                                            'This exception already exists';
+                                      });
+                                      return;
+                                    }
+
+                                    setState(() {
+                                      rangeError = null;
+                                    });
+                                    exceptions.add(editingRange!);
+                                  },
+                                  label: Text('Add'),
+                                  icon: Icon(Icons.add),
+                                ),
+                              ),
+                            ],
+                          ),
+
+                          Container(
+                            decoration: BoxDecoration(
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(16.0),
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(12.0),
+                              child: Column(
+                                spacing: 8.0,
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Exceptions',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.labelSmall?.copyWith(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimaryContainer,
+                                    ),
+                                  ),
+                                  ...exceptions.map((exception) {
+                                    return Container(
+                                      decoration: BoxDecoration(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.primary,
+                                        borderRadius: BorderRadius.vertical(
+                                          top:
+                                              exception == exceptions[0]
+                                                  ? Radius.circular(12.0)
+                                                  : Radius.circular(4.0),
+                                          bottom:
+                                              exception ==
+                                                      exceptions[exceptions
+                                                              .length -
+                                                          1]
+                                                  ? Radius.circular(12.0)
+                                                  : Radius.circular(4.0),
+                                        ),
+                                      ),
+                                      child: Padding(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12.0,
+                                        ),
+                                        child: Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.spaceBetween,
+                                          children: [
+                                            Text(
+                                              '${DateFormat(DateFormat.YEAR_ABBR_MONTH_DAY).format(exception.start)} - ${DateFormat(DateFormat.YEAR_ABBR_MONTH_DAY).format(exception.end)}',
+                                              style: Theme.of(
+                                                context,
+                                              ).textTheme.labelLarge?.copyWith(
+                                                color:
+                                                    Theme.of(
+                                                      context,
+                                                    ).colorScheme.onPrimary,
+                                              ),
+                                            ),
+                                            IconButton(
+                                              onPressed: () {
+                                                setState(() {
+                                                  exceptions.remove(exception);
+                                                });
+                                              },
+                                              icon: Icon(Icons.delete_outline),
+                                              color:
+                                                  Theme.of(
+                                                    context,
+                                                  ).colorScheme.onPrimary,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    );
+                                  }),
+                                  if (exceptions.isEmpty)
+                                    Padding(
+                                      padding: EdgeInsetsGeometry.all(16.0),
+                                      child: Center(
+                                        child: Text(
+                                          'You haven\'t added any exceptions yet!',
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.bodySmall?.copyWith(
+                                            color:
+                                                Theme.of(context)
+                                                    .colorScheme
+                                                    .onPrimaryContainer,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+
+          if (_isLoading)
+            Positioned.fill(
+              child: AbsorbPointer(
+                absorbing: true,
+                child: Stack(
+                  children: [
+                    const ModalBarrier(
+                      dismissible: false,
+                      color: Colors.black54,
+                    ),
+                    const Center(child: CircularProgressIndicator()),
+                  ],
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

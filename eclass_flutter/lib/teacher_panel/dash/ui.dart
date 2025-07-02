@@ -27,7 +27,7 @@ class _TeacherDashState extends State<TeacherDash> {
   Future<void> loadNotices() async {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
-      Uri.parse('http://10.173.158.188:8080/teacher/notices/getAll'),
+      Uri.parse('http://192.168.1.106:8080/teacher/notices/getAll'),
       headers: {"Authorization": "Bearer $idToken"},
     );
     Map body = jsonDecode(response.body);
@@ -40,7 +40,7 @@ class _TeacherDashState extends State<TeacherDash> {
   Future<void> loadClasses() async {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
-      Uri.parse('http://10.173.158.188:8080/teacher/class/get/all'),
+      Uri.parse('http://192.168.1.106:8080/teacher/class/get/all'),
       headers: {'Authorization': 'Bearer $idToken'},
     );
 
@@ -533,7 +533,7 @@ class _NewClassModalState extends State<NewClassModal> {
 
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await post(
-      Uri.parse('http://10.173.158.188:8080/teacher/class/new'),
+      Uri.parse('http://192.168.1.106:8080/teacher/class/new'),
       headers: {'Authorization': 'Bearer $idToken'},
       body: {
         'name': nameController.text.trim(),
@@ -705,7 +705,7 @@ class _CreateNoticeModalState extends State<CreateNoticeModal> {
     });
     final req = MultipartRequest(
       'POST',
-      Uri.parse('http://10.173.158.188:8080/teacher/notices/create'),
+      Uri.parse('http://192.168.1.106:8080/teacher/notices/create'),
     );
     req.fields['title'] = titleController.text.trim();
     req.fields['tags'] = jsonEncode(['tag1', 'tag2']);
