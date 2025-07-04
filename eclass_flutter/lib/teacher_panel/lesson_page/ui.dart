@@ -1,6 +1,5 @@
 import 'dart:convert';
 import 'package:animations/animations.dart';
-import 'package:eclass_flutter/teacher_panel/dash/ui.dart';
 import 'package:eclass_flutter/teacher_panel/teacherUI.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -28,7 +27,7 @@ class _TeacherLessonState extends State<TeacherLesson> {
     final classID = ModalRoute.of(context)?.settings.arguments as int;
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
-      Uri.parse('http://192.168.1.106:8080/teacher/class/get?id=$classID'),
+      Uri.parse('http://10.173.158.188:8080/teacher/class/get?id=$classID'),
       headers: {'Authorization': 'Bearer $idToken'},
     );
     final body = jsonDecode(response.body);
@@ -77,7 +76,7 @@ class _TeacherLessonState extends State<TeacherLesson> {
                     code: classCode,
                     isLoading: _isLoading,
                   ),
-                  LessonsSection(),
+                  LessonsSection(classId: classId ?? 0),
                   Column(
                     spacing: 16.0,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -395,16 +394,19 @@ class _TeacherLessonState extends State<TeacherLesson> {
                                           maxChildSize: 0.9,
                                           expand: false,
                                           builder:
-                                              (context, scrollController) =>
-                                                  SingleChildScrollView(
-                                                    controller:
-                                                        scrollController,
-                                                    child: ScheduleLessonsModal(
-                                                      className: className,
-                                                      gradeName: gradeName,
-                                                      classId: classId ?? 0,
-                                                    ),
+                                              (
+                                                context,
+                                                scrollController,
+                                              ) => Scaffold(
+                                                body: SingleChildScrollView(
+                                                  controller: scrollController,
+                                                  child: ScheduleLessonsModal(
+                                                    className: className,
+                                                    gradeName: gradeName,
+                                                    classId: classId ?? 0,
                                                   ),
+                                                ),
+                                              ),
                                         ),
                                       ),
                                 );
@@ -468,6 +470,32 @@ class ScheduleLessonsModal extends StatefulWidget {
 
 class _ScheduleLessonsModalState extends State<ScheduleLessonsModal> {
   List schedules = [];
+  bool _isLoading = true;
+
+  Future<void> getSchedules() async {
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await get(
+      Uri.parse(
+        'http://10.173.158.188:8080/schedules/getForClass?id=${widget.classId}',
+      ),
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+    final body = jsonDecode(response.body);
+    if (response.statusCode == 200) {
+      setState(() {
+        schedules = body['schedules'];
+      });
+    }
+    setState(() {
+      _isLoading = false;
+    });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getSchedules();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -485,49 +513,193 @@ class _ScheduleLessonsModalState extends State<ScheduleLessonsModal> {
                   'Schedule Lessons',
                   style: Theme.of(context).textTheme.headlineLarge,
                 ),
-                Text(
-                  '${widget.className} \u2022 ${widget.gradeName}',
-                ), // TODO: must modify
+                Text('${widget.className} \u2022 ${widget.gradeName}'),
               ],
             ),
           ),
-          OpenContainer(
-            openColor: Theme.of(context).colorScheme.surfaceContainerLow,
-            closedColor: Theme.of(context).colorScheme.surfaceContainerLow,
-            transitionType: ContainerTransitionType.fadeThrough,
-            closedElevation: 0.0,
-            openBuilder:
-                (context, _) => NewScheduleDialog(
-                  className: widget.className,
-                  gradeName: widget.gradeName,
-                  classId: widget.classId,
-                ),
-            closedBuilder:
-                (context, openContainer) => GestureDetector(
-                  onTap: openContainer,
-                  child: Container(
-                    padding: EdgeInsets.all(10.0),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.vertical(
-                        top: Radius.circular(4.0),
-                        bottom: Radius.circular(12.0),
-                      ),
-                      border: Border.all(
-                        color: Theme.of(context).colorScheme.outline,
-                      ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            spacing: 8.0,
+            children: [
+              ...schedules.map((e) {
+                late String weekday;
+                switch (e['weekday']) {
+                  case 1:
+                    weekday = 'Mon';
+                  case 2:
+                    weekday = 'Tue';
+                  case 3:
+                    weekday = 'Wed';
+                  case 4:
+                    weekday = 'Thu';
+                  case 5:
+                    weekday = 'Fri';
+                  case 6:
+                    weekday = 'Sat';
+                  case 0:
+                    weekday = 'Sun';
+                  default:
+                    weekday = '???';
+                }
+
+                List time = jsonDecode(e['time']);
+                String hours = time[0].toString();
+                String min = time[1].toString();
+                if (hours.length == 1) {
+                  hours = '0$hours';
+                }
+                if (min.length == 1) {
+                  min = '0$min';
+                }
+
+                return Container(
+                  padding: EdgeInsets.all(10.0),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.vertical(
+                      top:
+                          e == schedules[0]
+                              ? Radius.circular(12.0)
+                              : Radius.circular(4.0),
+                      bottom: Radius.circular(4.0),
                     ),
-                    child: Column(
-                      spacing: 16,
-                      children: [
-                        Icon(Icons.add_circle),
-                        Text(
-                          'Schedule more lessons',
-                          style: Theme.of(context).textTheme.titleSmall,
-                        ),
-                      ],
-                    ),
+                    color: Theme.of(context).colorScheme.primaryContainer,
                   ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        "${e['name']}",
+                        style: Theme.of(
+                          context,
+                        ).textTheme.labelMedium?.copyWith(
+                          color:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        spacing: 8.0,
+                        children: [
+                          Text(
+                            '$weekday $hours:$min',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.headlineSmall?.copyWith(
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                          Column(
+                            children: [
+                              Text(
+                                '${e['duration']}min/Rm. ${e['room']}',
+                                style: Theme.of(
+                                  context,
+                                ).textTheme.bodySmall?.copyWith(
+                                  color:
+                                      Theme.of(
+                                        context,
+                                      ).colorScheme.onPrimaryContainer,
+                                ),
+                              ),
+                            ],
+                          ),
+                          OutlinedButton.icon(
+                            onPressed: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(
+                                  content: Text("This feature is coming soon!"),
+                                ),
+                              );
+                            },
+                            label: Text("Edit"),
+                            icon: Icon(Icons.today),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSurfaceVariant,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }),
+
+              if (_isLoading)
+                Column(
+                  spacing: 8.0,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.vertical(
+                        top: Radius.circular(12.0),
+                        bottom: Radius.circular(4.0),
+                      ),
+                      child: Shimmer.fromColors(
+                        baseColor: Colors.grey[300]!,
+                        highlightColor: Colors.grey[100]!,
+                        child: Container(color: Colors.white, height: 100),
+                      ),
+                    ),
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(4.0),
+                      child: Shimmer.fromColors(
+                        baseColor: Colors.grey[300]!,
+                        highlightColor: Colors.grey[100]!,
+                        child: Container(color: Colors.white, height: 100),
+                      ),
+                    ),
+                  ],
                 ),
+
+              OpenContainer(
+                openColor: Theme.of(context).colorScheme.surfaceContainerLow,
+                closedColor: Theme.of(context).colorScheme.surfaceContainerLow,
+                transitionType: ContainerTransitionType.fadeThrough,
+                closedElevation: 0.0,
+                openBuilder:
+                    (context, _) => NewScheduleDialog(
+                      className: widget.className,
+                      gradeName: widget.gradeName,
+                      classId: widget.classId,
+                    ),
+                closedBuilder:
+                    (context, openContainer) => GestureDetector(
+                      onTap: openContainer,
+                      child: Container(
+                        padding: EdgeInsets.all(10.0),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.vertical(
+                            top:
+                                schedules.isEmpty
+                                    ? Radius.circular(12.0)
+                                    : Radius.circular(4.0),
+                            bottom: Radius.circular(12.0),
+                          ),
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.outline,
+                          ),
+                        ),
+                        child: Column(
+                          spacing: 16,
+                          children: [
+                            Icon(Icons.add_circle),
+                            Text(
+                              'Schedule more lessons',
+                              style: Theme.of(context).textTheme.titleSmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+              ),
+            ],
           ),
         ],
       ),
@@ -559,7 +731,7 @@ class _NewScheduleDialogState extends State<NewScheduleDialog> {
   String? dayError;
   TimeOfDay startTime = TimeOfDay(hour: 8, minute: 0);
   Duration duration = Duration(minutes: 40);
-  List<DateTimeRange> exceptions = [];
+  List<List<String>> exceptions = [];
   DateTimeRange? editingRange;
   String? rangeError;
   String room = '';
@@ -572,7 +744,7 @@ class _NewScheduleDialogState extends State<NewScheduleDialog> {
     });
     final idToken = await FirebaseAuth.instance.currentUser!.getIdToken();
     final response = await post(
-      Uri.parse('http://192.168.1.106:8080/schedules/new?generate=true'),
+      Uri.parse('http://10.173.158.188:8080/schedules/new?generate=true'),
       headers: {'Authorization': 'Bearer $idToken'},
       body: {
         'classId': jsonEncode(widget.classId),
@@ -695,6 +867,7 @@ class _NewScheduleDialogState extends State<NewScheduleDialog> {
                               if (val!.isEmpty) {
                                 return "Enter a schedule name";
                               }
+                              return null;
                             },
                             onSaved: (newValue) {
                               setState(() {
@@ -811,6 +984,7 @@ class _NewScheduleDialogState extends State<NewScheduleDialog> {
                                     if (value!.isEmpty) {
                                       return 'Select a lesson start time!';
                                     }
+                                    return null;
                                   },
                                 ),
                               ),
@@ -835,12 +1009,13 @@ class _NewScheduleDialogState extends State<NewScheduleDialog> {
                                     }
 
                                     try {
-                                      if (int.parse(value!) < 1) {
+                                      if (int.parse(value) < 1) {
                                         return 'Enter a valid lesson duration';
                                       }
                                     } catch (e) {
                                       return 'Did you enter a valid duration?';
                                     }
+                                    return null;
                                   },
                                   onSaved: (newValue) {
                                     setState(() {
@@ -867,6 +1042,7 @@ class _NewScheduleDialogState extends State<NewScheduleDialog> {
                               if (val!.isEmpty) {
                                 return "Enter a room name or number";
                               }
+                              return null;
                             },
                             onSaved: (newValue) {
                               setState(() {
@@ -943,7 +1119,10 @@ class _NewScheduleDialogState extends State<NewScheduleDialog> {
                                     setState(() {
                                       rangeError = null;
                                     });
-                                    exceptions.add(editingRange!);
+                                    exceptions.add([
+                                      editingRange!.start.toIso8601String(),
+                                      editingRange!.end.toIso8601String(),
+                                    ]);
                                   },
                                   label: Text('Add'),
                                   icon: Icon(Icons.add),
@@ -1007,7 +1186,7 @@ class _NewScheduleDialogState extends State<NewScheduleDialog> {
                                               MainAxisAlignment.spaceBetween,
                                           children: [
                                             Text(
-                                              '${DateFormat(DateFormat.YEAR_ABBR_MONTH_DAY).format(exception.start)} - ${DateFormat(DateFormat.YEAR_ABBR_MONTH_DAY).format(exception.end)}',
+                                              '${DateFormat(DateFormat.YEAR_ABBR_MONTH_DAY).format(DateTime.parse(exception[0]))} - ${DateFormat(DateFormat.YEAR_ABBR_MONTH_DAY).format(DateTime.parse(exception[1]))}',
                                               style: Theme.of(
                                                 context,
                                               ).textTheme.labelLarge?.copyWith(
@@ -1252,7 +1431,8 @@ class TroubleStudent extends StatelessWidget {
 }
 
 class LessonsSection extends StatefulWidget {
-  const LessonsSection({super.key});
+  const LessonsSection({super.key, required this.classId});
+  final int classId;
 
   @override
   State<LessonsSection> createState() => _LessonsSectionState();
@@ -1260,6 +1440,26 @@ class LessonsSection extends StatefulWidget {
 
 class _LessonsSectionState extends State<LessonsSection> {
   DateTime selectedDate = DateTime.now();
+
+  Future<void> loadLessons() async {
+    final idToken = FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await get(
+      Uri.parse(
+        'http://10.173.158.188:8080/teacher/lessons/get/date?date=${selectedDate.toIso8601String()};classId=${widget.classId!}',
+      ),
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+    print(response.statusCode);
+  }
+
+  @override
+  void didUpdateWidget(oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.classId != oldWidget.classId) {
+      loadLessons(); // reload data if input changes
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
