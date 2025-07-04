@@ -1440,16 +1440,21 @@ class LessonsSection extends StatefulWidget {
 
 class _LessonsSectionState extends State<LessonsSection> {
   DateTime selectedDate = DateTime.now();
+  List lessons = [];
 
   Future<void> loadLessons() async {
-    final idToken = FirebaseAuth.instance.currentUser?.getIdToken();
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
       Uri.parse(
-        'http://10.173.158.188:8080/teacher/lessons/get/date?date=${selectedDate.toIso8601String()};classId=${widget.classId!}',
+        'http://10.173.158.188:8080/teacher/lesson/get/date?date=${selectedDate.toIso8601String()}&classId=${widget.classId}',
       ),
       headers: {'Authorization': 'Bearer $idToken'},
     );
-    print(response.statusCode);
+    print(response.body);
+    final body = jsonDecode(response.body);
+    setState(() {
+      lessons = body['lessons'];
+    });
   }
 
   @override
@@ -1479,6 +1484,7 @@ class _LessonsSectionState extends State<LessonsSection> {
               setState(() {
                 selectedDate = selectedDateModal;
               });
+              loadLessons();
             }
           },
           child: Chip(
@@ -1493,15 +1499,49 @@ class _LessonsSectionState extends State<LessonsSection> {
             ),
           ),
         ),
-        LessonCard(),
-        LessonCard(),
+        ...lessons.map((lesson) {
+          return LessonCard(
+            duration: lesson['duration'],
+            notes: lesson['notes'] ?? '',
+            topic: lesson['topic'] ?? '',
+            lessonId: lesson['id'],
+            room: lesson['room'],
+            time: DateTime.parse(lesson['datetime']),
+          );
+        }),
+
+        if (lessons.length == 0)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32.0),
+            child: Center(
+              child: Text(
+                "Hooray! No lessons today!",
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+          ),
       ],
     );
   }
 }
 
 class LessonCard extends StatefulWidget {
-  const LessonCard({super.key});
+  const LessonCard({
+    super.key,
+    required this.lessonId,
+    required this.notes,
+    required this.topic,
+    required this.duration,
+    required this.room,
+    required this.time,
+  });
+
+  final int lessonId;
+  final String room;
+  final String notes;
+  final String topic;
+  final DateTime time;
+  final int duration;
 
   @override
   State<LessonCard> createState() => _LessonCardState();
@@ -1531,12 +1571,13 @@ class _LessonCardState extends State<LessonCard> {
   @override
   void initState() {
     super.initState();
-    notesController.text =
-        "Hi class!\nNew topic today -- be ready! I will quiz you on your current knowledge. Don't worry, this will not impact your grades.";
+    notesController.text = widget.notes;
+    topicController.text = widget.topic;
   }
 
   @override
   Widget build(BuildContext context) {
+    final endTime = widget.time.add(Duration(minutes: widget.duration));
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).colorScheme.surfaceContainerLowest,
@@ -1547,17 +1588,19 @@ class _LessonCardState extends State<LessonCard> {
         spacing: 10.0,
         children: [
           Row(
+            spacing: 16.0,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                "08:20 - 09:00",
+                "${widget.time.hour.toString().length == 1 ? '0' : ''}${widget.time.hour}:${widget.time.minute.toString().length == 1 ? '0' : ''}${widget.time.minute} - ${endTime.hour.toString().length == 1 ? '0' : ''}${endTime.hour}:${endTime.minute.toString().length == 1 ? '0' : ''}${endTime.minute}",
                 style: Theme.of(context).textTheme.titleMedium,
               ),
               Text(
-                "Room 302",
+                "Room ${widget.room}",
                 style: Theme.of(context).textTheme.labelMedium?.copyWith(
                   color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
