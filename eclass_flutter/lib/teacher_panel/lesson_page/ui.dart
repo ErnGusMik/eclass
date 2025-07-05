@@ -1441,6 +1441,7 @@ class LessonsSection extends StatefulWidget {
 class _LessonsSectionState extends State<LessonsSection> {
   DateTime selectedDate = DateTime.now();
   List lessons = [];
+  List allLessonsList = [];
 
   Future<void> loadLessons() async {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
@@ -1450,10 +1451,19 @@ class _LessonsSectionState extends State<LessonsSection> {
       ),
       headers: {'Authorization': 'Bearer $idToken'},
     );
-    print(response.body);
     final body = jsonDecode(response.body);
+    final allLessons = await get(
+      Uri.parse('http://10.173.158.188:8080/teacher/lesson/get/all?classId=${widget.classId}'),
+      headers: {
+        'Authorization': 'Bearer $idToken'
+      }
+    );
+    if (allLessons.statusCode != 200) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('An error occured while loading lessons')));
+    }
     setState(() {
       lessons = body['lessons'];
+      allLessonsList = jsonDecode(allLessons.body)['lessons'];
     });
   }
 
@@ -1507,6 +1517,9 @@ class _LessonsSectionState extends State<LessonsSection> {
             lessonId: lesson['id'],
             room: lesson['room'],
             time: DateTime.parse(lesson['datetime']),
+            hwAssigned: lesson['hw_assigned'],
+            hwDue: lesson['hw_due'],
+            allLessonsList: allLessonsList
           );
         }),
 
@@ -1534,6 +1547,9 @@ class LessonCard extends StatefulWidget {
     required this.duration,
     required this.room,
     required this.time,
+    required this.hwAssigned,
+    required this.hwDue,
+    required this.allLessonsList
   });
 
   final int lessonId;
@@ -1542,6 +1558,9 @@ class LessonCard extends StatefulWidget {
   final String topic;
   final DateTime time;
   final int duration;
+  final hwDue;
+  final hwAssigned;
+  final List allLessonsList;
 
   @override
   State<LessonCard> createState() => _LessonCardState();
@@ -1573,6 +1592,56 @@ class _LessonCardState extends State<LessonCard> {
     super.initState();
     notesController.text = widget.notes;
     topicController.text = widget.topic;
+  }
+
+  Future<void> handleChange(String field) async {
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    String content = '';
+    if (field == 'topic') {
+      content = topicController.text;
+    } else if (field == 'notes') {
+      content = notesController.text;
+    } else if (field == 'hw_due') {
+      if (widget.hwDue == false) {
+        final assignedLesson = showDialog(context: context, builder: (context) => AlertDialog(
+          title: Text('What lesson was this HW assigned?'),
+          actions: [
+            TextButton(onPressed: () {Navigator.pop(context);}, child: Text('Cancel and delete draft')),
+            TextButton(onPressed: () {}, child: Text('Save'))
+          ],
+          content: ListView.builder(itemCount: widget.allLessonsList.length, itemBuilder:(context, index) {
+            return ListTile(
+              leading: Radio(value: widget.allLessonsList[index].id, groupValue: '', onChanged: () {}),
+              // TODO: you left here. you are in the process of getting homework in the lesson cards. this dialog pops up when no homework is present. finish the dialog, then the other dialog.
+            );
+          },),
+        ));
+      }
+    } else if (field == 'hw_assigned') {
+      if (widget.hwAssigned == false) {
+        final dueLesson = showDialog(context: context, builder: (context) => AlertDialog(
+          title: Text('What lesson is this HW due?'),
+          actions: [
+            TextButton(onPressed: () {Navigator.pop(context);}, child: Text('Cancel and delete draft')),
+            TextButton(onPressed: () {}, child: Text('Save'))
+          ],
+        ));
+      }
+    } else if (field == 'assessment') {
+
+    }
+    final response = await put(
+      Uri.parse('http://10.173.158.188:8080/teacher/lesson/update?field=$field'),
+      headers: {
+        'Authorization': 'Bearer $idToken'
+      },
+      body: {
+        'lessonId': widget.lessonId.toString(),
+        'content': content,
+      }
+    );
+    print(response.statusCode);
+    // TODO: you left here. finish the request and lessons cards now.
   }
 
   @override
@@ -1636,6 +1705,9 @@ class _LessonCardState extends State<LessonCard> {
                       editingNotes ? Icons.check : Icons.edit_outlined,
                     ),
                     onPressed: () {
+                      if (editingNotes) {
+                        handleChange('notes');
+                      }
                       setState(() {
                         editingNotes = !editingNotes;
                       });
@@ -1698,6 +1770,7 @@ class _LessonCardState extends State<LessonCard> {
                             Theme.of(context).colorScheme.onTertiaryContainer,
                       ),
                       onPressed: () {
+                        if (editingTopic) handleChange('topic');
                         setState(() {
                           editingTopic = !editingTopic;
                         });
