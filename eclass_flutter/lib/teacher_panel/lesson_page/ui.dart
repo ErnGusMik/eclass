@@ -1453,13 +1453,15 @@ class _LessonsSectionState extends State<LessonsSection> {
     );
     final body = jsonDecode(response.body);
     final allLessons = await get(
-      Uri.parse('http://10.173.158.188:8080/teacher/lesson/get/all?classId=${widget.classId}'),
-      headers: {
-        'Authorization': 'Bearer $idToken'
-      }
+      Uri.parse(
+        'http://10.173.158.188:8080/teacher/lesson/get/all?classId=${widget.classId}',
+      ),
+      headers: {'Authorization': 'Bearer $idToken'},
     );
     if (allLessons.statusCode != 200) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('An error occured while loading lessons')));
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('An error occured while loading lessons')),
+      );
     }
     setState(() {
       lessons = body['lessons'];
@@ -1519,7 +1521,7 @@ class _LessonsSectionState extends State<LessonsSection> {
             time: DateTime.parse(lesson['datetime']),
             hwAssigned: lesson['hw_assigned'],
             hwDue: lesson['hw_due'],
-            allLessonsList: allLessonsList
+            allLessonsList: allLessonsList,
           );
         }),
 
@@ -1549,7 +1551,7 @@ class LessonCard extends StatefulWidget {
     required this.time,
     required this.hwAssigned,
     required this.hwDue,
-    required this.allLessonsList
+    required this.allLessonsList,
   });
 
   final int lessonId;
@@ -1587,60 +1589,82 @@ class _LessonCardState extends State<LessonCard> {
   FocusNode assessmentFocusNode = FocusNode();
   bool editingAssessment = false;
 
+  int? _selectedLesson;
+
   @override
   void initState() {
     super.initState();
+    final dueHw = jsonDecode(widget.hwDue);
     notesController.text = widget.notes;
     topicController.text = widget.topic;
+    print(dueHw['description']);
+    hwDueController.text = jsonDecode(widget.hwDue)['description'];
   }
 
   Future<void> handleChange(String field) async {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     String content = '';
+    int? hwDueId;
+    int? hwAssignedId;
+
+    _selectedLesson = null;
+
     if (field == 'topic') {
       content = topicController.text;
     } else if (field == 'notes') {
       content = notesController.text;
     } else if (field == 'hw_due') {
+      content = hwDueController.text.trim();
       if (widget.hwDue == false) {
-        final assignedLesson = showDialog(context: context, builder: (context) => AlertDialog(
-          title: Text('What lesson was this HW assigned?'),
-          actions: [
-            TextButton(onPressed: () {Navigator.pop(context);}, child: Text('Cancel and delete draft')),
-            TextButton(onPressed: () {}, child: Text('Save'))
-          ],
-          content: ListView.builder(itemCount: widget.allLessonsList.length, itemBuilder:(context, index) {
-            return ListTile(
-              leading: Radio(value: widget.allLessonsList[index].id, groupValue: '', onChanged: () {}),
-              // TODO: you left here. you are in the process of getting homework in the lesson cards. this dialog pops up when no homework is present. finish the dialog, then the other dialog.
-            );
-          },),
-        ));
+        final dialog = await showDialog<int>(
+          context: context,
+          builder:
+              (context) => LessonSelectDialog(
+                allLessonsList: widget.allLessonsList,
+                initialSelectedLesson: _selectedLesson,
+                dueTime: widget.time,
+              ),
+        );
+        print(dialog);
+        if (dialog == null) {
+          return;
+        }
+        hwAssignedId = dialog;
       }
     } else if (field == 'hw_assigned') {
       if (widget.hwAssigned == false) {
-        final dueLesson = showDialog(context: context, builder: (context) => AlertDialog(
-          title: Text('What lesson is this HW due?'),
-          actions: [
-            TextButton(onPressed: () {Navigator.pop(context);}, child: Text('Cancel and delete draft')),
-            TextButton(onPressed: () {}, child: Text('Save'))
-          ],
-        ));
+        final dueLesson = showDialog(
+          context: context,
+          builder:
+              (context) => AlertDialog(
+                title: Text('What lesson is this HW due?'),
+                actions: [
+                  TextButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    child: Text('Cancel and delete draft'),
+                  ),
+                  TextButton(onPressed: () {}, child: Text('Save')),
+                ],
+              ),
+        );
       }
-    } else if (field == 'assessment') {
-
-    }
+    } else if (field == 'assessment') {}
     final response = await put(
-      Uri.parse('http://10.173.158.188:8080/teacher/lesson/update?field=$field'),
-      headers: {
-        'Authorization': 'Bearer $idToken'
-      },
+      Uri.parse(
+        'http://10.173.158.188:8080/teacher/lesson/update?field=$field',
+      ),
+      headers: {'Authorization': 'Bearer $idToken'},
       body: {
         'lessonId': widget.lessonId.toString(),
         'content': content,
-      }
+        'hw_due_id': hwDueId.toString(),
+        'hw_assigned_id': hwAssignedId.toString(),
+      },
     );
     print(response.statusCode);
+    print(response.body);
     // TODO: you left here. finish the request and lessons cards now.
   }
 
@@ -1833,6 +1857,7 @@ class _LessonCardState extends State<LessonCard> {
                         color: Theme.of(context).colorScheme.onPrimaryContainer,
                       ),
                       onPressed: () {
+                        if (editingHwDue) handleChange('hw_due');
                         setState(() {
                           editingHwDue = !editingHwDue;
                         });
@@ -2014,6 +2039,94 @@ class Header extends StatelessWidget {
               style: Theme.of(context).textTheme.titleMedium,
             ),
       ],
+    );
+  }
+}
+
+class LessonSelectDialog extends StatefulWidget {
+  final List allLessonsList;
+  final int? initialSelectedLesson;
+  final DateTime dueTime;
+
+  const LessonSelectDialog({
+    super.key,
+    required this.allLessonsList,
+    required this.initialSelectedLesson,
+    required this.dueTime,
+  });
+
+  @override
+  State<LessonSelectDialog> createState() => _LessonSelectDialogState();
+}
+
+class _LessonSelectDialogState extends State<LessonSelectDialog> {
+  int? _selectedLesson;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedLesson = widget.initialSelectedLesson;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text('What lesson was this HW assigned?'),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text('Cancel and delete draft'),
+        ),
+        TextButton(
+          onPressed: () {
+            if (_selectedLesson == null) return;
+            Navigator.pop(context, _selectedLesson);
+          },
+          child: Text('Save'),
+        ),
+      ],
+      content: SizedBox(
+        height: 300,
+        width: double.maxFinite,
+        child: Column(
+          children: [
+            Text(
+              "This homework is due on ${DateFormat('E, MMM d, H:mm').format(widget.dueTime)}. Select a lesson before this date.",
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              maxLines: 3,
+            ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: widget.allLessonsList.length,
+                itemBuilder: (context, index) {
+                  final lesson = widget.allLessonsList[index];
+                  final lessonId = lesson['id'] as int;
+
+                  return RadioListTile<int>(
+                    key: Key(lessonId.toString()),
+                    value: lessonId,
+                    groupValue: _selectedLesson,
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedLesson = value;
+                      });
+                    },
+                    title: Text(
+                      DateFormat(
+                        'E, MMM d, H:mm',
+                      ).format(DateTime.parse(lesson['datetime'])),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
