@@ -1442,8 +1442,13 @@ class _LessonsSectionState extends State<LessonsSection> {
   DateTime selectedDate = DateTime.now();
   List lessons = [];
   List allLessonsList = [];
+  bool _isLoading = true;
 
   Future<void> loadLessons() async {
+    setState(() {
+      _isLoading = true;
+      lessons = [];
+    });
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
       Uri.parse(
@@ -1466,6 +1471,7 @@ class _LessonsSectionState extends State<LessonsSection> {
     setState(() {
       lessons = body['lessons'];
       allLessonsList = jsonDecode(allLessons.body)['lessons'];
+      _isLoading = false;
     });
   }
 
@@ -1511,6 +1517,21 @@ class _LessonsSectionState extends State<LessonsSection> {
             ),
           ),
         ),
+
+        if (_isLoading)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16.0),
+            child: Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Container(
+                color: Colors.white,
+                height: 400,
+                width: double.maxFinite,
+              ),
+            ),
+          ),
+
         ...lessons.map((lesson) {
           return LessonCard(
             duration: lesson['duration'],
@@ -1525,7 +1546,7 @@ class _LessonsSectionState extends State<LessonsSection> {
           );
         }),
 
-        if (lessons.length == 0)
+        if (lessons.isEmpty && !_isLoading)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 32.0),
             child: Center(
@@ -1590,15 +1611,22 @@ class _LessonCardState extends State<LessonCard> {
   bool editingAssessment = false;
 
   int? _selectedLesson;
+  late bool hwDueExists;
+  late bool hwAssignedExists;
 
   @override
   void initState() {
     super.initState();
-    final dueHw = jsonDecode(widget.hwDue);
+    hwDueExists = widget.hwDue == false ? false : true;
+    hwAssignedExists = widget.hwAssigned == false ? false : true;
     notesController.text = widget.notes;
     topicController.text = widget.topic;
-    print(dueHw['description']);
-    hwDueController.text = jsonDecode(widget.hwDue)['description'];
+    if (widget.hwDue != false) {
+      hwDueController.text = widget.hwDue['description'];
+    }
+    if (widget.hwAssigned != false) {
+      hwAssignedController.text = widget.hwAssigned['description'];
+    }
   }
 
   Future<void> handleChange(String field) async {
@@ -1625,32 +1653,31 @@ class _LessonCardState extends State<LessonCard> {
                 dueTime: widget.time,
               ),
         );
-        print(dialog);
         if (dialog == null) {
           return;
         }
         hwAssignedId = dialog;
       }
     } else if (field == 'hw_assigned') {
+      content = hwAssignedController.text.trim();
       if (widget.hwAssigned == false) {
-        final dueLesson = showDialog(
+        final dialog = await showDialog<int>(
           context: context,
           builder:
-              (context) => AlertDialog(
-                title: Text('What lesson is this HW due?'),
-                actions: [
-                  TextButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    child: Text('Cancel and delete draft'),
-                  ),
-                  TextButton(onPressed: () {}, child: Text('Save')),
-                ],
+              (context) => LessonSelectDialog(
+                allLessonsList: widget.allLessonsList,
+                initialSelectedLesson: _selectedLesson,
+                dueTime: widget.time,
+                due: false,
               ),
         );
+        if (dialog == null) {
+          return;
+        }
+        hwDueId = dialog;
       }
     } else if (field == 'assessment') {}
+
     final response = await put(
       Uri.parse(
         'http://10.173.158.188:8080/teacher/lesson/update?field=$field',
@@ -1663,9 +1690,17 @@ class _LessonCardState extends State<LessonCard> {
         'hw_assigned_id': hwAssignedId.toString(),
       },
     );
-    print(response.statusCode);
-    print(response.body);
-    // TODO: you left here. finish the request and lessons cards now.
+
+    if (response.statusCode == 201) {
+      switch (field) {
+        case 'hw_due':
+          hwDueExists = true;
+        case 'hw_assigned':
+          hwAssignedExists = true;
+      }
+    }
+
+    // TODO: you left here. add cases for how to edit hw when it exists above, then move on to assessments section (later add assessments to the lesson cards)
   }
 
   @override
@@ -1920,6 +1955,7 @@ class _LessonCardState extends State<LessonCard> {
                         color: Theme.of(context).colorScheme.onPrimaryContainer,
                       ),
                       onPressed: () {
+                        if (editingHwAssigned) handleChange('hw_assigned');
                         setState(() {
                           editingHwAssigned = !editingHwAssigned;
                         });
@@ -2047,12 +2083,14 @@ class LessonSelectDialog extends StatefulWidget {
   final List allLessonsList;
   final int? initialSelectedLesson;
   final DateTime dueTime;
+  final bool due;
 
   const LessonSelectDialog({
     super.key,
     required this.allLessonsList,
     required this.initialSelectedLesson,
     required this.dueTime,
+    this.due = true,
   });
 
   @override
@@ -2071,7 +2109,9 @@ class _LessonSelectDialogState extends State<LessonSelectDialog> {
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text('What lesson was this HW assigned?'),
+      title: Text(
+        widget.due ? 'When was this HW assigned?' : 'When is this HW due?',
+      ),
       actions: [
         TextButton(
           onPressed: () {
@@ -2093,7 +2133,9 @@ class _LessonSelectDialogState extends State<LessonSelectDialog> {
         child: Column(
           children: [
             Text(
-              "This homework is due on ${DateFormat('E, MMM d, H:mm').format(widget.dueTime)}. Select a lesson before this date.",
+              widget.due
+                  ? "This homework is due on ${DateFormat('E, MMM d, H:mm').format(widget.dueTime)}. Select a lesson before this date."
+                  : "This homework was assigned on ${DateFormat('E, MMM d, H:mm').format(widget.dueTime)}. Select a lesson after this date.",
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
