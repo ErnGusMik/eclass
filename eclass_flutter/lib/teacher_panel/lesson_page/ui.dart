@@ -339,6 +339,7 @@ class _TeacherLessonState extends State<TeacherLesson> {
                         title: "Knowledge and science: introduction quiz",
                         summative: false,
                       ),
+                      // TODO: you left here. do server now. then fetch assessments and show here
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10.0),
                         child: GestureDetector(
@@ -2147,6 +2148,19 @@ class _TestModalState extends State<TestModal> {
     if (response.statusCode == 201) {
       Navigator.pop(context);
       return;
+    } else if (response.statusCode == 409) {
+      showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text("Failed to create"),
+            content: Text('An assessment already exists for this lesson. Choose a different lesson and try again.'),
+            actions: [
+              TextButton(onPressed: () {Navigator.pop(context);}, child: Text('Close'))
+            ],
+          ),
+    );
+    return;
     }
     showDialog(
       context: context,
