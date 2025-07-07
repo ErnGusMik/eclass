@@ -34,7 +34,7 @@ class _NoticePageState extends State<NoticePage> {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
 
     final response = await get(
-      Uri.parse('http://10.173.158.188:8080/notices/get?id=$id'),
+      Uri.parse('http://192.168.1.106:8080/notices/get?id=$id'),
       headers: {'Authorization': 'Bearer $idToken'},
     );
 
@@ -70,7 +70,7 @@ class _NoticePageState extends State<NoticePage> {
       return file;
     }
     try {
-      final response = await get(Uri.parse('http://10.173.158.188:8080$url'));
+      final response = await get(Uri.parse('http://192.168.1.106:8080$url'));
 
       await file.writeAsBytes(response.bodyBytes);
       return file;

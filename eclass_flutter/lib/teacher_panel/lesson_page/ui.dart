@@ -22,12 +22,13 @@ class _TeacherLessonState extends State<TeacherLesson> {
   String classCode = '';
   bool _isLoading = true;
   int? classId;
+  List allLessons = [];
 
   Future<void> getClassData() async {
     final classID = ModalRoute.of(context)?.settings.arguments as int;
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
-      Uri.parse('http://10.173.158.188:8080/teacher/class/get?id=$classID'),
+      Uri.parse('http://192.168.1.106:8080/teacher/class/get?id=$classID'),
       headers: {'Authorization': 'Bearer $idToken'},
     );
     final body = jsonDecode(response.body);
@@ -47,11 +48,30 @@ class _TeacherLessonState extends State<TeacherLesson> {
     });
   }
 
+// delete from lessonssection later
+  Future<void> _loadAllLessons() async {
+    if (classId == null) return;
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await get(
+      Uri.parse('http://192.168.1.106:8080/teacher/lesson/get/all?classId=$classId'),
+      headers: {
+        'Authorization': 'Bearer $idToken'
+      }
+    );
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      setState(() {
+        allLessons = body['lessons'];
+      });
+    }
+  }
+
   @override
   void didChangeDependencies() async {
     super.didChangeDependencies();
     await _loadAvatar();
     await getClassData();
+    await _loadAllLessons();
     setState(() {
       _isLoading = false;
     });
@@ -322,7 +342,44 @@ class _TeacherLessonState extends State<TeacherLesson> {
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10.0),
                         child: GestureDetector(
-                          onTap: () {},
+                          onTap: () {
+                            showModalBottomSheet(
+                              context: context,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.vertical(
+                                  top: Radius.circular(16.0),
+                                ),
+                              ),
+                              showDragHandle: true,
+                              isScrollControlled: true,
+                              builder:
+                                  (context) => AnimatedPadding(
+                                    duration: Duration(milliseconds: 100),
+                                    curve: Curves.easeOut,
+                                    padding: EdgeInsetsGeometry.only(
+                                      bottom:
+                                          MediaQuery.of(
+                                            context,
+                                          ).viewInsets.bottom,
+                                    ),
+                                    child: DraggableScrollableSheet(
+                                      expand: false,
+                                      maxChildSize: 0.8,
+                                      builder:
+                                          (context, scrollController) =>
+                                              SingleChildScrollView(
+                                                controller: scrollController,
+                                                child: TestModal(
+                                                  classId: classId ?? 0,
+                                                  className: className,
+                                                  gradeName: gradeName,
+                                                  allLessons: allLessons,
+                                                ),
+                                              ),
+                                    ),
+                                  ),
+                            );
+                          },
                           child: Container(
                             height: 120,
                             decoration: BoxDecoration(
@@ -476,7 +533,7 @@ class _ScheduleLessonsModalState extends State<ScheduleLessonsModal> {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
       Uri.parse(
-        'http://10.173.158.188:8080/schedules/getForClass?id=${widget.classId}',
+        'http://192.168.1.106:8080/schedules/getForClass?id=${widget.classId}',
       ),
       headers: {'Authorization': 'Bearer $idToken'},
     );
@@ -744,7 +801,7 @@ class _NewScheduleDialogState extends State<NewScheduleDialog> {
     });
     final idToken = await FirebaseAuth.instance.currentUser!.getIdToken();
     final response = await post(
-      Uri.parse('http://10.173.158.188:8080/schedules/new?generate=true'),
+      Uri.parse('http://192.168.1.106:8080/schedules/new?generate=true'),
       headers: {'Authorization': 'Bearer $idToken'},
       body: {
         'classId': jsonEncode(widget.classId),
@@ -1452,14 +1509,14 @@ class _LessonsSectionState extends State<LessonsSection> {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
       Uri.parse(
-        'http://10.173.158.188:8080/teacher/lesson/get/date?date=${selectedDate.toIso8601String()}&classId=${widget.classId}',
+        'http://192.168.1.106:8080/teacher/lesson/get/date?date=${selectedDate.toIso8601String()}&classId=${widget.classId}',
       ),
       headers: {'Authorization': 'Bearer $idToken'},
     );
     final body = jsonDecode(response.body);
     final allLessons = await get(
       Uri.parse(
-        'http://10.173.158.188:8080/teacher/lesson/get/all?classId=${widget.classId}',
+        'http://192.168.1.106:8080/teacher/lesson/get/all?classId=${widget.classId}',
       ),
       headers: {'Authorization': 'Bearer $idToken'},
     );
@@ -1643,7 +1700,7 @@ class _LessonCardState extends State<LessonCard> {
       content = notesController.text;
     } else if (field == 'hw_due') {
       content = hwDueController.text.trim();
-      if (widget.hwDue == false) {
+      if (hwDueExists == false) {
         final dialog = await showDialog<int>(
           context: context,
           builder:
@@ -1660,7 +1717,7 @@ class _LessonCardState extends State<LessonCard> {
       }
     } else if (field == 'hw_assigned') {
       content = hwAssignedController.text.trim();
-      if (widget.hwAssigned == false) {
+      if (hwAssignedExists == false) {
         final dialog = await showDialog<int>(
           context: context,
           builder:
@@ -1679,9 +1736,7 @@ class _LessonCardState extends State<LessonCard> {
     } else if (field == 'assessment') {}
 
     final response = await put(
-      Uri.parse(
-        'http://10.173.158.188:8080/teacher/lesson/update?field=$field',
-      ),
+      Uri.parse('http://192.168.1.106:8080/teacher/lesson/update?field=$field'),
       headers: {'Authorization': 'Bearer $idToken'},
       body: {
         'lessonId': widget.lessonId.toString(),
@@ -2044,6 +2099,352 @@ class _LessonCardState extends State<LessonCard> {
   }
 }
 
+class TestModal extends StatelessWidget {
+  const TestModal({
+    super.key,
+    required this.classId,
+    required this.className,
+    required this.gradeName,
+    required this.allLessons
+  });
+
+  final int classId;
+  final String className;
+  final String gradeName;
+  final List allLessons;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        spacing: 30.0,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            "Create New Assessment",
+            style: Theme.of(context).textTheme.headlineLarge,
+            textAlign: TextAlign.center,
+          ),
+          TextField(
+            maxLines: null,
+            style: Theme.of(context).textTheme.bodyLarge,
+            decoration: InputDecoration(
+              labelText: "Topic",
+              labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              border: UnderlineInputBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              ),
+            ),
+          ),
+          Column(
+            spacing: 8.0,
+            children: [
+              GradingSysSelector(),
+              Text(
+                "Practice assessments don't count towards the final grade and are assessed in percent by the teacher.",
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          Container(
+            padding: EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerLowest,
+              borderRadius: BorderRadius.all(Radius.circular(12.0)),
+            ),
+            child: Column(
+              spacing: 8.0,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text("Class", style: Theme.of(context).textTheme.labelMedium),
+                Material(
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: Theme.of(context).colorScheme.tertiary,
+                      child: Text(
+                        gradeName.substring(0, 2) +
+                            gradeName.substring(gradeName.length - 1),
+                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          color: Theme.of(context).colorScheme.onTertiary,
+                        ),
+                      ),
+                    ),
+                    title: Text(
+                      className,
+                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                        color: Theme.of(context).colorScheme.onTertiaryContainer,
+                      ),
+                    ),
+                    tileColor: Theme.of(context).colorScheme.tertiaryContainer,
+                    selectedTileColor:
+                        Theme.of(context).colorScheme.tertiaryContainer,
+                    contentPadding: EdgeInsets.symmetric(
+                      vertical: 8.0,
+                      horizontal: 16.0,
+                    ),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.all(Radius.circular(12.0)),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          TimeSelector(label: "Lesson", expanded: true, allLessons: allLessons,),
+          
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              FilledButton.icon(
+                onPressed: () {},
+                icon: Icon(Icons.add),
+                label: Text("Create"),
+                style: FilledButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    vertical: 16.0,
+                    horizontal: 24.0,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.0),
+        ],
+      ),
+    );
+  }
+}
+
+class TimeSelector extends StatefulWidget {
+  const TimeSelector({super.key, required this.label, this.expanded = false, required this.allLessons});
+
+  final bool expanded;
+  final String label;
+  final List allLessons;
+
+  @override
+  State<TimeSelector> createState() => _TimeSelectorState();
+}
+
+class _TimeSelectorState extends State<TimeSelector> {
+  DateTime? _dateTime;
+
+
+  Future<void> handleEdit() async {
+    final selectedLessonId = await showDialog(
+      context: context,
+      builder: (context) => TimeSelectDialog(allLessonsList: widget.allLessons)
+    );
+    if (selectedLessonId == null) return;
+    final selectedLesson = widget.allLessons.firstWhere((e) => e['id'] == selectedLessonId);
+    setState(() {
+      _dateTime = DateTime.parse(selectedLesson['datetime']);
+    });
+
+    print(selectedLesson);
+  }
+
+  
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer,
+        borderRadius: BorderRadius.all(Radius.circular(12.0)),
+      ),
+      width: widget.expanded ? null : 180,
+      padding: EdgeInsets.all(10.0),
+      child:
+          widget.expanded
+              ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    widget.label,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _dateTime != null ? DateFormat("E, dd/MM").format(_dateTime!) : '--',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.headlineSmall?.copyWith(
+                          color:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                      Text(
+                        _dateTime != null ? DateFormat(DateFormat.HOUR24_MINUTE).format(_dateTime!) : '--:--',
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                          color:
+                              Theme.of(context).colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: handleEdit,
+                        label: Text(
+                          "Edit",
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                        icon: Icon(
+                          Icons.today,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              )
+              : Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 10,
+                children: [
+                  Text(
+                    widget.label,
+                    style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  Text(
+                    _dateTime == null ? "--" : DateFormat("E, dd/MM").format(_dateTime!),
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  Text(
+                    _dateTime == null ? '--:--' : DateFormat(DateFormat.HOUR24_MINUTE).format(_dateTime!),
+                    style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                      color: Theme.of(context).colorScheme.onPrimaryContainer,
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      OutlinedButton.icon(
+                        onPressed: handleEdit,
+                        label: Text(
+                          "Edit",
+                          style: Theme.of(context).textTheme.labelLarge,
+                        ),
+                        icon: Icon(
+                          Icons.today,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+    );
+  }
+}
+
+
+class GradingSysSelector extends StatefulWidget {
+  const GradingSysSelector({super.key});
+
+  @override
+  State<GradingSysSelector> createState() => _GradingSysSelectorState();
+}
+
+class _GradingSysSelectorState extends State<GradingSysSelector> {
+  String? _selectodMethod;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      spacing: 16.0,
+      children: [
+        Expanded(
+          child: ListTile(
+            title: Text(
+              "Graded assessment",
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color:
+                    _selectodMethod == "graded"
+                        ? Theme.of(context).colorScheme.onPrimaryContainer
+                        : Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            trailing: Radio.adaptive(
+              value: "graded",
+              groupValue: _selectodMethod,
+              onChanged: (String? val) {
+                setState(() {
+                  _selectodMethod = val;
+                });
+              },
+            ),
+            onTap: () {
+              setState(() {
+                _selectodMethod = "graded";
+              });
+            },
+            tileColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+            selectedTileColor: Theme.of(context).colorScheme.primaryContainer,
+            selected: _selectodMethod == "graded",
+            contentPadding: EdgeInsets.all(10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(12.0)),
+            ),
+            selectedColor: Theme.of(context).colorScheme.onPrimaryContainer,
+          ),
+        ),
+        Expanded(
+          child: ListTile(
+            title: Text(
+              "Practice assessment",
+              style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                color:
+                    _selectodMethod == "practice"
+                        ? Theme.of(context).colorScheme.onPrimaryContainer
+                        : Theme.of(context).colorScheme.onSurface,
+              ),
+            ),
+            trailing: Radio.adaptive(
+              value: "practice",
+              groupValue: _selectodMethod,
+              onChanged: (String? val) {
+                setState(() {
+                  _selectodMethod = val;
+                });
+              },
+            ),
+            onTap: () {
+              setState(() {
+                _selectodMethod = "practice";
+              });
+            },
+            tileColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+            selectedTileColor: Theme.of(context).colorScheme.primaryContainer,
+            selected: _selectodMethod == "practice",
+            contentPadding: EdgeInsets.all(10),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.all(Radius.circular(12)),
+            ),
+            selectedColor: Theme.of(context).colorScheme.onPrimaryContainer,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 class Header extends StatelessWidget {
   const Header({
     super.key,
@@ -2172,6 +2573,80 @@ class _LessonSelectDialogState extends State<LessonSelectDialog> {
     );
   }
 }
+
+class TimeSelectDialog extends StatefulWidget {
+  final List allLessonsList;
+
+  const TimeSelectDialog({
+    super.key,
+    required this.allLessonsList,
+  });
+
+  @override
+  State<TimeSelectDialog> createState() => _TimeSelectDialogState();
+}
+
+class _TimeSelectDialogState extends State<TimeSelectDialog> {
+  int? _selectedLesson;
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(
+        'Select a Lesson'
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text('Cancel'),
+        ),
+        TextButton(
+          onPressed: () {
+            if (_selectedLesson == null) return;
+            Navigator.pop(context, _selectedLesson);
+          },
+          child: Text('OK'),
+        ),
+      ],
+      content: SizedBox(
+        height: 300,
+        width: double.maxFinite,
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView.builder(
+                itemCount: widget.allLessonsList.length,
+                itemBuilder: (context, index) {
+                  final lesson = widget.allLessonsList[index];
+                  final lessonId = lesson['id'] as int;
+
+                  return RadioListTile<int>(
+                    key: Key(lessonId.toString()),
+                    value: lessonId,
+                    groupValue: _selectedLesson,
+                    onChanged: (value) {
+                      setState(() {
+                        _selectedLesson = value;
+                      });
+                    },
+                    title: Text(
+                      DateFormat(
+                        'E, MMM d, H:mm',
+                      ).format(DateTime.parse(lesson['datetime'])),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
 
 // helper
 Widget loadingBlocks(TextStyle theme, double width, {bool onPrimary = false}) {
