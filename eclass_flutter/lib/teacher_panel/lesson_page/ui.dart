@@ -48,15 +48,15 @@ class _TeacherLessonState extends State<TeacherLesson> {
     });
   }
 
-// delete from lessonssection later
+  // delete from lessonssection later
   Future<void> _loadAllLessons() async {
     if (classId == null) return;
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
-      Uri.parse('http://192.168.1.106:8080/teacher/lesson/get/all?classId=$classId'),
-      headers: {
-        'Authorization': 'Bearer $idToken'
-      }
+      Uri.parse(
+        'http://192.168.1.106:8080/teacher/lesson/get/all?classId=$classId',
+      ),
+      headers: {'Authorization': 'Bearer $idToken'},
     );
     if (response.statusCode == 200) {
       final body = jsonDecode(response.body);
@@ -353,30 +353,22 @@ class _TeacherLessonState extends State<TeacherLesson> {
                               showDragHandle: true,
                               isScrollControlled: true,
                               builder:
-                                  (context) => AnimatedPadding(
-                                    duration: Duration(milliseconds: 100),
-                                    curve: Curves.easeOut,
-                                    padding: EdgeInsetsGeometry.only(
-                                      bottom:
-                                          MediaQuery.of(
-                                            context,
-                                          ).viewInsets.bottom,
-                                    ),
-                                    child: DraggableScrollableSheet(
-                                      expand: false,
-                                      maxChildSize: 0.8,
-                                      builder:
-                                          (context, scrollController) =>
-                                              SingleChildScrollView(
-                                                controller: scrollController,
-                                                child: TestModal(
-                                                  classId: classId ?? 0,
-                                                  className: className,
-                                                  gradeName: gradeName,
-                                                  allLessons: allLessons,
-                                                ),
-                                              ),
-                                    ),
+                                  (context) => DraggableScrollableSheet(
+                                    expand: false,
+                                    maxChildSize: 0.8,
+                                    initialChildSize: 0.7,
+                                    builder:
+                                        (context, scrollController) => Scaffold(
+                                          body: SingleChildScrollView(
+                                            controller: scrollController,
+                                            child: TestModal(
+                                              classId: classId ?? 0,
+                                              className: className,
+                                              gradeName: gradeName,
+                                              allLessons: allLessons,
+                                            ),
+                                          ),
+                                        ),
                                   ),
                             );
                           },
@@ -2099,19 +2091,75 @@ class _LessonCardState extends State<LessonCard> {
   }
 }
 
-class TestModal extends StatelessWidget {
+class TestModal extends StatefulWidget {
   const TestModal({
     super.key,
     required this.classId,
     required this.className,
     required this.gradeName,
-    required this.allLessons
+    required this.allLessons,
   });
 
   final int classId;
   final String className;
   final String gradeName;
   final List allLessons;
+
+  @override
+  State<TestModal> createState() => _TestModalState();
+}
+
+class _TestModalState extends State<TestModal> {
+  final GlobalKey<_GradingSysSelectorState> _gradingSysKey =
+      GlobalKey<_GradingSysSelectorState>();
+  final GlobalKey<_TimeSelectorState> _timeKey =
+      GlobalKey<_TimeSelectorState>();
+
+  TextEditingController topicController = TextEditingController();
+  String? topicError;
+
+  Future<void> handleCreation() async {
+    final topic = topicController.text.trim();
+    final sys = _gradingSysKey.currentState?._selectodMethod;
+    final lesson = _timeKey.currentState?.lesson;
+
+    if (topic.isEmpty || topic == '') {
+      setState(() {
+        topicError = 'Enter an asssessment topic';
+      });
+      return;
+    }
+
+    if (sys == null || lesson == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Select a grading system and lesson!')),
+      );
+      return;
+    }
+
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await post(
+      Uri.parse('http://192.168.1.106:8080/teacher/lesson/assessment/create'),
+      headers: {'Authorization': 'Bearer $idToken'},
+      body: {'lessonId': lesson['id'].toString(), 'topic': topic, 'sys': sys},
+    );
+
+    if (response.statusCode == 201) {
+      Navigator.pop(context);
+      return;
+    }
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text("Failed to create"),
+            content: Text('Something went wrong. Try again shortly.'),
+            actions: [
+              TextButton(onPressed: () {Navigator.pop(context);}, child: Text('Close'))
+            ],
+          ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2126,11 +2174,13 @@ class TestModal extends StatelessWidget {
             style: Theme.of(context).textTheme.headlineLarge,
             textAlign: TextAlign.center,
           ),
-          TextField(
+          TextFormField(
             maxLines: null,
             style: Theme.of(context).textTheme.bodyLarge,
             decoration: InputDecoration(
               labelText: "Topic",
+              errorMaxLines: 2,
+              errorText: topicError,
               labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -2143,11 +2193,12 @@ class TestModal extends StatelessWidget {
                 borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
               ),
             ),
+            controller: topicController,
           ),
           Column(
             spacing: 8.0,
             children: [
-              GradingSysSelector(),
+              GradingSysSelector(key: _gradingSysKey),
               Text(
                 "Practice assessments don't count towards the final grade and are assessed in percent by the teacher.",
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -2172,17 +2223,22 @@ class TestModal extends StatelessWidget {
                     leading: CircleAvatar(
                       backgroundColor: Theme.of(context).colorScheme.tertiary,
                       child: Text(
-                        gradeName.substring(0, 2) +
-                            gradeName.substring(gradeName.length - 1),
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        widget.gradeName.substring(0, 2) +
+                            widget.gradeName.substring(
+                              widget.gradeName.length - 1,
+                            ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleMedium?.copyWith(
                           color: Theme.of(context).colorScheme.onTertiary,
                         ),
                       ),
                     ),
                     title: Text(
-                      className,
+                      widget.className,
                       style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onTertiaryContainer,
+                        color:
+                            Theme.of(context).colorScheme.onTertiaryContainer,
                       ),
                     ),
                     tileColor: Theme.of(context).colorScheme.tertiaryContainer,
@@ -2200,13 +2256,20 @@ class TestModal extends StatelessWidget {
               ],
             ),
           ),
-          TimeSelector(label: "Lesson", expanded: true, allLessons: allLessons,),
-          
+          TimeSelector(
+            label: "Lesson",
+            expanded: true,
+            allLessons: widget.allLessons,
+            key: _timeKey,
+          ),
+
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               FilledButton.icon(
-                onPressed: () {},
+                onPressed: () {
+                  handleCreation();
+                },
                 icon: Icon(Icons.add),
                 label: Text("Create"),
                 style: FilledButton.styleFrom(
@@ -2226,7 +2289,12 @@ class TestModal extends StatelessWidget {
 }
 
 class TimeSelector extends StatefulWidget {
-  const TimeSelector({super.key, required this.label, this.expanded = false, required this.allLessons});
+  const TimeSelector({
+    Key? key,
+    required this.label,
+    this.expanded = false,
+    required this.allLessons,
+  }) : super(key: key);
 
   final bool expanded;
   final String label;
@@ -2238,23 +2306,29 @@ class TimeSelector extends StatefulWidget {
 
 class _TimeSelectorState extends State<TimeSelector> {
   DateTime? _dateTime;
-
+  Map? lesson;
 
   Future<void> handleEdit() async {
     final selectedLessonId = await showDialog(
       context: context,
-      builder: (context) => TimeSelectDialog(allLessonsList: widget.allLessons)
+      builder:
+          (context) => TimeSelectDialog(
+            allLessonsList: widget.allLessons,
+            selectedItem: lesson == null ? null : lesson!['id'],
+          ),
     );
     if (selectedLessonId == null) return;
-    final selectedLesson = widget.allLessons.firstWhere((e) => e['id'] == selectedLessonId);
+    final selectedLesson = widget.allLessons.firstWhere(
+      (e) => e['id'] == selectedLessonId,
+    );
     setState(() {
       _dateTime = DateTime.parse(selectedLesson['datetime']);
     });
 
-    print(selectedLesson);
+    setState(() {
+      lesson = selectedLesson;
+    });
   }
-
-  
 
   @override
   Widget build(BuildContext context) {
@@ -2280,7 +2354,9 @@ class _TimeSelectorState extends State<TimeSelector> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        _dateTime != null ? DateFormat("E, dd/MM").format(_dateTime!) : '--',
+                        _dateTime != null
+                            ? DateFormat("E, dd/MM").format(_dateTime!)
+                            : '--',
                         style: Theme.of(
                           context,
                         ).textTheme.headlineSmall?.copyWith(
@@ -2289,7 +2365,11 @@ class _TimeSelectorState extends State<TimeSelector> {
                         ),
                       ),
                       Text(
-                        _dateTime != null ? DateFormat(DateFormat.HOUR24_MINUTE).format(_dateTime!) : '--:--',
+                        _dateTime != null
+                            ? DateFormat(
+                              DateFormat.HOUR24_MINUTE,
+                            ).format(_dateTime!)
+                            : '--:--',
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                           color:
                               Theme.of(context).colorScheme.onPrimaryContainer,
@@ -2321,13 +2401,19 @@ class _TimeSelectorState extends State<TimeSelector> {
                     ),
                   ),
                   Text(
-                    _dateTime == null ? "--" : DateFormat("E, dd/MM").format(_dateTime!),
+                    _dateTime == null
+                        ? "--"
+                        : DateFormat("E, dd/MM").format(_dateTime!),
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
                   ),
                   Text(
-                    _dateTime == null ? '--:--' : DateFormat(DateFormat.HOUR24_MINUTE).format(_dateTime!),
+                    _dateTime == null
+                        ? '--:--'
+                        : DateFormat(
+                          DateFormat.HOUR24_MINUTE,
+                        ).format(_dateTime!),
                     style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                       color: Theme.of(context).colorScheme.onPrimaryContainer,
                     ),
@@ -2354,9 +2440,8 @@ class _TimeSelectorState extends State<TimeSelector> {
   }
 }
 
-
 class GradingSysSelector extends StatefulWidget {
-  const GradingSysSelector({super.key});
+  const GradingSysSelector({Key? key}) : super(key: key);
 
   @override
   State<GradingSysSelector> createState() => _GradingSysSelectorState();
@@ -2576,10 +2661,12 @@ class _LessonSelectDialogState extends State<LessonSelectDialog> {
 
 class TimeSelectDialog extends StatefulWidget {
   final List allLessonsList;
+  final int? selectedItem;
 
   const TimeSelectDialog({
     super.key,
     required this.allLessonsList,
+    this.selectedItem,
   });
 
   @override
@@ -2590,11 +2677,16 @@ class _TimeSelectDialogState extends State<TimeSelectDialog> {
   int? _selectedLesson;
 
   @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    _selectedLesson = widget.selectedItem;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return AlertDialog(
-      title: Text(
-        'Select a Lesson'
-      ),
+      title: Text('Select a Lesson'),
       actions: [
         TextButton(
           onPressed: () {
@@ -2646,7 +2738,6 @@ class _TimeSelectDialogState extends State<TimeSelectDialog> {
     );
   }
 }
-
 
 // helper
 Widget loadingBlocks(TextStyle theme, double width, {bool onPrimary = false}) {
