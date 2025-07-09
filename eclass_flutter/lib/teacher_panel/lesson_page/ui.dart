@@ -23,6 +23,7 @@ class _TeacherLessonState extends State<TeacherLesson> {
   bool _isLoading = true;
   int? classId;
   List allLessons = [];
+  List assessments = [];
 
   Future<void> getClassData() async {
     final classID = ModalRoute.of(context)?.settings.arguments as int;
@@ -46,6 +47,22 @@ class _TeacherLessonState extends State<TeacherLesson> {
     setState(() {
       imgUrl = prefs.getString('picture')!;
     });
+  }
+
+  Future<void> _loadAssessments() async {
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await get(
+      Uri.parse(
+        'http://192.168.1.106:8080/teacher/lesson/assessment/getUpcoming?classId=$classId',
+      ),
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+    if (response.statusCode == 200) {
+      final body = jsonDecode(response.body);
+      setState(() {
+        assessments = body['assessments'];
+      });
+    }
   }
 
   // delete from lessonssection later
@@ -72,6 +89,7 @@ class _TeacherLessonState extends State<TeacherLesson> {
     await _loadAvatar();
     await getClassData();
     await _loadAllLessons();
+    await _loadAssessments();
     setState(() {
       _isLoading = false;
     });
@@ -330,16 +348,25 @@ class _TeacherLessonState extends State<TeacherLesson> {
                         "Upcoming Assessments",
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
-                      AssessmentCard(
-                        date: 'Thursday',
-                        title: "Knowledge and politics: summative assessment",
+                      ...assessments.map(
+                        (e) => AssessmentCard(
+                          title: e['topic'],
+                          summative: e['sys'] == 'graded' ? true : false,
+                          date: DateFormat(
+                            'EEEE, dd/MM',
+                          ).format(DateTime.parse(e['datetime'])),
+                        ),
                       ),
-                      AssessmentCard(
-                        date: "Friday",
-                        title: "Knowledge and science: introduction quiz",
-                        summative: false,
-                      ),
-                      // TODO: you left here. do server now. then fetch assessments and show here
+                      if (assessments.isEmpty && _isLoading == false)
+                        Padding(
+                          padding: EdgeInsets.symmetric(vertical: 24.0),
+                          child: Center(
+                            child: Text(
+                              'No assessments yet! Create one below.',
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ),
+                        ),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 10.0),
                         child: GestureDetector(
@@ -2150,17 +2177,24 @@ class _TestModalState extends State<TestModal> {
       return;
     } else if (response.statusCode == 409) {
       showDialog(
-      context: context,
-      builder:
-          (context) => AlertDialog(
-            title: Text("Failed to create"),
-            content: Text('An assessment already exists for this lesson. Choose a different lesson and try again.'),
-            actions: [
-              TextButton(onPressed: () {Navigator.pop(context);}, child: Text('Close'))
-            ],
-          ),
-    );
-    return;
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: Text("Failed to create"),
+              content: Text(
+                'An assessment already exists for this lesson. Choose a different lesson and try again.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text('Close'),
+                ),
+              ],
+            ),
+      );
+      return;
     }
     showDialog(
       context: context,
@@ -2169,7 +2203,12 @@ class _TestModalState extends State<TestModal> {
             title: Text("Failed to create"),
             content: Text('Something went wrong. Try again shortly.'),
             actions: [
-              TextButton(onPressed: () {Navigator.pop(context);}, child: Text('Close'))
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text('Close'),
+              ),
             ],
           ),
     );
