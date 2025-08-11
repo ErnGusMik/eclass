@@ -57,12 +57,19 @@ class _TeacherLessonState extends State<TeacherLesson> {
       ),
       headers: {'Authorization': 'Bearer $idToken'},
     );
-    if (response.statusCode == 200) {
+    if (response.statusCode == 200 && mounted) {
       final body = jsonDecode(response.body);
+      if (!mounted) return;
       setState(() {
         assessments = body['assessments'];
       });
     }
+  }
+
+  void removeAssessment(int lessonId) {
+    setState(() {
+      assessments.removeWhere((item) => item['lesson_id'] == lessonId);
+    });
   }
 
   // delete from lessonssection later
@@ -114,7 +121,10 @@ class _TeacherLessonState extends State<TeacherLesson> {
                     code: classCode,
                     isLoading: _isLoading,
                   ),
-                  LessonsSection(classId: classId ?? 0),
+                  LessonsSection(
+                    classId: classId ?? 0,
+                    assessmentFunc: _loadAssessments,
+                  ),
                   Column(
                     spacing: 16.0,
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -355,6 +365,8 @@ class _TeacherLessonState extends State<TeacherLesson> {
                           date: DateFormat(
                             'EEEE, dd/MM',
                           ).format(DateTime.parse(e['datetime'])),
+                          lesson: e['lesson_id'],
+                          onDelete: removeAssessment,
                         ),
                       ),
                       if (assessments.isEmpty && _isLoading == false)
@@ -1418,11 +1430,15 @@ class AssessmentCard extends StatelessWidget {
     required this.date,
     required this.title,
     this.summative = true,
+    required this.lesson,
+    this.onDelete,
   });
 
   final String date;
   final String title;
   final bool summative;
+  final int lesson;
+  final void Function(int)? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -1445,9 +1461,7 @@ class AssessmentCard extends StatelessWidget {
                   Text(date, style: Theme.of(context).textTheme.labelMedium),
                   Text(title, style: Theme.of(context).textTheme.titleMedium),
                   Text(
-                    summative
-                        ? "Summative assessment"
-                        : "Internal school assessment",
+                    summative ? "Graded assessment" : "Practice assessment",
                     style: Theme.of(context).textTheme.labelMedium?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -1459,7 +1473,21 @@ class AssessmentCard extends StatelessWidget {
               spacing: 10.0,
               children: [
                 IconButton(
-                  onPressed: () {},
+                  onPressed:
+                      () async {
+                        final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+                        final response = await delete(
+                          Uri.parse('http://192.168.1.106:8080/teacher/lesson/assessment/delete?lessonId=$lesson'),
+                          headers: {
+                            'Authorization': 'Bearer $idToken'
+                          }
+                        );
+                        if (response.statusCode != 204) {
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${response.statusCode} ${jsonDecode(response.body)['error']}')));
+                          return;
+                        }
+                        onDelete!(lesson);
+                      },
                   icon: Icon(
                     Icons.delete_outlined,
                     color: Theme.of(context).colorScheme.error,
@@ -1508,8 +1536,13 @@ class TroubleStudent extends StatelessWidget {
 }
 
 class LessonsSection extends StatefulWidget {
-  const LessonsSection({super.key, required this.classId});
+  const LessonsSection({
+    super.key,
+    required this.classId,
+    required this.assessmentFunc,
+  });
   final int classId;
+  final Function assessmentFunc;
 
   @override
   State<LessonsSection> createState() => _LessonsSectionState();
@@ -1610,7 +1643,9 @@ class _LessonsSectionState extends State<LessonsSection> {
           ),
 
         ...lessons.map((lesson) {
+          final assessment = lesson['assessment'];
           return LessonCard(
+            assessmentFunc: widget.assessmentFunc,
             duration: lesson['duration'],
             notes: lesson['notes'] ?? '',
             topic: lesson['topic'] ?? '',
@@ -1620,6 +1655,7 @@ class _LessonsSectionState extends State<LessonsSection> {
             hwAssigned: lesson['hw_assigned'],
             hwDue: lesson['hw_due'],
             allLessonsList: allLessonsList,
+            assessment: assessment == false ? '' : assessment['topic'],
           );
         }),
 
@@ -1650,6 +1686,8 @@ class LessonCard extends StatefulWidget {
     required this.hwAssigned,
     required this.hwDue,
     required this.allLessonsList,
+    required this.assessment,
+    required this.assessmentFunc,
   });
 
   final int lessonId;
@@ -1661,6 +1699,8 @@ class LessonCard extends StatefulWidget {
   final hwDue;
   final hwAssigned;
   final List allLessonsList;
+  final String assessment;
+  final Function assessmentFunc;
 
   @override
   State<LessonCard> createState() => _LessonCardState();
@@ -1698,6 +1738,7 @@ class _LessonCardState extends State<LessonCard> {
     hwAssignedExists = widget.hwAssigned == false ? false : true;
     notesController.text = widget.notes;
     topicController.text = widget.topic;
+    assessmentController.text = widget.assessment;
     if (widget.hwDue != false) {
       hwDueController.text = widget.hwDue['description'];
     }
@@ -1753,7 +1794,9 @@ class _LessonCardState extends State<LessonCard> {
         }
         hwDueId = dialog;
       }
-    } else if (field == 'assessment') {}
+    } else if (field == 'assessment') {
+      content = assessmentController.text;
+    }
 
     final response = await put(
       Uri.parse('http://192.168.1.106:8080/teacher/lesson/update?field=$field'),
@@ -1775,7 +1818,17 @@ class _LessonCardState extends State<LessonCard> {
       }
     }
 
-    // TODO: you left here. add cases for how to edit hw when it exists above, then move on to assessments section (later add assessments to the lesson cards)
+    if (response.statusCode == 500 && field == 'assessment') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Assessment editing failed! If you have not created an assessment, create one below!',
+          ),
+        ),
+      );
+    } else if (response.statusCode == 204 && field == 'assessment') {
+      widget.assessmentFunc();
+    }
   }
 
   @override
@@ -2111,7 +2164,7 @@ class _LessonCardState extends State<LessonCard> {
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
-            children: [FilledButton(child: Text("Details"), onPressed: () {})],
+            children: [FilledButton(onPressed: null, child: Text("Details"))],
           ),
         ],
       ),
