@@ -362,11 +362,11 @@ class _TeacherLessonState extends State<TeacherLesson> {
                         (e) => AssessmentCard(
                           title: e['topic'],
                           summative: e['sys'] == 'graded' ? true : false,
-                          date: DateFormat(
-                            'EEEE, dd/MM',
-                          ).format(DateTime.parse(e['datetime'])),
+                          date: e['datetime'],
                           lesson: e['lesson_id'],
                           onDelete: removeAssessment,
+                          id: e['assessment_id'],
+                          allLessons: allLessons,
                         ),
                       ),
                       if (assessments.isEmpty && _isLoading == false)
@@ -1432,6 +1432,8 @@ class AssessmentCard extends StatelessWidget {
     this.summative = true,
     required this.lesson,
     this.onDelete,
+    required this.id,
+    required this.allLessons,
   });
 
   final String date;
@@ -1439,6 +1441,8 @@ class AssessmentCard extends StatelessWidget {
   final bool summative;
   final int lesson;
   final void Function(int)? onDelete;
+  final int id;
+  final List allLessons;
 
   @override
   Widget build(BuildContext context) {
@@ -1458,7 +1462,10 @@ class AssessmentCard extends StatelessWidget {
                 spacing: 10.0,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(date, style: Theme.of(context).textTheme.labelMedium),
+                  Text(
+                    DateFormat('EEEE, dd/MM').format(DateTime.parse(date)),
+                    style: Theme.of(context).textTheme.labelMedium,
+                  ),
                   Text(title, style: Theme.of(context).textTheme.titleMedium),
                   Text(
                     summative ? "Graded assessment" : "Practice assessment",
@@ -1473,27 +1480,67 @@ class AssessmentCard extends StatelessWidget {
               spacing: 10.0,
               children: [
                 IconButton(
-                  onPressed:
-                      () async {
-                        final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
-                        final response = await delete(
-                          Uri.parse('http://192.168.1.106:8080/teacher/lesson/assessment/delete?lessonId=$lesson'),
-                          headers: {
-                            'Authorization': 'Bearer $idToken'
-                          }
-                        );
-                        if (response.statusCode != 204) {
-                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('${response.statusCode} ${jsonDecode(response.body)['error']}')));
-                          return;
-                        }
-                        onDelete!(lesson);
-                      },
+                  onPressed: () async {
+                    final idToken =
+                        await FirebaseAuth.instance.currentUser?.getIdToken();
+                    final response = await delete(
+                      Uri.parse(
+                        'http://192.168.1.106:8080/teacher/lesson/assessment/delete?lessonId=$lesson',
+                      ),
+                      headers: {'Authorization': 'Bearer $idToken'},
+                    );
+                    if (response.statusCode != 204) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text(
+                            '${response.statusCode} ${jsonDecode(response.body)['error']}',
+                          ),
+                        ),
+                      );
+                      return;
+                    }
+                    onDelete!(lesson);
+                  },
                   icon: Icon(
                     Icons.delete_outlined,
                     color: Theme.of(context).colorScheme.error,
                   ),
                 ),
-                IconButton(onPressed: () {}, icon: Icon(Icons.edit_outlined)),
+                IconButton(
+                  onPressed: () {
+                    showModalBottomSheet(
+                      context: context,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.vertical(
+                          top: Radius.circular(16.0),
+                        ),
+                      ),
+                      showDragHandle: true,
+                      isScrollControlled: true,
+                      builder:
+                          (context) => DraggableScrollableSheet(
+                            expand: false,
+                            maxChildSize: 0.8,
+                            initialChildSize: 0.7,
+                            builder:
+                                (context, scrollController) => Scaffold(
+                                  body: SingleChildScrollView(
+                                    controller: scrollController,
+                                    child: TestEditModal(
+                                      allLessons: allLessons,
+                                      id: id,
+                                      topic: title,
+                                      sys: summative ? 'graded' : 'practice',
+                                      lessonId: lesson,
+                                      date: date,
+                                    ),
+                                  ),
+                                ),
+                          ),
+                    );
+                  },
+                  icon: Icon(Icons.edit_outlined),
+                ), // TODO: you left here. do the edit assessment function now (start with server). show autofilled modal for editing.
               ],
             ),
           ],
@@ -1706,6 +1753,7 @@ class LessonCard extends StatefulWidget {
   State<LessonCard> createState() => _LessonCardState();
 }
 
+// TODO: on assessment edit, show dialog with options
 class _LessonCardState extends State<LessonCard> {
   TextEditingController notesController = TextEditingController();
   FocusNode notesFocusNode = FocusNode();
@@ -2172,6 +2220,241 @@ class _LessonCardState extends State<LessonCard> {
   }
 }
 
+class TestEditModal extends StatefulWidget {
+  const TestEditModal({
+    super.key,
+    required this.id,
+    required this.allLessons,
+    required this.lessonId,
+    required this.sys,
+    required this.topic,
+    required this.date,
+  });
+
+  final List allLessons;
+  final int id;
+  final String topic;
+  final String sys;
+  final int lessonId;
+  final String date;
+
+  @override
+  State<TestEditModal> createState() => _TestEditModalState();
+}
+
+class _TestEditModalState extends State<TestEditModal> {
+  final GlobalKey<_GradingSysSelectorState> _gradingSysKey =
+      GlobalKey<_GradingSysSelectorState>();
+
+  final GlobalKey<_TimeSelectorState> _timeKey =
+      GlobalKey<_TimeSelectorState>();
+
+  TextEditingController topicController = TextEditingController();
+  String? topicError;
+
+  @override
+  void initState() {
+    super.initState();
+    topicController.text = widget.topic;
+    print(widget.date);
+  }
+
+  Future<void> handleCreation() async {
+    final topic = topicController.text.trim();
+    final sys = _gradingSysKey.currentState?._selectodMethod;
+    final lesson = _timeKey.currentState?.lesson;
+
+    if (topic.isEmpty || topic == '') {
+      setState(() {
+        topicError = 'Enter an asssessment topic';
+      });
+      return;
+    }
+
+    if (sys == null || lesson == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Select a grading system and lesson!')),
+      );
+      return;
+    }
+
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await post(
+      Uri.parse('http://192.168.1.106:8080/teacher/lesson/assessment/create'),
+      headers: {'Authorization': 'Bearer $idToken'},
+      body: {'lessonId': lesson['id'].toString(), 'topic': topic, 'sys': sys},
+    );
+
+    if (response.statusCode == 201) {
+      Navigator.pop(context);
+      return;
+    } else if (response.statusCode == 409) {
+      showDialog(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: Text("Failed to create"),
+              content: Text(
+                'An assessment already exists for this lesson. Choose a different lesson and try again.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text('Close'),
+                ),
+              ],
+            ),
+      );
+      return;
+    }
+    showDialog(
+      context: context,
+      builder:
+          (context) => AlertDialog(
+            title: Text("Failed to create"),
+            content: Text('Something went wrong. Try again shortly.'),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+                child: Text('Close'),
+              ),
+            ],
+          ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        spacing: 30.0,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            "Edit Assessment",
+            style: Theme.of(context).textTheme.headlineLarge,
+            textAlign: TextAlign.center,
+          ),
+          TextFormField(
+            maxLines: null,
+            style: Theme.of(context).textTheme.bodyLarge,
+            decoration: InputDecoration(
+              labelText: "Topic",
+              errorMaxLines: 2,
+              errorText: topicError,
+              labelStyle: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+              filled: true,
+              fillColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              border: UnderlineInputBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              ),
+              focusedBorder: UnderlineInputBorder(
+                borderRadius: BorderRadius.vertical(top: Radius.circular(8)),
+              ),
+            ),
+            controller: topicController,
+          ),
+          Column(
+            spacing: 8.0,
+            children: [
+              GradingSysSelector(key: _gradingSysKey, initial: widget.sys),
+              Text(
+                "Practice assessments don't count towards the final grade and are assessed in percent by the teacher.",
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
+          ),
+          // Container(
+          //   padding: EdgeInsets.all(10),
+          //   decoration: BoxDecoration(
+          //     color: Theme.of(context).colorScheme.surfaceContainerLowest,
+          //     borderRadius: BorderRadius.all(Radius.circular(12.0)),
+          //   ),
+          //   child: Column(
+          //     spacing: 8.0,
+          //     crossAxisAlignment: CrossAxisAlignment.start,
+          //     children: [
+          //       Text("Class", style: Theme.of(context).textTheme.labelMedium),
+          //       Material(
+          //         child: ListTile(
+          //           leading: CircleAvatar(
+          //             backgroundColor: Theme.of(context).colorScheme.tertiary,
+          //             child: Text(
+          //               widget.gradeName.substring(0, 2) +
+          //                   widget.gradeName.substring(
+          //                     widget.gradeName.length - 1,
+          //                   ),
+          //               style: Theme.of(
+          //                 context,
+          //               ).textTheme.titleMedium?.copyWith(
+          //                 color: Theme.of(context).colorScheme.onTertiary,
+          //               ),
+          //             ),
+          //           ),
+          //           title: Text(
+          //             widget.className,
+          //             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+          //               color:
+          //                   Theme.of(context).colorScheme.onTertiaryContainer,
+          //             ),
+          //           ),
+          //           tileColor: Theme.of(context).colorScheme.tertiaryContainer,
+          //           selectedTileColor:
+          //               Theme.of(context).colorScheme.tertiaryContainer,
+          //           contentPadding: EdgeInsets.symmetric(
+          //             vertical: 8.0,
+          //             horizontal: 16.0,
+          //           ),
+          //           shape: RoundedRectangleBorder(
+          //             borderRadius: BorderRadius.all(Radius.circular(12.0)),
+          //           ),
+          //         ),
+          //       ),
+          //     ],
+          //   ),
+          // ),
+          TimeSelector(
+            label: "Lesson",
+            expanded: true,
+            allLessons: widget.allLessons,
+            key: _timeKey,
+            initial: DateTime.tryParse(widget.date),
+          ),
+
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              FilledButton.icon(
+                onPressed: () {
+                  // handleCreation();
+                },
+                icon: Icon(Icons.check),
+                label: Text("Confirm"),
+                style: FilledButton.styleFrom(
+                  padding: EdgeInsets.symmetric(
+                    vertical: 16.0,
+                    horizontal: 24.0,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: 16.0),
+        ],
+      ),
+    );
+  }
+}
+
 class TestModal extends StatefulWidget {
   const TestModal({
     super.key,
@@ -2400,11 +2683,13 @@ class TimeSelector extends StatefulWidget {
     required this.label,
     this.expanded = false,
     required this.allLessons,
+    this.initial,
   }) : super(key: key);
 
   final bool expanded;
   final String label;
   final List allLessons;
+  final DateTime? initial;
 
   @override
   State<TimeSelector> createState() => _TimeSelectorState();
@@ -2413,6 +2698,15 @@ class TimeSelector extends StatefulWidget {
 class _TimeSelectorState extends State<TimeSelector> {
   DateTime? _dateTime;
   Map? lesson;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!mounted) return;
+    setState(() {
+      _dateTime = widget.initial;
+    });
+  }
 
   Future<void> handleEdit() async {
     final selectedLessonId = await showDialog(
@@ -2547,7 +2841,8 @@ class _TimeSelectorState extends State<TimeSelector> {
 }
 
 class GradingSysSelector extends StatefulWidget {
-  const GradingSysSelector({Key? key}) : super(key: key);
+  const GradingSysSelector({Key? key, this.initial}) : super(key: key);
+  final String? initial;
 
   @override
   State<GradingSysSelector> createState() => _GradingSysSelectorState();
@@ -2555,6 +2850,15 @@ class GradingSysSelector extends StatefulWidget {
 
 class _GradingSysSelectorState extends State<GradingSysSelector> {
   String? _selectodMethod;
+
+  @override
+  void initState() {
+    super.initState();
+    if (!mounted) return;
+    setState(() {
+      _selectodMethod = widget.initial;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
