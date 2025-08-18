@@ -15,7 +15,6 @@ Started out as a project for Hack Club Neighborhood.
 | Login | ✅ |
 | Logout | ✅ |
 | Signup | ✅ |
-| Password reset | ❌ |
 
 ### Teacher mode
 
@@ -90,7 +89,7 @@ Started out as a project for Hack Club Neighborhood.
 | Create new assignment | ✅ |
 | Linking to lessons | ✅ |
 | Deletion | ✅ |
-| Assessment editing | ❌ |
+| Assessment editing | ✅ |
 | Editing from lesson | ❌ |
 
 **Students**
@@ -105,7 +104,7 @@ Started out as a project for Hack Club Neighborhood.
 | ------- | ------ |
 | Basic UI | ✅ |
 | Rename | ❌ |
-| Schedule lessons | ❌ |
+| Schedule lessons | ✅ |
 | Add co-teacher | ❌ |
 | Delete class | ❌ |
 

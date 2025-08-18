@@ -516,7 +516,17 @@ class _TeacherLessonState extends State<TeacherLesson> {
                               child: Text("Add co-teacher"),
                             ),
                             FilledButton.icon(
-                              onPressed: () {},
+                              onPressed: () {
+                                showDialog(
+                                  context: context,
+                                  builder:
+                                      (context) => DeleteClassDialog(
+                                        classCode: classId,
+                                        classTitle: className,
+                                        grade: gradeName,
+                                      ),
+                                );
+                              },
                               label: Text("Delete"),
                               icon: Icon(Icons.delete_outline),
                               style: FilledButton.styleFrom(
@@ -537,6 +547,123 @@ class _TeacherLessonState extends State<TeacherLesson> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class DeleteClassDialog extends StatefulWidget {
+  const DeleteClassDialog({
+    super.key,
+    this.classCode,
+    required this.classTitle,
+    required this.grade,
+  });
+  final String classTitle;
+  final int? classCode;
+  final String grade;
+
+  @override
+  State<DeleteClassDialog> createState() => _DeleteClassDialogState();
+}
+
+class _DeleteClassDialogState extends State<DeleteClassDialog> {
+  String enteredData = '';
+  final _formKey = GlobalKey<FormState>();
+
+  Future<void> handleDeletion() async {}
+
+  void _submit() {
+    if (_formKey.currentState!.validate()) {
+      // do stuff
+    }
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog.adaptive(
+      title: Text('Delete ${widget.classTitle}?'),
+      content: SingleChildScrollView(
+        child: Form(
+          key: _formKey,
+          child: Column(
+            spacing: 25.0,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text.rich(
+                TextSpan(
+                  text: 'Are you sure you want to delete ',
+                  children: [
+                    TextSpan(
+                      text: widget.classTitle,
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(text: ' for '),
+                    TextSpan(
+                      text: widget.grade,
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(
+                      text:
+                          '? You and your students will lose access to all data associated with this class incl. lessons, grades, assessments etc.',
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                'This action is irreversible.',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              Text.rich(
+                TextSpan(
+                  text: 'Type ',
+                  children: [
+                    TextSpan(
+                      text: '${widget.classTitle}/${widget.grade}',
+                      style: TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    TextSpan(text: ' below to continue.'),
+                  ],
+                ),
+              ),
+              TextFormField(
+                decoration: InputDecoration(
+                  border: UnderlineInputBorder(),
+                  hintText: '${widget.classTitle}/${widget.grade}',
+                ),
+                validator: (value) {
+                  if (value != '${widget.classTitle}/${widget.grade}') {
+                    return 'The values don\'t match!';
+                  }
+                  return null;
+                },
+                onChanged: (value) {
+                  setState(() {
+                    enteredData = value;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+      actions: [
+        TextButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          child: Text('Cancel'),
+        ),
+        FilledButton(
+          onPressed: enteredData.isNotEmpty ? _submit : null,
+          style: FilledButton.styleFrom(
+            backgroundColor: Theme.of(context).colorScheme.error,
+            foregroundColor: Theme.of(context).colorScheme.onError,
+          ),
+          child: Text('Delete anyway'),
+        ),
+      ],
     );
   }
 }
@@ -1753,7 +1880,6 @@ class LessonCard extends StatefulWidget {
   State<LessonCard> createState() => _LessonCardState();
 }
 
-// TODO: on assessment edit, show dialog with options
 class _LessonCardState extends State<LessonCard> {
   TextEditingController notesController = TextEditingController();
   FocusNode notesFocusNode = FocusNode();
@@ -2261,8 +2387,9 @@ class _TestEditModalState extends State<TestEditModal> {
 
   Future<void> handleCreation() async {
     final topic = topicController.text.trim();
-    final sys = _gradingSysKey.currentState?._selectodMethod;
+    final sys = _gradingSysKey.currentState?._selectodMethod ?? widget.sys;
     final lesson = _timeKey.currentState?.lesson;
+    final lessonId = lesson == null ? widget.lessonId : lesson['id'];
 
     if (topic.isEmpty || topic == '') {
       setState(() {
@@ -2271,21 +2398,19 @@ class _TestEditModalState extends State<TestEditModal> {
       return;
     }
 
-    if (sys == null || lesson == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Select a grading system and lesson!')),
-      );
-      return;
-    }
-
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
-    final response = await post(
-      Uri.parse('http://192.168.1.106:8080/teacher/lesson/assessment/create'),
+    final response = await put(
+      Uri.parse('http://192.168.1.106:8080/teacher/lesson/assessment/update'),
       headers: {'Authorization': 'Bearer $idToken'},
-      body: {'lessonId': lesson['id'].toString(), 'topic': topic, 'sys': sys},
+      body: {
+        'lessonId': lessonId.toString(),
+        'topic': topic,
+        'sys': sys,
+        'assessmentId': widget.id.toString(),
+      },
     );
 
-    if (response.statusCode == 201) {
+    if (response.statusCode == 200) {
       Navigator.pop(context);
       return;
     } else if (response.statusCode == 409) {
@@ -2293,9 +2418,9 @@ class _TestEditModalState extends State<TestEditModal> {
         context: context,
         builder:
             (context) => AlertDialog(
-              title: Text("Failed to create"),
+              title: Text("Failed to update"),
               content: Text(
-                'An assessment already exists for this lesson. Choose a different lesson and try again.',
+                'A different assessment already exists for this lesson. Choose a different lesson and try again.',
               ),
               actions: [
                 TextButton(
@@ -2309,11 +2434,12 @@ class _TestEditModalState extends State<TestEditModal> {
       );
       return;
     }
+    print(response.body);
     showDialog(
       context: context,
       builder:
           (context) => AlertDialog(
-            title: Text("Failed to create"),
+            title: Text("Failed to update"),
             content: Text('Something went wrong. Try again shortly.'),
             actions: [
               TextButton(
@@ -2373,55 +2499,6 @@ class _TestEditModalState extends State<TestEditModal> {
               ),
             ],
           ),
-          // Container(
-          //   padding: EdgeInsets.all(10),
-          //   decoration: BoxDecoration(
-          //     color: Theme.of(context).colorScheme.surfaceContainerLowest,
-          //     borderRadius: BorderRadius.all(Radius.circular(12.0)),
-          //   ),
-          //   child: Column(
-          //     spacing: 8.0,
-          //     crossAxisAlignment: CrossAxisAlignment.start,
-          //     children: [
-          //       Text("Class", style: Theme.of(context).textTheme.labelMedium),
-          //       Material(
-          //         child: ListTile(
-          //           leading: CircleAvatar(
-          //             backgroundColor: Theme.of(context).colorScheme.tertiary,
-          //             child: Text(
-          //               widget.gradeName.substring(0, 2) +
-          //                   widget.gradeName.substring(
-          //                     widget.gradeName.length - 1,
-          //                   ),
-          //               style: Theme.of(
-          //                 context,
-          //               ).textTheme.titleMedium?.copyWith(
-          //                 color: Theme.of(context).colorScheme.onTertiary,
-          //               ),
-          //             ),
-          //           ),
-          //           title: Text(
-          //             widget.className,
-          //             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-          //               color:
-          //                   Theme.of(context).colorScheme.onTertiaryContainer,
-          //             ),
-          //           ),
-          //           tileColor: Theme.of(context).colorScheme.tertiaryContainer,
-          //           selectedTileColor:
-          //               Theme.of(context).colorScheme.tertiaryContainer,
-          //           contentPadding: EdgeInsets.symmetric(
-          //             vertical: 8.0,
-          //             horizontal: 16.0,
-          //           ),
-          //           shape: RoundedRectangleBorder(
-          //             borderRadius: BorderRadius.all(Radius.circular(12.0)),
-          //           ),
-          //         ),
-          //       ),
-          //     ],
-          //   ),
-          // ),
           TimeSelector(
             label: "Lesson",
             expanded: true,
@@ -2429,13 +2506,12 @@ class _TestEditModalState extends State<TestEditModal> {
             key: _timeKey,
             initial: DateTime.tryParse(widget.date),
           ),
-
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
             children: [
               FilledButton.icon(
                 onPressed: () {
-                  // handleCreation();
+                  handleCreation();
                 },
                 icon: Icon(Icons.check),
                 label: Text("Confirm"),
