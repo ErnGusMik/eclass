@@ -124,6 +124,8 @@ class _TeacherLessonState extends State<TeacherLesson> {
                   LessonsSection(
                     classId: classId ?? 0,
                     assessmentFunc: _loadAssessments,
+                    className: className,
+                    gradeName: gradeName,
                   ),
                   Column(
                     spacing: 16.0,
@@ -524,6 +526,7 @@ class _TeacherLessonState extends State<TeacherLesson> {
                                         classCode: classId,
                                         classTitle: className,
                                         grade: gradeName,
+                                        id: classId,
                                       ),
                                 );
                               },
@@ -551,16 +554,414 @@ class _TeacherLessonState extends State<TeacherLesson> {
   }
 }
 
+class LessonDetailsModal extends StatefulWidget {
+  const LessonDetailsModal({
+    super.key,
+    required this.lessonId,
+    required this.notes,
+    required this.topic,
+    required this.duration,
+    required this.room,
+    required this.time,
+    required this.hwAssigned,
+    required this.hwDue,
+    required this.allLessonsList,
+    required this.assessment,
+    required this.assessmentFunc,
+    required this.className,
+    required this.gradeName,
+  });
+
+  final int lessonId;
+  final String room;
+  final String notes;
+  final String topic;
+  final DateTime time;
+  final int duration;
+  final hwDue;
+  final hwAssigned;
+  final List allLessonsList;
+  final String assessment;
+  final Function assessmentFunc;
+  final String className;
+  final String gradeName;
+
+  @override
+  State<LessonDetailsModal> createState() => _LessonDetailsModalState();
+}
+
+class _LessonDetailsModalState extends State<LessonDetailsModal> {
+  TextEditingController notesController = TextEditingController();
+  FocusNode notesFocusNode = FocusNode();
+  bool editingNotes = false;
+
+  TextEditingController topicController = TextEditingController();
+  FocusNode topicFocusNode = FocusNode();
+  bool editingTopic = false;
+
+  TextEditingController hwDueController = TextEditingController();
+  FocusNode hwDueFocusNode = FocusNode();
+  bool editingHwDue = false;
+
+  TextEditingController hwAssignedController = TextEditingController();
+  FocusNode hwAssignedFocusNode = FocusNode();
+  bool editingHwAssigned = false;
+
+  TextEditingController assessmentController = TextEditingController();
+  FocusNode assessmentFocusNode = FocusNode();
+  bool editingAssessment = false;
+
+  int? _selectedLesson;
+  late bool hwDueExists;
+  late bool hwAssignedExists;
+  late String assessmentSys = '';
+
+  @override
+  void initState() {
+    super.initState();
+    hwDueExists = widget.hwDue == false ? false : true;
+    hwAssignedExists = widget.hwAssigned == false ? false : true;
+    notesController.text = widget.notes;
+    topicController.text = widget.topic;
+    assessmentController.text = widget.assessment;
+    if (widget.hwDue != false) {
+      hwDueController.text = widget.hwDue['description'];
+    }
+    if (widget.hwAssigned != false) {
+      hwAssignedController.text = widget.hwAssigned['description'];
+    }
+  }
+
+  Future<void> handleChange(String field) async {
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    String content = '';
+    int? hwDueId;
+    int? hwAssignedId;
+
+    _selectedLesson = null;
+
+    if (field == 'topic') {
+      content = topicController.text;
+    } else if (field == 'notes') {
+      content = notesController.text;
+    } else if (field == 'hw_due') {
+      content = hwDueController.text.trim();
+      if (hwDueExists == false) {
+        final dialog = await showDialog<int>(
+          context: context,
+          builder:
+              (context) => LessonSelectDialog(
+                allLessonsList: widget.allLessonsList,
+                initialSelectedLesson: _selectedLesson,
+                dueTime: widget.time,
+              ),
+        );
+        if (dialog == null) {
+          return;
+        }
+        hwAssignedId = dialog;
+      }
+    } else if (field == 'hw_assigned') {
+      content = hwAssignedController.text.trim();
+      if (hwAssignedExists == false) {
+        final dialog = await showDialog<int>(
+          context: context,
+          builder:
+              (context) => LessonSelectDialog(
+                allLessonsList: widget.allLessonsList,
+                initialSelectedLesson: _selectedLesson,
+                dueTime: widget.time,
+                due: false,
+              ),
+        );
+        if (dialog == null) {
+          return;
+        }
+        hwDueId = dialog;
+      }
+    } else if (field == 'assessment') {
+      content = assessmentController.text;
+    }
+
+    final response = await put(
+      Uri.parse('http://192.168.1.106:8080/teacher/lesson/update?field=$field'),
+      headers: {'Authorization': 'Bearer $idToken'},
+      body: {
+        'lessonId': widget.lessonId.toString(),
+        'content': content,
+        'hw_due_id': hwDueId.toString(),
+        'hw_assigned_id': hwAssignedId.toString(),
+      },
+    );
+
+    if (response.statusCode == 201) {
+      switch (field) {
+        case 'hw_due':
+          hwDueExists = true;
+        case 'hw_assigned':
+          hwAssignedExists = true;
+      }
+    }
+
+    if (response.statusCode == 500 && field == 'assessment') {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Assessment editing failed! If you have not created an assessment, create one below!',
+          ),
+        ),
+      );
+    } else if (response.statusCode == 204 && field == 'assessment') {
+      widget.assessmentFunc();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    // Class name anagram
+    final classNameList = widget.className.split(' ');
+    String className = '';
+    if (classNameList.length >= 3) {
+      className =
+          classNameList[0].substring(0, 1) +
+          classNameList[1].substring(0, 1) +
+          classNameList[2].substring(0, 1);
+    } else if (classNameList.length == 2) {
+      className =
+          classNameList[0].substring(0, 1) + classNameList[1].substring(0, 1);
+    } else {
+      className = classNameList[0].substring(0, 2);
+    }
+
+    String day = '';
+    if (widget.time.day == DateTime.now().day &&
+        widget.time.month == DateTime.now().month &&
+        widget.time.year == DateTime.now().year) {
+      day = 'Today';
+    } else if (widget.time.day == DateTime.now().day + 1 &&
+        widget.time.month == DateTime.now().month &&
+        widget.time.year == DateTime.now().year) {
+      day = 'Tomorrow';
+    } else {
+      day = DateFormat('E dd MMMM').format(widget.time);
+    }
+
+    return Padding(
+      padding: EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        spacing: 18.0,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              CircleAvatar(
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                foregroundColor: Theme.of(context).colorScheme.primary,
+                child: Text(className),
+              ),
+              Column(
+                children: [
+                  Text(
+                    widget.className,
+                    style: Theme.of(context).textTheme.headlineLarge,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  Text(
+                    '${widget.gradeName} \u2022 $day ${DateFormat('Hm').format(widget.time)} - ${DateFormat('Hm').format(widget.time.add(Duration(minutes: widget.duration)))} \u2022 Rm. ${widget.room}',
+                    style: Theme.of(context).textTheme.bodyMedium,
+                  ),
+                ],
+              ),
+            ],
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: TextField(
+                  controller: notesController,
+                  focusNode: notesFocusNode,
+                  enabled: editingNotes,
+                  decoration: InputDecoration.collapsed(
+                    hintText: 'None',
+                    hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  maxLines: null,
+                  style: Theme.of(context).textTheme.bodyMedium,
+                ),
+              ),
+              IconButton(
+                icon: Icon(editingNotes ? Icons.check : Icons.edit_outlined),
+                onPressed: () {
+                  if (editingNotes) {
+                    handleChange('notes');
+                  }
+                  setState(() {
+                    editingNotes = !editingNotes;
+                  });
+                  if (editingNotes) {
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      notesFocusNode.requestFocus();
+                    });
+                  }
+                },
+              ),
+            ],
+          ),
+          Container(
+            padding: EdgeInsets.all(10.0),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.tertiaryContainer,
+              borderRadius: BorderRadius.circular(12.0),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 4.0,
+              children: [
+                Text(
+                  "Topic",
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onTertiaryContainer,
+                  ),
+                ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: TextField(
+                        controller: topicController,
+                        focusNode: topicFocusNode,
+                        enabled: editingTopic,
+                        decoration: InputDecoration.collapsed(
+                          hintText: 'None',
+                          hintStyle: Theme.of(
+                            context,
+                          ).textTheme.bodyMedium?.copyWith(
+                            color:
+                                Theme.of(
+                                  context,
+                                ).colorScheme.onTertiaryContainer,
+                          ),
+                        ),
+                        maxLines: null,
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color:
+                              Theme.of(context).colorScheme.onTertiaryContainer,
+                        ),
+                      ),
+                    ),
+                    IconButton(
+                      icon: Icon(
+                        editingTopic ? Icons.check : Icons.edit_outlined,
+                        color:
+                            Theme.of(context).colorScheme.onTertiaryContainer,
+                      ),
+                      onPressed: () {
+                        if (editingTopic) handleChange('topic');
+                        setState(() {
+                          editingTopic = !editingTopic;
+                        });
+                        if (editingTopic) {
+                          WidgetsBinding.instance.addPostFrameCallback((_) {
+                            topicFocusNode.requestFocus();
+                          });
+                        }
+                      },
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          // TODO: add students' uploads
+          Column(
+            children: [
+              Text(
+                'Assessment',
+                style: Theme.of(context).textTheme.labelMedium,
+              ),
+              Row(
+                spacing: 16.0,
+                children: [
+                  Container(
+                    child: Column(
+                      spacing: 10.0,
+                      children: [
+                        Text(
+                          'Assessment topic',
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+                        Text(
+                          widget.assessment,
+                          style: Theme.of(context).textTheme.bodyMedium,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Container(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      spacing: 10.0,
+                      children: [
+                        Text(
+                          'Grading system',
+                          style: Theme.of(context).textTheme.labelMedium,
+                        ),
+                        Row(
+                          children: [
+                            RadioListTile(
+                              value: 'graded',
+                              groupValue: assessmentSys,
+                              onChanged:
+                                  (value) => setState(() {
+                                    assessmentSys = value!;
+                                  }),
+                              title: Text(
+                                'Graded',
+                                style: Theme.of(context).textTheme.labelLarge,
+                              ),
+                            ),
+                            RadioListTile(
+                              value: 'practice',
+                              groupValue: assessmentSys,
+                              onChanged:
+                                  (value) => setState(() {
+                                    assessmentSys = value!;
+                                  }),
+                              title: Text(
+                                'Practice',
+                                style: Theme.of(context).textTheme.labelLarge,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              // TODO: add assessment results
+              // TODO: add attendance
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class DeleteClassDialog extends StatefulWidget {
   const DeleteClassDialog({
     super.key,
     this.classCode,
     required this.classTitle,
     required this.grade,
+    this.id,
   });
   final String classTitle;
   final int? classCode;
   final String grade;
+  final int? id;
 
   @override
   State<DeleteClassDialog> createState() => _DeleteClassDialogState();
@@ -572,12 +973,43 @@ class _DeleteClassDialogState extends State<DeleteClassDialog> {
 
   Future<void> handleDeletion() async {}
 
-  void _submit() {
+  void _submit() async {
     if (_formKey.currentState!.validate()) {
-      // do stuff
+      if (widget.id == null) return;
+      final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+      final response = await delete(
+        Uri.parse(
+          'http://192.168.1.106:8080/teacher/class/delete?id=${widget.id}',
+        ),
+        headers: {'Authorization': 'Bearer $idToken'},
+      );
+
+      print(response.statusCode);
+      print(response.body);
+      if (response.statusCode == 204) {
+        if (!mounted) return;
+        Navigator.pushReplacementNamed(context, '/teacher');
+        return;
+      }
+      Navigator.pop(context);
+      showDialog(
+        context: context,
+        builder:
+            (context) => AlertDialog(
+              title: Text('Failed to delete class'),
+              content: Text('Try again in a moment or contact support.'),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: Text('OK'),
+                ),
+              ],
+            ),
+      );
     }
   }
-
 
   @override
   Widget build(BuildContext context) {
@@ -1714,9 +2146,13 @@ class LessonsSection extends StatefulWidget {
     super.key,
     required this.classId,
     required this.assessmentFunc,
+    required this.className,
+    required this.gradeName,
   });
   final int classId;
   final Function assessmentFunc;
+  final String className;
+  final String gradeName;
 
   @override
   State<LessonsSection> createState() => _LessonsSectionState();
@@ -1830,6 +2266,8 @@ class _LessonsSectionState extends State<LessonsSection> {
             hwDue: lesson['hw_due'],
             allLessonsList: allLessonsList,
             assessment: assessment == false ? '' : assessment['topic'],
+            className: widget.className,
+            gradeName: widget.gradeName,
           );
         }),
 
@@ -1862,6 +2300,8 @@ class LessonCard extends StatefulWidget {
     required this.allLessonsList,
     required this.assessment,
     required this.assessmentFunc,
+    required this.className,
+    required this.gradeName,
   });
 
   final int lessonId;
@@ -1875,6 +2315,8 @@ class LessonCard extends StatefulWidget {
   final List allLessonsList;
   final String assessment;
   final Function assessmentFunc;
+  final String className;
+  final String gradeName;
 
   @override
   State<LessonCard> createState() => _LessonCardState();
@@ -2338,7 +2780,51 @@ class _LessonCardState extends State<LessonCard> {
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.end,
-            children: [FilledButton(onPressed: null, child: Text("Details"))],
+            children: [
+              FilledButton(
+                onPressed: () {
+                  showModalBottomSheet(
+                    context: context,
+                    builder:
+                        (context) => AnimatedPadding(
+                          duration: Duration(milliseconds: 100),
+                          curve: Curves.easeOut,
+                          padding: EdgeInsetsGeometry.only(
+                            bottom: MediaQuery.of(context).viewInsets.bottom,
+                          ),
+                          child: DraggableScrollableSheet(
+                            expand: false,
+                            maxChildSize: 0.9,
+                            initialChildSize: 0.7,
+                            minChildSize: 0.7,
+                            builder:
+                                (context, scrollController) =>
+                                    SingleChildScrollView(
+                                      controller: scrollController,
+                                      child: LessonDetailsModal(
+                                        allLessonsList: widget.allLessonsList,
+                                        assessment:
+                                            assessmentController.text.trim(),
+                                        assessmentFunc: widget.assessmentFunc,
+                                        className: widget.className,
+                                        topic: topicController.text.trim(),
+                                        duration: widget.duration,
+                                        gradeName: widget.gradeName,
+                                        hwAssigned: hwAssignedExists,
+                                        hwDue: hwDueExists,
+                                        lessonId: widget.lessonId,
+                                        notes: notesController.text.trim(),
+                                        room: widget.room,
+                                        time: widget.time,
+                                      ),
+                                    ),
+                          ),
+                        ),
+                  );
+                },
+                child: Text("Details"),
+              ),
+            ],
           ),
         ],
       ),

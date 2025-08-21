@@ -106,7 +106,7 @@ Started out as a project for Hack Club Neighborhood.
 | Rename | ❌ |
 | Schedule lessons | ✅ |
 | Add co-teacher | ❌ |
-| Delete class | ❌ |
+| Delete class | ✅ |
 
 ### Student mode
 
