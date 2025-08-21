@@ -743,34 +743,42 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
         widget.time.year == DateTime.now().year) {
       day = 'Tomorrow';
     } else {
-      day = DateFormat('E dd MMMM').format(widget.time);
+      day = DateFormat('E dd/MM,').format(widget.time);
     }
 
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 16.0),
       child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         spacing: 18.0,
         children: [
           Row(
+            spacing: 14.0,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
               CircleAvatar(
                 backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                 foregroundColor: Theme.of(context).colorScheme.primary,
                 child: Text(className),
               ),
-              Column(
-                children: [
-                  Text(
-                    widget.className,
-                    style: Theme.of(context).textTheme.headlineLarge,
-                    overflow: TextOverflow.ellipsis,
-                  ),
-                  Text(
-                    '${widget.gradeName} \u2022 $day ${DateFormat('Hm').format(widget.time)} - ${DateFormat('Hm').format(widget.time.add(Duration(minutes: widget.duration)))} \u2022 Rm. ${widget.room}',
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ],
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.className,
+                      style: Theme.of(context).textTheme.headlineMedium,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      softWrap: false,
+                    ),
+                    Text(
+                      '${widget.gradeName} \u2022 $day ${DateFormat('Hm').format(widget.time)} - ${DateFormat('Hm').format(widget.time.add(Duration(minutes: widget.duration)))} \u2022 Rm. ${widget.room}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
@@ -782,7 +790,7 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
                   focusNode: notesFocusNode,
                   enabled: editingNotes,
                   decoration: InputDecoration.collapsed(
-                    hintText: 'None',
+                    hintText: 'Add a note for your class to see',
                     hintStyle: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant,
                     ),
@@ -875,6 +883,8 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
           ),
           // TODO: add students' uploads
           Column(
+            spacing: 8.0,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 'Assessment',
@@ -882,60 +892,87 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
               ),
               Row(
                 spacing: 16.0,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    child: Column(
-                      spacing: 10.0,
-                      children: [
-                        Text(
-                          'Assessment topic',
-                          style: Theme.of(context).textTheme.labelMedium,
-                        ),
-                        Text(
-                          widget.assessment,
-                          style: Theme.of(context).textTheme.bodyMedium,
-                        ),
-                      ],
+                    width: (MediaQuery.of(context).size.width - 16.0 * 3) * 0.5,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12.0),
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 10.0,
+                        children: [
+                          Text(
+                            'Assessment topic',
+                            style: Theme.of(context).textTheme.labelMedium,
+                          ),
+                          Text(
+                            widget.assessment == '' ? 'Intro quiz about the synthesis of politics and knowledge' : widget.assessment,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   Container(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      spacing: 10.0,
-                      children: [
-                        Text(
-                          'Grading system',
-                          style: Theme.of(context).textTheme.labelMedium,
-                        ),
-                        Row(
-                          children: [
-                            RadioListTile(
-                              value: 'graded',
-                              groupValue: assessmentSys,
-                              onChanged:
-                                  (value) => setState(() {
-                                    assessmentSys = value!;
-                                  }),
-                              title: Text(
-                                'Graded',
-                                style: Theme.of(context).textTheme.labelLarge,
-                              ),
+                    width: (MediaQuery.of(context).size.width - 16.0 * 3) * 0.5,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12.0),
+                      color:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 10.0,
+                        children: [
+                          Text(
+                            'Grading system',
+                            style: Theme.of(context).textTheme.labelMedium,
+                          ),
+                          RadioListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 8.0,
                             ),
-                            RadioListTile(
-                              value: 'practice',
-                              groupValue: assessmentSys,
-                              onChanged:
-                                  (value) => setState(() {
-                                    assessmentSys = value!;
-                                  }),
-                              title: Text(
-                                'Practice',
-                                style: Theme.of(context).textTheme.labelLarge,
-                              ),
+                            controlAffinity: ListTileControlAffinity.trailing,
+                            selected: assessmentSys == 'graded',
+                            value: 'graded',
+                            groupValue: assessmentSys,
+                            onChanged:
+                                (value) => setState(() {
+                                  assessmentSys = value!;
+                                }),
+                            title: Text(
+                              'Graded',
+                              style: Theme.of(context).textTheme.labelLarge,
                             ),
-                          ],
-                        ),
-                      ],
+                          ),
+                          RadioListTile(
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 8.0,
+                            ),
+                            controlAffinity: ListTileControlAffinity.trailing,
+                            selected: assessmentSys == 'practice',
+                            value: 'practice',
+                            groupValue: assessmentSys,
+                            onChanged:
+                                (value) => setState(() {
+                                  assessmentSys = value!;
+                                }),
+                            title: Text(
+                              'Practice',
+                              style: Theme.of(context).textTheme.labelLarge,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ],
@@ -2784,6 +2821,8 @@ class _LessonCardState extends State<LessonCard> {
               FilledButton(
                 onPressed: () {
                   showModalBottomSheet(
+                    showDragHandle: true,
+                    isScrollControlled: true,
                     context: context,
                     builder:
                         (context) => AnimatedPadding(
@@ -2795,8 +2834,7 @@ class _LessonCardState extends State<LessonCard> {
                           child: DraggableScrollableSheet(
                             expand: false,
                             maxChildSize: 0.9,
-                            initialChildSize: 0.7,
-                            minChildSize: 0.7,
+                            initialChildSize: 0.5,
                             builder:
                                 (context, scrollController) =>
                                     SingleChildScrollView(
