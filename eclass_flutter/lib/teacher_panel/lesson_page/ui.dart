@@ -1002,7 +1002,7 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
                 ],
               ),
               // TODO: add assessment results
-              AttendanceSection(lessonId: widget.lessonId)
+              AttendanceSection(lessonId: widget.lessonId),
             ],
           ),
         ],
@@ -1022,44 +1022,63 @@ class AttendanceSection extends StatefulWidget {
 
 class _AttendanceSectionState extends State<AttendanceSection> {
   List students = [
-    {
-      'display_name': 'Ernests Gustavs Mikuts',
-      'id': 13
-    }
+    {'display_name': 'Ernests Gustavs Mikuts', 'id': 13, 'status': ''},
   ];
   bool loading = true;
 
-  // Future<void> fetchStudents() async {
-  //   if (widget.classId == null) return;
-  //   final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
-  //   final response = await get(
-  //     Uri.parse(
-  //       'http://192.168.1.106:8080/teacher/class/students?classId=${widget.classId}',
-  //     ),
-  //     headers: {'Authorization': 'Bearer $idToken'},
-  //   );
-  //   if (response.statusCode == 200) {
-  //     final studentList = jsonDecode(response.body);
-  //     setState(() {
-  //       students = List<String>.from(studentList['students'].map((e) => e['display_name']));
-  //       loading = false;
-  //     });
-  //   }
-  // }
+  Future<void> fetchStudents() async {
+    if (widget.lessonId == null) return;
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await get(
+      Uri.parse(
+        'http://192.168.1.106:8080/teacher/lesson/attendance/get?lessonId=${widget.lessonId}',
+      ),
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+    if (response.statusCode == 200) {
+      final studentList = jsonDecode(response.body);
+      setState(() {
+        students = List<Map>.from(studentList['students']);
+        loading = false;
+      });
+    }
+  }
 
-  // @override
-  // void initState() {
-  //   super.initState();
-  //   fetchStudents();
-  // }
+  @override
+  void initState() {
+    super.initState();
+    fetchStudents();
+  }
 
-  // @override
-  // void didUpdateWidget(covariant AttendanceSection oldWidget) {
-  //   super.didUpdateWidget(oldWidget);
-  //   if (widget.classId != oldWidget.classId) {
-  //     fetchStudents();
-  //   }
-  // }
+  Future<void> updateAttendance(
+    dynamic student,
+    String status,
+    bool selected,
+  ) async {
+    if (widget.lessonId == null) return;
+    setState(() {
+      student['status'] = selected ? status : '';
+    });
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await put(
+      Uri.parse('http://192.168.1.106:8080/teacher/lesson/attendance/update'),
+      headers: {'Authorization': 'Bearer $idToken'},
+      body: {
+        'lessonId': widget.lessonId.toString(),
+        'studentId': student['id'].toString(),
+        'status': status,
+      },
+    );
+    if (response.statusCode != 200) {
+      print(response.body);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to update attendance')));
+      setState(() {
+        student['status'] = '';
+      });
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -1081,30 +1100,49 @@ class _AttendanceSectionState extends State<AttendanceSection> {
                       ),
             ),
             child: ListTile(
-              title: GestureDetector(child: Text(student['display_name'], overflow: TextOverflow.ellipsis), onTap: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Tapped on ${student['display_name']}'))),),
+              title: GestureDetector(
+                child: Text(
+                  student['display_name'],
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onTap:
+                    () => ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Tapped on ${student['display_name']}'),
+                      ),
+                    ),
+              ),
               trailing: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  ChoiceChip(label: Text('A'), onSelected: (selected) {
-                    setState(() {
-                      student['status'] = selected ? 'A' : '';
-                    });
-                  }, selected: student['status'] == 'A'),
-                  ChoiceChip(label: Text('E'), onSelected: (selected) {
-                    setState(() {
-                      student['status'] = selected ? 'E' : '';
-                    });
-                  }, selected: student['status'] == 'E'),
-                  ChoiceChip(label: Text('L'), onSelected: (selected) {
-                    setState(() {
-                      student['status'] = selected ? 'L' : '';
-                    });
-                  }, selected: student['status'] == 'L'),
-                  ChoiceChip(label: Text('P'), onSelected: (selected) {
-                    setState(() {
-                      student['status'] = selected ? 'P' : '';
-                    });
-                  }, selected: student['status'] == 'P'),
+                  ChoiceChip(
+                    label: Text('A'),
+                    onSelected: (selected) {
+                      updateAttendance(student, 'A', selected);
+                    },
+                    selected: student['status'] == 'A',
+                  ),
+                  ChoiceChip(
+                    label: Text('E'),
+                    onSelected: (selected) {
+                      updateAttendance(student, 'E', selected);
+                    },
+                    selected: student['status'] == 'E',
+                  ),
+                  ChoiceChip(
+                    label: Text('L'),
+                    onSelected: (selected) {
+                      updateAttendance(student, 'L', selected);
+                    },
+                    selected: student['status'] == 'L',
+                  ),
+                  ChoiceChip(
+                    label: Text('P'),
+                    onSelected: (selected) {
+                      updateAttendance(student, 'P', selected);
+                    },
+                    selected: student['status'] == 'P',
+                  ),
                 ],
               ),
               tileColor: Theme.of(context).colorScheme.surfaceContainerLowest,
@@ -1112,8 +1150,11 @@ class _AttendanceSectionState extends State<AttendanceSection> {
                 borderRadius:
                     students[0] == student
                         ? students[students.length - 1] == student
-                        ? BorderRadius.vertical(top: Radius.circular(12.0), bottom: Radius.circular(12.0))
-                        : BorderRadius.vertical(top: Radius.circular(12.0))
+                            ? BorderRadius.vertical(
+                              top: Radius.circular(12.0),
+                              bottom: Radius.circular(12.0),
+                            )
+                            : BorderRadius.vertical(top: Radius.circular(12.0))
                         : students[students.length - 1] == student
                         ? BorderRadius.vertical(bottom: Radius.circular(12.0))
                         : BorderRadius.zero,
@@ -1121,18 +1162,21 @@ class _AttendanceSectionState extends State<AttendanceSection> {
             ),
           ),
         ),
-        if (loading) ListView(
-          shrinkWrap: true,
-          children: [
-            for (var i = 0; i < 8; i++)
-              loadingBlocks(Theme.of(context).textTheme.headlineSmall!, MediaQuery.of(context).size.width - 32)
-          ],
-        )
+        if (loading)
+          ListView(
+            shrinkWrap: true,
+            children: [
+              for (var i = 0; i < 8; i++)
+                loadingBlocks(
+                  Theme.of(context).textTheme.headlineSmall!,
+                  MediaQuery.of(context).size.width - 32,
+                ),
+            ],
+          ),
       ],
     );
   }
 }
-
 
 class DeleteClassDialog extends StatefulWidget {
   const DeleteClassDialog({
@@ -2121,7 +2165,9 @@ class _StudentsSectionState extends State<StudentsSection> {
     if (response.statusCode == 200) {
       final studentList = jsonDecode(response.body);
       setState(() {
-        students = List<String>.from(studentList['students'].map((e) => e['display_name']));
+        students = List<String>.from(
+          studentList['students'].map((e) => e['display_name']),
+        );
         loading = false;
       });
     }
@@ -2183,8 +2229,11 @@ class _StudentsSectionState extends State<StudentsSection> {
                 borderRadius:
                     students[0] == student
                         ? students[students.length - 1] == student
-                        ? BorderRadius.vertical(top: Radius.circular(12.0), bottom: Radius.circular(12.0))
-                        : BorderRadius.vertical(top: Radius.circular(12.0))
+                            ? BorderRadius.vertical(
+                              top: Radius.circular(12.0),
+                              bottom: Radius.circular(12.0),
+                            )
+                            : BorderRadius.vertical(top: Radius.circular(12.0))
                         : students[students.length - 1] == student
                         ? BorderRadius.vertical(bottom: Radius.circular(12.0))
                         : BorderRadius.zero,
@@ -2192,13 +2241,17 @@ class _StudentsSectionState extends State<StudentsSection> {
             ),
           ),
         ),
-        if (loading) ListView(
-          shrinkWrap: true,
-          children: [
-            for (var i = 0; i < 8; i++)
-              loadingBlocks(Theme.of(context).textTheme.headlineSmall!, MediaQuery.of(context).size.width - 32)
-          ],
-        )
+        if (loading)
+          ListView(
+            shrinkWrap: true,
+            children: [
+              for (var i = 0; i < 8; i++)
+                loadingBlocks(
+                  Theme.of(context).textTheme.headlineSmall!,
+                  MediaQuery.of(context).size.width - 32,
+                ),
+            ],
+          ),
       ],
     );
   }
@@ -3023,29 +3076,28 @@ class _LessonCardState extends State<LessonCard> {
                             maxChildSize: 0.9,
                             initialChildSize: 0.5,
                             builder:
-                                (context, scrollController) =>
-                                    Scaffold(
-                                      body: SingleChildScrollView(
-                                        controller: scrollController,
-                                        child: LessonDetailsModal(
-                                          allLessonsList: widget.allLessonsList,
-                                          assessment:
-                                              assessmentController.text.trim(),
-                                          assessmentFunc: widget.assessmentFunc,
-                                          className: widget.className,
-                                          topic: topicController.text.trim(),
-                                          duration: widget.duration,
-                                          gradeName: widget.gradeName,
-                                          hwAssigned: hwAssignedExists,
-                                          hwDue: hwDueExists,
-                                          lessonId: widget.lessonId,
-                                          notes: notesController.text.trim(),
-                                          room: widget.room,
-                                          time: widget.time,
-                                          assessmentSys: widget.assessmentSys,
-                                        ),
-                                      ),
+                                (context, scrollController) => Scaffold(
+                                  body: SingleChildScrollView(
+                                    controller: scrollController,
+                                    child: LessonDetailsModal(
+                                      allLessonsList: widget.allLessonsList,
+                                      assessment:
+                                          assessmentController.text.trim(),
+                                      assessmentFunc: widget.assessmentFunc,
+                                      className: widget.className,
+                                      topic: topicController.text.trim(),
+                                      duration: widget.duration,
+                                      gradeName: widget.gradeName,
+                                      hwAssigned: hwAssignedExists,
+                                      hwDue: hwDueExists,
+                                      lessonId: widget.lessonId,
+                                      notes: notesController.text.trim(),
+                                      room: widget.room,
+                                      time: widget.time,
+                                      assessmentSys: widget.assessmentSys,
                                     ),
+                                  ),
+                                ),
                           ),
                         ),
                   );
