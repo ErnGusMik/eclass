@@ -442,7 +442,7 @@ class _TeacherLessonState extends State<TeacherLesson> {
                       ),
                     ],
                   ),
-                  StudentsSection(),
+                  StudentsSection(classId: classId),
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     spacing: 8.0,
@@ -732,17 +732,12 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
     final response = await put(
       Uri.parse('http://192.168.1.106:8080/teacher/lesson/update/system'),
       headers: {'Authorization': 'Bearer $idToken'},
-      body: {
-        'lessonId': widget.lessonId.toString(),
-        'sys': value,
-      },
+      body: {'lessonId': widget.lessonId.toString(), 'sys': value},
     );
 
     if (response.statusCode != 204) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to update assessment system!'),
-        ),
+        SnackBar(content: Text('Failed to update assessment system!')),
       );
     }
   }
@@ -927,9 +922,7 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
-                    constraints: BoxConstraints(
-                      minHeight: 170.0,
-                    ),
+                    constraints: BoxConstraints(minHeight: 170.0),
                     width: (MediaQuery.of(context).size.width - 16.0 * 3) * 0.5,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12.0),
@@ -938,7 +931,7 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(10.0),
-                      child: Column(                        
+                      child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         spacing: 10.0,
                         children: [
@@ -947,7 +940,9 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
                             style: Theme.of(context).textTheme.labelMedium,
                           ),
                           Text(
-                            widget.assessment == '' ? 'None' : widget.assessment,
+                            widget.assessment == ''
+                                ? 'None'
+                                : widget.assessment,
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ],
@@ -1007,7 +1002,7 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
                 ],
               ),
               // TODO: add assessment results
-              // TODO: add attendance
+              AttendanceSection(lessonId: widget.lessonId)
             ],
           ),
         ],
@@ -1015,6 +1010,129 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
     );
   }
 }
+
+class AttendanceSection extends StatefulWidget {
+  const AttendanceSection({super.key, required this.lessonId});
+
+  final int? lessonId;
+
+  @override
+  State<AttendanceSection> createState() => _AttendanceSectionState();
+}
+
+class _AttendanceSectionState extends State<AttendanceSection> {
+  List students = [
+    {
+      'display_name': 'Ernests Gustavs Mikuts',
+      'id': 13
+    }
+  ];
+  bool loading = true;
+
+  // Future<void> fetchStudents() async {
+  //   if (widget.classId == null) return;
+  //   final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+  //   final response = await get(
+  //     Uri.parse(
+  //       'http://192.168.1.106:8080/teacher/class/students?classId=${widget.classId}',
+  //     ),
+  //     headers: {'Authorization': 'Bearer $idToken'},
+  //   );
+  //   if (response.statusCode == 200) {
+  //     final studentList = jsonDecode(response.body);
+  //     setState(() {
+  //       students = List<String>.from(studentList['students'].map((e) => e['display_name']));
+  //       loading = false;
+  //     });
+  //   }
+  // }
+
+  // @override
+  // void initState() {
+  //   super.initState();
+  //   fetchStudents();
+  // }
+
+  // @override
+  // void didUpdateWidget(covariant AttendanceSection oldWidget) {
+  //   super.didUpdateWidget(oldWidget);
+  //   if (widget.classId != oldWidget.classId) {
+  //     fetchStudents();
+  //   }
+  // }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text("Attendance", style: Theme.of(context).textTheme.labelMedium),
+        SizedBox(height: 8.0),
+        ...students.map(
+          (student) => Container(
+            decoration: BoxDecoration(
+              border:
+                  student == students[students.length - 1]
+                      ? Border()
+                      : Border(
+                        bottom: BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
+            ),
+            child: ListTile(
+              title: GestureDetector(child: Text(student['display_name'], overflow: TextOverflow.ellipsis), onTap: () => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Tapped on ${student['display_name']}'))),),
+              trailing: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ChoiceChip(label: Text('A'), onSelected: (selected) {
+                    setState(() {
+                      student['status'] = selected ? 'A' : '';
+                    });
+                  }, selected: student['status'] == 'A'),
+                  ChoiceChip(label: Text('E'), onSelected: (selected) {
+                    setState(() {
+                      student['status'] = selected ? 'E' : '';
+                    });
+                  }, selected: student['status'] == 'E'),
+                  ChoiceChip(label: Text('L'), onSelected: (selected) {
+                    setState(() {
+                      student['status'] = selected ? 'L' : '';
+                    });
+                  }, selected: student['status'] == 'L'),
+                  ChoiceChip(label: Text('P'), onSelected: (selected) {
+                    setState(() {
+                      student['status'] = selected ? 'P' : '';
+                    });
+                  }, selected: student['status'] == 'P'),
+                ],
+              ),
+              tileColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    students[0] == student
+                        ? students[students.length - 1] == student
+                        ? BorderRadius.vertical(top: Radius.circular(12.0), bottom: Radius.circular(12.0))
+                        : BorderRadius.vertical(top: Radius.circular(12.0))
+                        : students[students.length - 1] == student
+                        ? BorderRadius.vertical(bottom: Radius.circular(12.0))
+                        : BorderRadius.zero,
+              ),
+            ),
+          ),
+        ),
+        if (loading) ListView(
+          shrinkWrap: true,
+          children: [
+            for (var i = 0; i < 8; i++)
+              loadingBlocks(Theme.of(context).textTheme.headlineSmall!, MediaQuery.of(context).size.width - 32)
+          ],
+        )
+      ],
+    );
+  }
+}
+
 
 class DeleteClassDialog extends StatefulWidget {
   const DeleteClassDialog({
@@ -1978,22 +2096,50 @@ class _NewScheduleDialogState extends State<NewScheduleDialog> {
   }
 }
 
-class StudentsSection extends StatelessWidget {
-  const StudentsSection({super.key});
+class StudentsSection extends StatefulWidget {
+  const StudentsSection({super.key, required this.classId});
 
-  static const List<String> students = [
-    "John Doe1",
-    "John Doe2",
-    "John Doe3",
-    "John Doe4",
-    "John Doe5",
-    "John Doe6",
-    "John Doe7",
-    "John Doe8",
-    "John Doe9",
-    "John Doe0",
-    "John Doe11",
-  ];
+  final int? classId;
+
+  @override
+  State<StudentsSection> createState() => _StudentsSectionState();
+}
+
+class _StudentsSectionState extends State<StudentsSection> {
+  List students = [];
+  bool loading = true;
+
+  Future<void> fetchStudents() async {
+    if (widget.classId == null) return;
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await get(
+      Uri.parse(
+        'http://192.168.1.106:8080/teacher/class/students?classId=${widget.classId}',
+      ),
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+    if (response.statusCode == 200) {
+      final studentList = jsonDecode(response.body);
+      setState(() {
+        students = List<String>.from(studentList['students'].map((e) => e['display_name']));
+        loading = false;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchStudents();
+  }
+
+  @override
+  void didUpdateWidget(covariant StudentsSection oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.classId != oldWidget.classId) {
+      fetchStudents();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -2036,7 +2182,9 @@ class StudentsSection extends StatelessWidget {
               shape: RoundedRectangleBorder(
                 borderRadius:
                     students[0] == student
-                        ? BorderRadius.vertical(top: Radius.circular(12.0))
+                        ? students[students.length - 1] == student
+                        ? BorderRadius.vertical(top: Radius.circular(12.0), bottom: Radius.circular(12.0))
+                        : BorderRadius.vertical(top: Radius.circular(12.0))
                         : students[students.length - 1] == student
                         ? BorderRadius.vertical(bottom: Radius.circular(12.0))
                         : BorderRadius.zero,
@@ -2044,6 +2192,13 @@ class StudentsSection extends StatelessWidget {
             ),
           ),
         ),
+        if (loading) ListView(
+          shrinkWrap: true,
+          children: [
+            for (var i = 0; i < 8; i++)
+              loadingBlocks(Theme.of(context).textTheme.headlineSmall!, MediaQuery.of(context).size.width - 32)
+          ],
+        )
       ],
     );
   }
@@ -2869,24 +3024,26 @@ class _LessonCardState extends State<LessonCard> {
                             initialChildSize: 0.5,
                             builder:
                                 (context, scrollController) =>
-                                    SingleChildScrollView(
-                                      controller: scrollController,
-                                      child: LessonDetailsModal(
-                                        allLessonsList: widget.allLessonsList,
-                                        assessment:
-                                            assessmentController.text.trim(),
-                                        assessmentFunc: widget.assessmentFunc,
-                                        className: widget.className,
-                                        topic: topicController.text.trim(),
-                                        duration: widget.duration,
-                                        gradeName: widget.gradeName,
-                                        hwAssigned: hwAssignedExists,
-                                        hwDue: hwDueExists,
-                                        lessonId: widget.lessonId,
-                                        notes: notesController.text.trim(),
-                                        room: widget.room,
-                                        time: widget.time,
-                                        assessmentSys: widget.assessmentSys,
+                                    Scaffold(
+                                      body: SingleChildScrollView(
+                                        controller: scrollController,
+                                        child: LessonDetailsModal(
+                                          allLessonsList: widget.allLessonsList,
+                                          assessment:
+                                              assessmentController.text.trim(),
+                                          assessmentFunc: widget.assessmentFunc,
+                                          className: widget.className,
+                                          topic: topicController.text.trim(),
+                                          duration: widget.duration,
+                                          gradeName: widget.gradeName,
+                                          hwAssigned: hwAssignedExists,
+                                          hwDue: hwDueExists,
+                                          lessonId: widget.lessonId,
+                                          notes: notesController.text.trim(),
+                                          room: widget.room,
+                                          time: widget.time,
+                                          assessmentSys: widget.assessmentSys,
+                                        ),
                                       ),
                                     ),
                           ),
