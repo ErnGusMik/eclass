@@ -570,6 +570,7 @@ class LessonDetailsModal extends StatefulWidget {
     required this.assessmentFunc,
     required this.className,
     required this.gradeName,
+    required this.assessmentSys,
   });
 
   final int lessonId;
@@ -585,6 +586,7 @@ class LessonDetailsModal extends StatefulWidget {
   final Function assessmentFunc;
   final String className;
   final String gradeName;
+  final String assessmentSys;
 
   @override
   State<LessonDetailsModal> createState() => _LessonDetailsModalState();
@@ -630,6 +632,10 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
     if (widget.hwAssigned != false) {
       hwAssignedController.text = widget.hwAssigned['description'];
     }
+    if (!mounted) return;
+    setState(() {
+      assessmentSys = widget.assessmentSys;
+    });
   }
 
   Future<void> handleChange(String field) async {
@@ -716,6 +722,31 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
     }
   }
 
+  Future<void> handleAssSysChange(String value) async {
+    if (value != 'graded' && value != 'practice') return;
+    setState(() {
+      assessmentSys = value;
+    });
+
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await put(
+      Uri.parse('http://192.168.1.106:8080/teacher/lesson/update/system'),
+      headers: {'Authorization': 'Bearer $idToken'},
+      body: {
+        'lessonId': widget.lessonId.toString(),
+        'sys': value,
+      },
+    );
+
+    if (response.statusCode != 204) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to update assessment system!'),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Class name anagram
@@ -733,6 +764,7 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
       className = classNameList[0].substring(0, 2);
     }
 
+    // Date & time
     String day = '';
     if (widget.time.day == DateTime.now().day &&
         widget.time.month == DateTime.now().month &&
@@ -895,6 +927,9 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Container(
+                    constraints: BoxConstraints(
+                      minHeight: 170.0,
+                    ),
                     width: (MediaQuery.of(context).size.width - 16.0 * 3) * 0.5,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12.0),
@@ -903,7 +938,7 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(10.0),
-                      child: Column(
+                      child: Column(                        
                         crossAxisAlignment: CrossAxisAlignment.start,
                         spacing: 10.0,
                         children: [
@@ -928,50 +963,44 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
                     ),
                     child: Padding(
                       padding: const EdgeInsets.all(10.0),
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        spacing: 10.0,
-                        children: [
-                          Text(
-                            'Grading system',
-                            style: Theme.of(context).textTheme.labelMedium,
-                          ),
-                          RadioListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 8.0,
+                      child: RadioGroup(
+                        groupValue: assessmentSys,
+                        onChanged: (value) => handleAssSysChange(value!),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: 10.0,
+                          children: [
+                            Text(
+                              'Grading system',
+                              style: Theme.of(context).textTheme.labelMedium,
                             ),
-                            controlAffinity: ListTileControlAffinity.trailing,
-                            selected: assessmentSys == 'graded',
-                            value: 'graded',
-                            groupValue: assessmentSys,
-                            onChanged:
-                                (value) => setState(() {
-                                  assessmentSys = value!;
-                                }),
-                            title: Text(
-                              'Graded',
-                              style: Theme.of(context).textTheme.labelLarge,
+                            RadioListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 8.0,
+                              ),
+                              controlAffinity: ListTileControlAffinity.trailing,
+                              selected: assessmentSys == 'graded',
+                              value: 'graded',
+                              title: Text(
+                                'Graded',
+                                style: Theme.of(context).textTheme.labelLarge,
+                              ),
                             ),
-                          ),
-                          RadioListTile(
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 8.0,
+                            RadioListTile(
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 8.0,
+                              ),
+                              controlAffinity: ListTileControlAffinity.trailing,
+                              selected: assessmentSys == 'practice',
+                              value: 'practice',
+                              title: Text(
+                                'Practice',
+                                style: Theme.of(context).textTheme.labelLarge,
+                              ),
                             ),
-                            controlAffinity: ListTileControlAffinity.trailing,
-                            selected: assessmentSys == 'practice',
-                            value: 'practice',
-                            groupValue: assessmentSys,
-                            onChanged:
-                                (value) => setState(() {
-                                  assessmentSys = value!;
-                                }),
-                            title: Text(
-                              'Practice',
-                              style: Theme.of(context).textTheme.labelLarge,
-                            ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   ),
@@ -2303,6 +2332,7 @@ class _LessonsSectionState extends State<LessonsSection> {
             hwDue: lesson['hw_due'],
             allLessonsList: allLessonsList,
             assessment: assessment == false ? '' : assessment['topic'],
+            assessmentSys: assessment == false ? '' : assessment['sys'],
             className: widget.className,
             gradeName: widget.gradeName,
           );
@@ -2339,6 +2369,7 @@ class LessonCard extends StatefulWidget {
     required this.assessmentFunc,
     required this.className,
     required this.gradeName,
+    required this.assessmentSys,
   });
 
   final int lessonId;
@@ -2354,6 +2385,7 @@ class LessonCard extends StatefulWidget {
   final Function assessmentFunc;
   final String className;
   final String gradeName;
+  final String assessmentSys;
 
   @override
   State<LessonCard> createState() => _LessonCardState();
@@ -2854,6 +2886,7 @@ class _LessonCardState extends State<LessonCard> {
                                         notes: notesController.text.trim(),
                                         room: widget.room,
                                         time: widget.time,
+                                        assessmentSys: widget.assessmentSys,
                                       ),
                                     ),
                           ),

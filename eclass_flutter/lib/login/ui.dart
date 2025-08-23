@@ -115,6 +115,7 @@ class _LoginPageState extends State<LoginPage> {
     if (response.statusCode == 201) {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setBool('loggedIn', true);
+      await prefs.setString('role', tab == 0 ? 'teacher' : 'student');
       Navigator.pushReplacementNamed(
         context,
         '/${tab == 0 ? 'teacher' : 'student'}',

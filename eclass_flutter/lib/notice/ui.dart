@@ -32,7 +32,6 @@ class _NoticePageState extends State<NoticePage> {
   Future<void> loadNotice() async {
     final id = ModalRoute.of(context)!.settings.arguments;
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
-
     final response = await get(
       Uri.parse('http://192.168.1.106:8080/notices/get?id=$id'),
       headers: {'Authorization': 'Bearer $idToken'},

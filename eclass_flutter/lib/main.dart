@@ -1,5 +1,6 @@
 import 'package:eclass_flutter/login/ui.dart';
 import 'package:eclass_flutter/notice/ui.dart';
+import 'package:eclass_flutter/student/studentUI.dart';
 import 'package:eclass_flutter/teacher_panel/lesson_page/ui.dart';
 import 'package:eclass_flutter/teacher_panel/teacherUI.dart';
 import 'package:eclass_flutter/user/ui.dart';
@@ -28,18 +29,30 @@ class AuthGate extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder<bool>(
+    return FutureBuilder<Map<String, dynamic>>(
       future: (() async {
         final prefs = await SharedPreferences.getInstance();
         final isLoggedIn = prefs.getBool('loggedIn') ?? false;
         final user = FirebaseAuth.instance.currentUser;
-        return isLoggedIn && user != null;
+        final role = prefs.getString('role'); // 'teacher' or 'student'
+        return {
+          'isLoggedIn': isLoggedIn && user != null,
+          'role': role,
+        };
       })(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
-        } else if (snapshot.hasData && snapshot.data == true) {
-          return TeacherUI();
+        } else if (snapshot.hasData && snapshot.data?['isLoggedIn'] == true) {
+          if (snapshot.data?['role'] == 'teacher') {
+            return TeacherUI();
+          } else if (snapshot.data?['role'] == 'student') {
+            return StudentUI();
+          } else {
+            // Unknown role, fallback to login
+            print('ERROR: Unknown role');
+            return LoginPage();
+          }
         } else {
           return LoginPage();
         }
