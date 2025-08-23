@@ -912,7 +912,7 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
                             style: Theme.of(context).textTheme.labelMedium,
                           ),
                           Text(
-                            widget.assessment == '' ? 'Intro quiz about the synthesis of politics and knowledge' : widget.assessment,
+                            widget.assessment == '' ? 'None' : widget.assessment,
                             style: Theme.of(context).textTheme.bodyMedium,
                           ),
                         ],
