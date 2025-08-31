@@ -571,6 +571,7 @@ class LessonDetailsModal extends StatefulWidget {
     required this.className,
     required this.gradeName,
     required this.assessmentSys,
+    required this.assessmentId,
   });
 
   final int lessonId;
@@ -587,6 +588,7 @@ class LessonDetailsModal extends StatefulWidget {
   final String className;
   final String gradeName;
   final String assessmentSys;
+  final int? assessmentId;
 
   @override
   State<LessonDetailsModal> createState() => _LessonDetailsModalState();
@@ -730,12 +732,15 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
 
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await put(
-      Uri.parse('http://192.168.1.106:8080/teacher/lesson/update/system'),
+      Uri.parse(
+        'http://192.168.1.106:8080/teacher/lesson/assessment/update/system',
+      ),
       headers: {'Authorization': 'Bearer $idToken'},
       body: {'lessonId': widget.lessonId.toString(), 'sys': value},
     );
 
     if (response.statusCode != 204) {
+      print(response.body);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Failed to update assessment system!')),
       );
@@ -908,6 +913,7 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
               ],
             ),
           ),
+          // TODO: add homework
           // TODO: add students' uploads
           Column(
             spacing: 8.0,
@@ -1002,11 +1008,163 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
                 ],
               ),
               // TODO: add assessment results
+              if (widget.assessment != '')
+                AssessmentGradesSection(
+                  lessonId: widget.lessonId,
+                  assessmentId: widget.assessmentId,
+                ),
               AttendanceSection(lessonId: widget.lessonId),
             ],
           ),
         ],
       ),
+    );
+  }
+}
+
+class AssessmentGradesSection extends StatefulWidget {
+  const AssessmentGradesSection({
+    super.key,
+    required this.lessonId,
+    required this.assessmentId,
+  });
+
+  final int? lessonId;
+  final int? assessmentId;
+
+  @override
+  State<AssessmentGradesSection> createState() =>
+      _AssessmentGradesSectionState();
+}
+
+class _AssessmentGradesSectionState extends State<AssessmentGradesSection> {
+  List students = [];
+  bool loading = true;
+
+  Future<void> fetchStudents() async {
+    if (widget.lessonId == null) return;
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await get(
+      Uri.parse(
+        'http://192.168.1.106:8080/teacher/lesson/scores/get?lessonId=${widget.lessonId}&assessmentId=${widget.assessmentId}',
+      ),
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+    print(response.body);
+    if (response.statusCode == 200) {
+      final studentList = jsonDecode(response.body);
+      print(studentList['students']);
+      setState(() {
+        students = List<Map>.from(studentList['students']);
+        loading = false;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchStudents();
+  }
+
+  Future<void> updateScore(
+    dynamic student,
+    bool selected,
+    int score,
+  ) async {
+    if (widget.lessonId == null) return;
+
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await put(
+      Uri.parse('http://192.168.1.106:8080/teacher/lesson/attendance/update'),
+      headers: {'Authorization': 'Bearer $idToken'},
+      body: {
+        'lessonId': widget.lessonId.toString(),
+        'studentId': student['id'].toString(),
+      }, // TODO: do this now. server endpoint ready. show dialog, then send to server.
+    );
+
+    if (response.statusCode != 200) {
+      print(response.body);
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Failed to update attendance')));
+      setState(() {
+        student['status'] = '';
+      });
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        ...students.map(
+          (student) => Container(
+            decoration: BoxDecoration(
+              border:
+                  student == students[students.length - 1]
+                      ? Border()
+                      : Border(
+                        bottom: BorderSide(
+                          color: Theme.of(context).colorScheme.outlineVariant,
+                        ),
+                      ),
+            ),
+            child: ListTile(
+              title: GestureDetector(
+                child: Text(
+                  student['display_name'],
+                  overflow: TextOverflow.ellipsis,
+                ),
+                onTap:
+                    () => ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('Tapped on ${student['display_name']}'),
+                      ),
+                    ),
+              ),
+              trailing: GestureDetector(
+                onTap: () {
+                  
+                },
+                child: Chip(
+                  label: Text('--%'),
+                  backgroundColor:
+                      Theme.of(context).colorScheme.secondaryContainer,
+                  side: BorderSide.none,
+                ),
+              ),
+              tileColor: Theme.of(context).colorScheme.surfaceContainerLowest,
+              shape: RoundedRectangleBorder(
+                borderRadius:
+                    students[0] == student
+                        ? students[students.length - 1] == student
+                            ? BorderRadius.vertical(
+                              top: Radius.circular(12.0),
+                              bottom: Radius.circular(12.0),
+                            )
+                            : BorderRadius.vertical(top: Radius.circular(12.0))
+                        : students[students.length - 1] == student
+                        ? BorderRadius.vertical(bottom: Radius.circular(12.0))
+                        : BorderRadius.zero,
+              ),
+            ),
+          ),
+        ),
+        if (loading)
+          ListView(
+            shrinkWrap: true,
+            children: [
+              for (var i = 0; i < 8; i++)
+                loadingBlocks(
+                  Theme.of(context).textTheme.headlineSmall!,
+                  MediaQuery.of(context).size.width - 32,
+                ),
+            ],
+          ),
+      ],
     );
   }
 }
@@ -1021,9 +1179,7 @@ class AttendanceSection extends StatefulWidget {
 }
 
 class _AttendanceSectionState extends State<AttendanceSection> {
-  List students = [
-    {'display_name': 'Ernests Gustavs Mikuts', 'id': 13, 'status': ''},
-  ];
+  List students = [];
   bool loading = true;
 
   Future<void> fetchStudents() async {
@@ -1037,6 +1193,7 @@ class _AttendanceSectionState extends State<AttendanceSection> {
     );
     if (response.statusCode == 200) {
       final studentList = jsonDecode(response.body);
+      print(studentList['students']);
       setState(() {
         students = List<Map>.from(studentList['students']);
         loading = false;
@@ -1066,9 +1223,10 @@ class _AttendanceSectionState extends State<AttendanceSection> {
       body: {
         'lessonId': widget.lessonId.toString(),
         'studentId': student['id'].toString(),
-        'status': status,
+        'status': selected ? status : '-',
       },
     );
+
     if (response.statusCode != 200) {
       print(response.body);
       ScaffoldMessenger.of(
@@ -1118,30 +1276,30 @@ class _AttendanceSectionState extends State<AttendanceSection> {
                   ChoiceChip(
                     label: Text('A'),
                     onSelected: (selected) {
-                      updateAttendance(student, 'A', selected);
+                      updateAttendance(student, 'a', selected);
                     },
-                    selected: student['status'] == 'A',
+                    selected: student['status'] == 'a',
                   ),
                   ChoiceChip(
                     label: Text('E'),
                     onSelected: (selected) {
-                      updateAttendance(student, 'E', selected);
+                      updateAttendance(student, 'e', selected);
                     },
-                    selected: student['status'] == 'E',
+                    selected: student['status'] == 'e',
                   ),
                   ChoiceChip(
                     label: Text('L'),
                     onSelected: (selected) {
-                      updateAttendance(student, 'L', selected);
+                      updateAttendance(student, 'l', selected);
                     },
-                    selected: student['status'] == 'L',
+                    selected: student['status'] == 'l',
                   ),
                   ChoiceChip(
                     label: Text('P'),
                     onSelected: (selected) {
-                      updateAttendance(student, 'P', selected);
+                      updateAttendance(student, 'p', selected);
                     },
-                    selected: student['status'] == 'P',
+                    selected: student['status'] == 'p',
                   ),
                 ],
               ),
@@ -2541,6 +2699,7 @@ class _LessonsSectionState extends State<LessonsSection> {
             allLessonsList: allLessonsList,
             assessment: assessment == false ? '' : assessment['topic'],
             assessmentSys: assessment == false ? '' : assessment['sys'],
+            assessmentId: assessment == false ? null : assessment['id'],
             className: widget.className,
             gradeName: widget.gradeName,
           );
@@ -2578,6 +2737,7 @@ class LessonCard extends StatefulWidget {
     required this.className,
     required this.gradeName,
     required this.assessmentSys,
+    required this.assessmentId,
   });
 
   final int lessonId;
@@ -2594,6 +2754,7 @@ class LessonCard extends StatefulWidget {
   final String className;
   final String gradeName;
   final String assessmentSys;
+  final int? assessmentId;
 
   @override
   State<LessonCard> createState() => _LessonCardState();
@@ -3083,6 +3244,7 @@ class _LessonCardState extends State<LessonCard> {
                                       allLessonsList: widget.allLessonsList,
                                       assessment:
                                           assessmentController.text.trim(),
+                                      assessmentId: widget.assessmentId,
                                       assessmentFunc: widget.assessmentFunc,
                                       className: widget.className,
                                       topic: topicController.text.trim(),

@@ -59,16 +59,16 @@ Started out as a project for Hack Club Neighborhood.
 **Lesson overview**
 | Feature | Status |
 | ------- | ------ |
-| Basic UI | ❌ |
-| Notes from teacher | ❌ |
-| Topic | ❌ |
+| Basic UI | ✅ |
+| Notes from teacher | ✅ |
+| Topic | ✅ |
 | HW due | ❌ |
 | HW assigned | ❌ |
 | Students' uploads | ❌ |
-| Assessment topic | ❌ |
-| Assessment system | ❌ |
+| Assessment topic | ✅ |
+| Assessment system | ✅ |
 | Grades | ❌ |
-| Attendance | ❌ |
+| Attendance | ✅ |
 
 
 **Class overview**
@@ -113,7 +113,7 @@ Started out as a project for Hack Club Neighborhood.
 **Dashboard**
 | Feature | Status |
 | ------- | ------ |
-| Basic UI | ❌ |
+| Basic UI | ✅ |
 | Search functionality | ❌ |
 | Heading | ❌ |
 | Today's classes | ❌ |
@@ -123,12 +123,9 @@ Started out as a project for Hack Club Neighborhood.
 **Notices**
 | Feature | Status |
 | ------- | ------ |
-| Basic UI | ❌ |
-| Notice creation | ❌ |
-| Notice carousel functionality | ❌ |
-| File uploads | ❌ |
-| Rich text editing | ❌ |
-| Notice viewing | ❌ |
+| Basic UI | ✅ |
+| Notice carousel functionality | ✅ |
+| Notice viewing | ✅ |
 | Search functionality | ❌ |
 
 **This week**
