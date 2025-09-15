@@ -5,7 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'package:flutter_quill/quill_delta.dart';
 import 'package:http/http.dart';
+import 'package:intl/intl.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:shimmer/shimmer.dart';
 
 class StudentDash extends StatefulWidget {
   const StudentDash({super.key});
@@ -84,51 +86,12 @@ class _StudentDashState extends State<StudentDash> {
                   spacing: 8.0,
                   children: [
                     Text(
-                      "Today's Classes",
+                      "Your classes",
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         color: Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          TeacherClass(
-                            lesson: "Theory of Knowledge",
-                            classGrade: "DP2",
-                            startTime: TimeOfDay(hour: 8, minute: 20),
-                            endTime: TimeOfDay(hour: 9, minute: 0),
-                            first: true,
-                          ),
-                          TeacherClass(
-                            lesson: "Theory of Knowledge",
-                            classGrade: "DP2",
-                            startTime: TimeOfDay(hour: 9, minute: 10),
-                            endTime: TimeOfDay(hour: 9, minute: 50),
-                          ),
-                          TeacherClass(
-                            lesson: "English B",
-                            classGrade: "MYP5",
-                            startTime: TimeOfDay(hour: 10, minute: 0),
-                            endTime: TimeOfDay(hour: 10, minute: 40),
-                          ),
-                          TeacherClass(
-                            lesson: "English B",
-                            classGrade: "MYP5",
-                            startTime: TimeOfDay(hour: 10, minute: 50),
-                            endTime: TimeOfDay(hour: 11, minute: 30),
-                          ),
-                          TeacherClass(
-                            lesson: "English B",
-                            classGrade: "MYP5",
-                            startTime: TimeOfDay(hour: 11, minute: 40),
-                            endTime: TimeOfDay(hour: 12, minute: 20),
-                            last: true,
-                          ),
-                        ],
-                      ),
-                    ),
+                    Lessons(),
                   ],
                 ),
               ),
@@ -303,6 +266,199 @@ class _StudentDashState extends State<StudentDash> {
   }
 }
 
+class Lessons extends StatefulWidget {
+  const Lessons({
+    super.key,
+  });
+
+  @override
+  State<Lessons> createState() => _LessonsState();
+}
+
+class _LessonsState extends State<Lessons> {
+  DateTime selectedDate = DateTime.now();
+  List lessons = [];
+  bool _isLoading = true;
+
+  Future<void> loadLessons() async {
+    setState(() {
+      _isLoading = true;
+      lessons = [];
+    });
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await get(
+      Uri.parse(
+        'http://192.168.1.106:8080/student/lessons/get?date=${selectedDate.toIso8601String()}',
+      ),
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+    final body = jsonDecode(response.body);
+    // final allLessons = await get(
+    //   Uri.parse(
+    //     'http://192.168.1.106:8080/teacher/lesson/get/all?classId=1',
+    //   ),
+    //   headers: {'Authorization': 'Bearer $idToken'},
+    // );
+    // if (allLessons.statusCode != 200) {
+    //   ScaffoldMessenger.of(context).showSnackBar(
+    //     SnackBar(content: Text('An error occured while loading lessons')),
+    //   );
+    // }
+    setState(() {
+      lessons = body['lessons'];
+      _isLoading = false;
+    });
+  }
+
+  // @override
+  // void didUpdateWidget(oldWidget) {
+  //   super.didUpdateWidget(oldWidget);
+  //   // reload data only when chip date changes
+  //   if (selectedDate != oldWidget.selectedDate) {
+  //     loadLessons(); // reload data if input changes
+  //   }
+  // }
+  @override
+  void initState() {
+    super.initState();
+    loadLessons();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: 8.0,
+      children: [
+        GestureDetector(
+          onTap: () async {
+            var selectedDateModal = await showDatePicker(
+              context: context,
+              firstDate: DateTime(2020),
+              lastDate: DateTime(2100),
+              initialDate: selectedDate,
+            );
+            if (selectedDateModal != null) {
+              setState(() {
+                selectedDate = selectedDateModal;
+              });
+              loadLessons();
+            }
+          },
+          child: Chip(
+            label: Text(DateFormat('dd/MM/yy').format(selectedDate)),
+            avatar: Icon(
+              Icons.calendar_today,
+              color: Theme.of(context).colorScheme.onSecondaryContainer,
+            ),
+            backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+            labelStyle: TextStyle(
+              color: Theme.of(context).colorScheme.onSecondaryContainer,
+            ),
+          ),
+        ),
+
+        if (_isLoading)
+          ClipRRect(
+            borderRadius: BorderRadius.circular(16.0),
+            child: Shimmer.fromColors(
+              baseColor: Colors.grey[300]!,
+              highlightColor: Colors.grey[100]!,
+              child: Container(
+                color: Colors.white,
+                height: 400,
+                width: double.maxFinite,
+              ),
+            ),
+          ),
+
+          ...lessons.map((lesson) {
+            return TeacherClass(
+              lesson: lesson,
+              startTime: TimeOfDay.fromDateTime(DateTime.parse(lesson['datetime'])),
+              endTime: TimeOfDay.fromDateTime(DateTime.parse(lesson['datetime'])),
+            );
+          }),
+
+        // ...lessons.map((lesson) {
+        //   final assessment = lesson['assessment'];
+        //   return LessonCard(
+        //     assessmentFunc: widget.assessmentFunc,
+        //     duration: lesson['duration'],
+        //     notes: lesson['notes'] ?? '',
+        //     topic: lesson['topic'] ?? '',
+        //     lessonId: lesson['id'],
+        //     room: lesson['room'],
+        //     time: DateTime.parse(lesson['datetime']),
+        //     hwAssigned: lesson['hw_assigned'],
+        //     hwDue: lesson['hw_due'],
+        //     allLessonsList: allLessonsList,
+        //     assessment: assessment == false ? '' : assessment['topic'],
+        //     assessmentSys: assessment == false ? '' : assessment['sys'],
+        //     assessmentId: assessment == false ? null : assessment['id'],
+        //     className: widget.className,
+        //     gradeName: widget.gradeName,
+        //   );
+        // }),
+
+        if (lessons.isEmpty && !_isLoading)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 32.0),
+            child: Center(
+              child: Text(
+                "Hooray! No lessons today!",
+                style: Theme.of(context).textTheme.bodyMedium,
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+  // @override
+  // Widget build(BuildContext context) {
+  //   return Padding(
+  //     padding: const EdgeInsets.symmetric(horizontal: 10.0),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.center,
+  //       children: [
+  //         TeacherClass(
+  //           lesson: "Theory of Knowledge",
+  //           classGrade: "DP2",
+  //           startTime: TimeOfDay(hour: 8, minute: 20),
+  //           endTime: TimeOfDay(hour: 9, minute: 0),
+  //           first: true,
+  //         ),
+  //         TeacherClass(
+  //           lesson: "Theory of Knowledge",
+  //           classGrade: "DP2",
+  //           startTime: TimeOfDay(hour: 9, minute: 10),
+  //           endTime: TimeOfDay(hour: 9, minute: 50),
+  //         ),
+  //         TeacherClass(
+  //           lesson: "English B",
+  //           classGrade: "MYP5",
+  //           startTime: TimeOfDay(hour: 10, minute: 0),
+  //           endTime: TimeOfDay(hour: 10, minute: 40),
+  //         ),
+  //         TeacherClass(
+  //           lesson: "English B",
+  //           classGrade: "MYP5",
+  //           startTime: TimeOfDay(hour: 10, minute: 50),
+  //           endTime: TimeOfDay(hour: 11, minute: 30),
+  //         ),
+  //         TeacherClass(
+  //           lesson: "English B",
+  //           classGrade: "MYP5",
+  //           startTime: TimeOfDay(hour: 11, minute: 40),
+  //           endTime: TimeOfDay(hour: 12, minute: 20),
+  //           last: true,
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
+}
+
 class ClassGroup extends StatefulWidget {
   const ClassGroup({super.key, required this.classes});
   final List classes;
@@ -392,7 +548,6 @@ class TeacherClass extends StatelessWidget {
   const TeacherClass({
     super.key,
     required this.lesson,
-    required this.classGrade,
     this.startTime,
     this.endTime,
     this.first = false,
@@ -400,8 +555,7 @@ class TeacherClass extends StatelessWidget {
     this.onTap,
   });
 
-  final String lesson;
-  final String classGrade;
+  final lesson;
   final TimeOfDay? startTime;
   final TimeOfDay? endTime;
   final bool first;
@@ -435,8 +589,13 @@ class TeacherClass extends StatelessWidget {
                 children: [
                   CircleAvatar(
                     child: Text(
-                      classGrade.substring(0, 2) +
-                          classGrade.substring(classGrade.length - 1),
+                      lesson['name']
+                          .toString()
+                          .split(' ')
+                          .map((e) => e.isNotEmpty ? e[0] : '')
+                          .take(3)
+                          .join()
+                          .toUpperCase(),
                     ),
                   ),
                   SizedBox(width: 16.0),
@@ -444,7 +603,7 @@ class TeacherClass extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        lesson,
+                        lesson['name'],
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(
@@ -455,8 +614,8 @@ class TeacherClass extends StatelessWidget {
                       ),
                       Text(
                         (startTime != null && endTime != null)
-                            ? "$classGrade \u2022 $startTimeStr - $endTimeStr"
-                            : classGrade,
+                            ? "$startTimeStr - $endTimeStr"
+                            : '',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(

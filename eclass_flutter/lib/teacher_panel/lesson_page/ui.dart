@@ -628,6 +628,7 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
     notesController.text = widget.notes;
     topicController.text = widget.topic;
     assessmentController.text = widget.assessment;
+    print(widget.hwDue);
     if (widget.hwDue != false) {
       hwDueController.text = widget.hwDue['description'];
     }
@@ -913,8 +914,81 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
               ],
             ),
           ),
-          // TODO: add homework
-          // TODO: add students' uploads
+          Column(
+            spacing: 8.0,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Homework', style: Theme.of(context).textTheme.labelMedium),
+              Row(
+                spacing: 16.0,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    constraints: BoxConstraints(minHeight: 170.0),
+                    width: (MediaQuery.of(context).size.width - 16.0 * 3) * 0.5,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12.0),
+                      color:
+                          Theme.of(context).colorScheme.secondaryContainer,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 10.0,
+                        children: [
+                          Text(
+                            'Homework due',
+                            style: Theme.of(context).textTheme.labelMedium,
+                          ),
+                          Text(
+                            widget.hwDue == false
+                                ? 'None'
+                                : widget.hwDue['description'],
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  Container(
+                    constraints: BoxConstraints(minHeight: 170.0),
+                    width: (MediaQuery.of(context).size.width - 16.0 * 3) * 0.5,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(12.0),
+                      color:
+                          Theme.of(context).colorScheme.secondaryContainer,
+                    ),
+                    child: Padding(
+                      padding: const EdgeInsets.all(10.0),
+                      child: RadioGroup(
+                        groupValue: assessmentSys,
+                        onChanged: (value) => handleAssSysChange(value!),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          spacing: 10.0,
+                          children: [
+                            Text(
+                              'Assigned homework',
+                              style: Theme.of(context).textTheme.labelMedium,
+                            ),
+                            Text(
+                              widget.hwAssigned == false
+                                  ? 'None'
+                                  : widget.hwAssigned['description'],
+                              style: Theme.of(context).textTheme.bodyMedium,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
+          // TODO: add students' uploads (LATER)
           Column(
             spacing: 8.0,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -977,6 +1051,7 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
                               style: Theme.of(context).textTheme.labelMedium,
                             ),
                             RadioListTile(
+                              enabled: widget.assessmentId != null,
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 8.0,
                               ),
@@ -989,6 +1064,7 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
                               ),
                             ),
                             RadioListTile(
+                              enabled: widget.assessmentId != null,
                               contentPadding: const EdgeInsets.symmetric(
                                 horizontal: 8.0,
                               ),
@@ -1007,7 +1083,6 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
                   ),
                 ],
               ),
-              // TODO: add assessment results
               if (widget.assessment != '')
                 AssessmentGradesSection(
                   lessonId: widget.lessonId,
@@ -1067,32 +1142,29 @@ class _AssessmentGradesSectionState extends State<AssessmentGradesSection> {
     fetchStudents();
   }
 
-  Future<void> updateScore(
-    dynamic student,
-    bool selected,
-    int score,
-  ) async {
-    if (widget.lessonId == null) return;
+  Future<int?> updateScore(dynamic student, int score) async {
+    if (widget.lessonId == null) return null;
 
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await put(
-      Uri.parse('http://192.168.1.106:8080/teacher/lesson/attendance/update'),
+      Uri.parse('http://192.168.1.106:8080/teacher/lesson/scores/update'),
       headers: {'Authorization': 'Bearer $idToken'},
       body: {
         'lessonId': widget.lessonId.toString(),
+        'assessmentId': widget.assessmentId.toString(),
         'studentId': student['id'].toString(),
-      }, // TODO: do this now. server endpoint ready. show dialog, then send to server.
+        'score': score.toString(),
+      },
     );
 
     if (response.statusCode != 200) {
       print(response.body);
       ScaffoldMessenger.of(
         context,
-      ).showSnackBar(SnackBar(content: Text('Failed to update attendance')));
-      setState(() {
-        student['status'] = '';
-      });
+      ).showSnackBar(SnackBar(content: Text('Failed to update score')));
+      return null;
     }
+    return score;
   }
 
   @override
@@ -1126,11 +1198,61 @@ class _AssessmentGradesSectionState extends State<AssessmentGradesSection> {
                     ),
               ),
               trailing: GestureDetector(
-                onTap: () {
-                  
+                onTap: () async {
+                  int? newScore = await showDialog(
+                    context: context,
+                    builder: (context) {
+                      int? newScore;
+                      return AlertDialog(
+                        title: Text('Update Score'),
+                        content: Column(
+                          spacing: 8.0,
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text('Student: ${student['display_name']}'),
+                            TextFormField(
+                              decoration: InputDecoration(
+                                labelText: 'New Score',
+                                border: OutlineInputBorder(),
+                                suffixText: '%',
+                              ),
+                              keyboardType: TextInputType.number,
+                              onChanged: (value) {
+                                newScore = int.tryParse(value);
+                              },
+                            ),
+                          ],
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () {
+                              Navigator.pop(context, null);
+                            },
+                            child: Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () {
+                              if (newScore == null || newScore == '') return;
+                              Navigator.pop(context, newScore);
+                            },
+                            child: Text('Update'),
+                          ),
+                        ],
+                      );
+                    },
+                  );
+                  if (newScore != null) {
+                    int? score = await updateScore(student, newScore);
+                    if (score != null) {
+                      setState(() {
+                        student['score'] = score;
+                      });
+                    }
+                  }
                 },
                 child: Chip(
-                  label: Text('--%'),
+                  label: Text('${student['score'] ?? '--'}%'),
                   backgroundColor:
                       Theme.of(context).colorScheme.secondaryContainer,
                   side: BorderSide.none,
@@ -3250,8 +3372,8 @@ class _LessonCardState extends State<LessonCard> {
                                       topic: topicController.text.trim(),
                                       duration: widget.duration,
                                       gradeName: widget.gradeName,
-                                      hwAssigned: hwAssignedExists,
-                                      hwDue: hwDueExists,
+                                      hwAssigned: widget.hwAssigned,
+                                      hwDue: widget.hwDue,
                                       lessonId: widget.lessonId,
                                       notes: notesController.text.trim(),
                                       room: widget.room,
