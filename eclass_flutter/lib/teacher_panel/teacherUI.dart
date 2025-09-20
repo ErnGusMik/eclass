@@ -52,6 +52,7 @@ class _TeacherUIState extends State<TeacherUI> {
             icon: Icon(Icons.school_outlined),
             label: "Overviews",
             selectedIcon: Icon(Icons.school),
+            enabled: false,
           ),
           NavigationDestination(
             icon: Icon(Icons.schedule),

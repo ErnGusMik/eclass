@@ -373,10 +373,14 @@ class _LessonsState extends State<Lessons> {
           ),
 
           ...lessons.map((lesson) {
+            DateTime startTime = DateTime.parse(lesson['datetime']);
+            DateTime endTime = startTime.add(Duration(minutes: lesson['duration']));
             return TeacherClass(
               lesson: lesson,
-              startTime: TimeOfDay.fromDateTime(DateTime.parse(lesson['datetime'])),
-              endTime: TimeOfDay.fromDateTime(DateTime.parse(lesson['datetime'])),
+              startTime: TimeOfDay.fromDateTime(startTime),
+              endTime: TimeOfDay.fromDateTime(endTime),
+              first: lesson == lessons[0] ? true : false,
+              last: lesson == lessons[lessons.length - 1] ? true : false,
             );
           }),
 
@@ -414,49 +418,6 @@ class _LessonsState extends State<Lessons> {
       ],
     );
   }
-  // @override
-  // Widget build(BuildContext context) {
-  //   return Padding(
-  //     padding: const EdgeInsets.symmetric(horizontal: 10.0),
-  //     child: Column(
-  //       crossAxisAlignment: CrossAxisAlignment.center,
-  //       children: [
-  //         TeacherClass(
-  //           lesson: "Theory of Knowledge",
-  //           classGrade: "DP2",
-  //           startTime: TimeOfDay(hour: 8, minute: 20),
-  //           endTime: TimeOfDay(hour: 9, minute: 0),
-  //           first: true,
-  //         ),
-  //         TeacherClass(
-  //           lesson: "Theory of Knowledge",
-  //           classGrade: "DP2",
-  //           startTime: TimeOfDay(hour: 9, minute: 10),
-  //           endTime: TimeOfDay(hour: 9, minute: 50),
-  //         ),
-  //         TeacherClass(
-  //           lesson: "English B",
-  //           classGrade: "MYP5",
-  //           startTime: TimeOfDay(hour: 10, minute: 0),
-  //           endTime: TimeOfDay(hour: 10, minute: 40),
-  //         ),
-  //         TeacherClass(
-  //           lesson: "English B",
-  //           classGrade: "MYP5",
-  //           startTime: TimeOfDay(hour: 10, minute: 50),
-  //           endTime: TimeOfDay(hour: 11, minute: 30),
-  //         ),
-  //         TeacherClass(
-  //           lesson: "English B",
-  //           classGrade: "MYP5",
-  //           startTime: TimeOfDay(hour: 11, minute: 40),
-  //           endTime: TimeOfDay(hour: 12, minute: 20),
-  //           last: true,
-  //         ),
-  //       ],
-  //     ),
-  //   );
-  // }
 }
 
 class ClassGroup extends StatefulWidget {
@@ -851,6 +812,155 @@ class Header extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class LessonModal extends StatefulWidget {
+  const LessonModal({
+    super.key,
+    required this.lessonId,
+    required this.notes,
+    required this.topic,
+    required this.duration,
+    required this.room,
+    required this.time,
+    required this.hwAssigned,
+    required this.hwDue,
+    required this.allLessonsList,
+    required this.assessment,
+    required this.className,
+    required this.gradeName,
+    required this.assessmentSys,
+    required this.assessmentId,
+  });
+
+  final int lessonId;
+  final String room;
+  final String notes;
+  final String topic;
+  final DateTime time;
+  final int duration;
+  final hwDue;
+  final hwAssigned;
+  final List allLessonsList;
+  final String assessment;
+  final String className;
+  final String gradeName;
+  final String assessmentSys;
+  final int? assessmentId;
+
+  @override
+  State<LessonModal> createState() => _LessonModalState();
+}
+
+class _LessonModalState extends State<LessonModal> {
+
+  // TODO: get attendance
+
+  @override
+  Widget build(BuildContext context) {
+    // Date & time
+    String day = '';
+    if (widget.time.day == DateTime.now().day &&
+        widget.time.month == DateTime.now().month &&
+        widget.time.year == DateTime.now().year) {
+      day = 'Today';
+    } else if (widget.time.day == DateTime.now().day + 1 &&
+        widget.time.month == DateTime.now().month &&
+        widget.time.year == DateTime.now().year) {
+      day = 'Tomorrow';
+    } else {
+      day = DateFormat('E dd/MM,').format(widget.time);
+    }
+    return Column(
+      children: [
+        Row(
+            spacing: 14.0,
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              CircleAvatar(
+                backgroundColor: Theme.of(context).colorScheme.primaryContainer,
+                foregroundColor: Theme.of(context).colorScheme.primary,
+                child: Text(widget.className),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      widget.className,
+                      style: Theme.of(context).textTheme.headlineMedium,
+                      overflow: TextOverflow.ellipsis,
+                      maxLines: 1,
+                      softWrap: false,
+                    ),
+                    Text(
+                      '${widget.gradeName} \u2022 $day ${DateFormat('Hm').format(widget.time)} - ${DateFormat('Hm').format(widget.time.add(Duration(minutes: widget.duration)))} \u2022 Rm. ${widget.room}',
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
+                  ],
+                ),
+              ),
+              Chip(
+                label: Text('Absent'),
+              ),
+            ],
+          ),
+          Text(
+            widget.notes != '' ? widget.notes : 'No notes from teacher',
+            style: Theme.of(context).textTheme.bodyLarge,
+          ),
+          Container(
+            padding: EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16.0),
+              color: Theme.of(context).colorScheme.tertiaryContainer,
+            ),
+            child: Column(
+              children: [
+                Text(
+                  'Topic',
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.onTertiaryContainer),
+                ),
+                Text(
+                  widget.topic != '' ? widget.topic : 'No topic specified',
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onTertiaryContainer),
+                ),
+              ],
+            ),
+          ),
+          Row(
+            children: [
+              Container(
+                width: (MediaQuery.of(context).size.width - 16 * 3) / 2,
+                padding: EdgeInsets.all(10),
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16.0),
+                  color: Theme.of(context).colorScheme.secondaryContainer,
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      'Assessment',
+                      style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.onSecondaryContainer),
+                    ),
+                    Text(
+                      '100%',
+                      style: Theme.of(context).textTheme.displayLarge?.copyWith(color: Theme.of(context).colorScheme.onSecondaryContainer),
+                    ),
+                    Text(
+                      'Essay on digital marketing and its impact on research online',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSecondaryContainer),
+                    )
+                  ],
+                ),
+              ),
+              // TODO: you left here. continue with the lesson modal for students here.
+            ],
+          )
+      ],
     );
   }
 }
