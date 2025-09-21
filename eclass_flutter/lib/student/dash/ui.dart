@@ -131,7 +131,12 @@ class _StudentDashState extends State<StudentDash> {
                               borderRadius: BorderRadius.circular(28.0),
                             ),
                             child: Padding(
-                              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 8.0, 8.0),
+                              padding: const EdgeInsets.fromLTRB(
+                                16.0,
+                                16.0,
+                                8.0,
+                                8.0,
+                              ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -161,20 +166,49 @@ class _StudentDashState extends State<StudentDash> {
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     spacing: 10.0,
                                     children: [
-                                      Text('6.8', style: Theme.of(context).textTheme.displayLarge?.copyWith(color: Theme.of(context).colorScheme.onPrimaryContainer)),
-                                      Icon(Icons.arrow_drop_up, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                                      Text(
+                                        '6.8',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.displayLarge?.copyWith(
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.onPrimaryContainer,
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.arrow_drop_up,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimaryContainer,
+                                      ),
                                     ],
                                   ),
-                                  Text('Keep it up!', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onPrimaryContainer)),
-                                  Expanded(child: SizedBox(),),
+                                  Text(
+                                    'Keep it up!',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.copyWith(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimaryContainer,
+                                    ),
+                                  ),
+                                  Expanded(child: SizedBox()),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
-                                      TextButton(onPressed: () {
-                                        // Handle view more
-                                      }, child: Text('View more'))
+                                      TextButton(
+                                        onPressed: () {
+                                          // Handle view more
+                                        },
+                                        child: Text('View more'),
+                                      ),
                                     ],
-                                  )
+                                  ),
                                 ],
                               ),
                             ),
@@ -188,7 +222,12 @@ class _StudentDashState extends State<StudentDash> {
                               borderRadius: BorderRadius.circular(28.0),
                             ),
                             child: Padding(
-                              padding: const EdgeInsets.fromLTRB(16.0, 16.0, 8.0, 8.0),
+                              padding: const EdgeInsets.fromLTRB(
+                                16.0,
+                                16.0,
+                                8.0,
+                                8.0,
+                              ),
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -218,20 +257,49 @@ class _StudentDashState extends State<StudentDash> {
                                     mainAxisAlignment: MainAxisAlignment.start,
                                     spacing: 10.0,
                                     children: [
-                                      Text('6.8', style: Theme.of(context).textTheme.displayLarge?.copyWith(color: Theme.of(context).colorScheme.onPrimaryContainer)),
-                                      Icon(Icons.arrow_drop_up, color: Theme.of(context).colorScheme.onPrimaryContainer),
+                                      Text(
+                                        '6.8',
+                                        style: Theme.of(
+                                          context,
+                                        ).textTheme.displayLarge?.copyWith(
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.onPrimaryContainer,
+                                        ),
+                                      ),
+                                      Icon(
+                                        Icons.arrow_drop_up,
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimaryContainer,
+                                      ),
                                     ],
                                   ),
-                                  Text('Keep it up!', style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onPrimaryContainer)),
-                                  Expanded(child: SizedBox(),),
+                                  Text(
+                                    'Keep it up!',
+                                    style: Theme.of(
+                                      context,
+                                    ).textTheme.bodyMedium?.copyWith(
+                                      color:
+                                          Theme.of(
+                                            context,
+                                          ).colorScheme.onPrimaryContainer,
+                                    ),
+                                  ),
+                                  Expanded(child: SizedBox()),
                                   Row(
                                     mainAxisAlignment: MainAxisAlignment.end,
                                     children: [
-                                      TextButton(onPressed: () {
-                                        // Handle view more
-                                      }, child: Text('View more'))
+                                      TextButton(
+                                        onPressed: () {
+                                          // Handle view more
+                                        },
+                                        child: Text('View more'),
+                                      ),
                                     ],
-                                  )
+                                  ),
                                 ],
                               ),
                             ),
@@ -267,9 +335,7 @@ class _StudentDashState extends State<StudentDash> {
 }
 
 class Lessons extends StatefulWidget {
-  const Lessons({
-    super.key,
-  });
+  const Lessons({super.key});
 
   @override
   State<Lessons> createState() => _LessonsState();
@@ -372,17 +438,63 @@ class _LessonsState extends State<Lessons> {
             ),
           ),
 
-          ...lessons.map((lesson) {
-            DateTime startTime = DateTime.parse(lesson['datetime']);
-            DateTime endTime = startTime.add(Duration(minutes: lesson['duration']));
-            return TeacherClass(
+        ...lessons.map((lesson) {
+          DateTime startTime = DateTime.parse(lesson['datetime']);
+          DateTime endTime = startTime.add(
+            Duration(minutes: lesson['duration']),
+          );
+          return GestureDetector(
+            onTap: () {
+              showModalBottomSheet(
+                showDragHandle: true,
+                isScrollControlled: true,
+                context: context,
+                builder:
+                    (context) => AnimatedPadding(
+                      duration: Duration(milliseconds: 100),
+                      curve: Curves.easeOut,
+                      padding: EdgeInsetsGeometry.only(
+                        bottom: MediaQuery.of(context).viewInsets.bottom,
+                      ),
+                      child: DraggableScrollableSheet(
+                        expand: false,
+                        maxChildSize: 0.9,
+                        initialChildSize: 0.5,
+                        builder:
+                            (context, scrollController) => Scaffold(
+                              body: SingleChildScrollView(
+                                controller: scrollController,
+                                child: LessonModal(
+                                  lessonId: lesson['id'],
+                                  notes: lesson['notes'] ?? '',
+                                  topic: lesson['topic'] ?? '',
+                                  duration: lesson['duration'],
+                                  room: lesson['room'],
+                                  time: DateTime.parse(lesson['datetime']),
+                                  hwAssigned: '',
+                                  hwDue: '',
+                                  allLessonsList: [],
+                                  assessment: '',
+                                  assessmentSys: '',
+                                  assessmentId: null,
+                                  className: lesson['name'],
+                                  gradeName: '',
+                                ),
+                              ),
+                            ),
+                      ),
+                    ),
+              );
+            },
+            child: TeacherClass(
               lesson: lesson,
               startTime: TimeOfDay.fromDateTime(startTime),
               endTime: TimeOfDay.fromDateTime(endTime),
               first: lesson == lessons[0] ? true : false,
               last: lesson == lessons[lessons.length - 1] ? true : false,
-            );
-          }),
+            ),
+          );
+        }),
 
         // ...lessons.map((lesson) {
         //   final assessment = lesson['assessment'];
@@ -404,7 +516,6 @@ class _LessonsState extends State<Lessons> {
         //     gradeName: widget.gradeName,
         //   );
         // }),
-
         if (lessons.isEmpty && !_isLoading)
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 32.0),
@@ -528,71 +639,66 @@ class TeacherClass extends StatelessWidget {
     var startTimeStr = startTime?.format(context).toString();
 
     var endTimeStr = endTime?.format(context).toString();
-    return GestureDetector(
-      onTap: onTap ?? () {},
-      child: Card(
-        elevation: 0.0,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.only(
-            topLeft: Radius.circular(first ? 12.0 : 4.0),
-            topRight: Radius.circular(first ? 12.0 : 4.0),
-            bottomLeft: Radius.circular(last ? 12.0 : 4.0),
-            bottomRight: Radius.circular(last ? 12.0 : 4.0),
-          ),
+    return Card(
+      elevation: 0.0,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.only(
+          topLeft: Radius.circular(first ? 12.0 : 4.0),
+          topRight: Radius.circular(first ? 12.0 : 4.0),
+          bottomLeft: Radius.circular(last ? 12.0 : 4.0),
+          bottomRight: Radius.circular(last ? 12.0 : 4.0),
         ),
-        color: Theme.of(context).colorScheme.surfaceContainerHighest,
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  CircleAvatar(
-                    child: Text(
-                      lesson['name']
-                          .toString()
-                          .split(' ')
-                          .map((e) => e.isNotEmpty ? e[0] : '')
-                          .take(3)
-                          .join()
-                          .toUpperCase(),
+      ),
+      color: Theme.of(context).colorScheme.surfaceContainerHighest,
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Row(
+              children: [
+                CircleAvatar(
+                  child: Text(
+                    lesson['name']
+                        .toString()
+                        .split(' ')
+                        .map((e) => e.isNotEmpty ? e[0] : '')
+                        .take(3)
+                        .join()
+                        .toUpperCase(),
+                  ),
+                ),
+                SizedBox(width: 16.0),
+                Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      lesson['name'],
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
+                      ),
                     ),
-                  ),
-                  SizedBox(width: 16.0),
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        lesson['name'],
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.titleMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
+                    Text(
+                      (startTime != null && endTime != null)
+                          ? "$startTimeStr - $endTimeStr"
+                          : '',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurface,
                       ),
-                      Text(
-                        (startTime != null && endTime != null)
-                            ? "$startTimeStr - $endTimeStr"
-                            : '',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurface,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: Icon(Icons.arrow_right),
-              ),
-            ],
-          ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Icon(Icons.arrow_right),
+            ),
+          ],
         ),
       ),
     );
@@ -855,8 +961,34 @@ class LessonModal extends StatefulWidget {
 }
 
 class _LessonModalState extends State<LessonModal> {
+  var details;
+  bool isLoading = true;
 
-  // TODO: get attendance
+  Future<void> getDetails() async {
+    final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
+    final response = await get(
+      Uri.parse(
+        'http://192.168.1.106:8080/student/lessons/details?lessonId=${widget.lessonId}',
+      ),
+      headers: {'Authorization': 'Bearer $idToken'},
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        details = jsonDecode(response.body);
+        isLoading = false;
+      });
+    } else {
+      // Handle error
+      print('Error fetching lesson details: ${response.statusCode}');
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    getDetails();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -873,9 +1005,13 @@ class _LessonModalState extends State<LessonModal> {
     } else {
       day = DateFormat('E dd/MM,').format(widget.time);
     }
-    return Column(
-      children: [
-        Row(
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 16.0,
+        children: [
+          Row(
             spacing: 14.0,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -883,7 +1019,15 @@ class _LessonModalState extends State<LessonModal> {
               CircleAvatar(
                 backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                 foregroundColor: Theme.of(context).colorScheme.primary,
-                child: Text(widget.className),
+                child: Text(
+                  widget.className
+                      .toString()
+                      .split(' ')
+                      .map((e) => e.isNotEmpty ? e[0] : '')
+                      .take(3)
+                      .join()
+                      .toUpperCase(),
+                ),
               ),
               Expanded(
                 child: Column(
@@ -891,21 +1035,19 @@ class _LessonModalState extends State<LessonModal> {
                   children: [
                     Text(
                       widget.className,
-                      style: Theme.of(context).textTheme.headlineMedium,
+                      style: Theme.of(context).textTheme.headlineSmall,
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
                       softWrap: false,
                     ),
                     Text(
-                      '${widget.gradeName} \u2022 $day ${DateFormat('Hm').format(widget.time)} - ${DateFormat('Hm').format(widget.time.add(Duration(minutes: widget.duration)))} \u2022 Rm. ${widget.room}',
+                      '$day ${DateFormat('Hm').format(widget.time)} - ${DateFormat('Hm').format(widget.time.add(Duration(minutes: widget.duration)))} \u2022 Rm. ${widget.room}',
                       style: Theme.of(context).textTheme.bodySmall,
                     ),
                   ],
                 ),
               ),
-              Chip(
-                label: Text('Absent'),
-              ),
+              Chip(label: Text('Absent')),
             ],
           ),
           Text(
@@ -914,53 +1056,176 @@ class _LessonModalState extends State<LessonModal> {
           ),
           Container(
             padding: EdgeInsets.all(10),
+            width: double.infinity,
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(16.0),
               color: Theme.of(context).colorScheme.tertiaryContainer,
             ),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'Topic',
-                  style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.onTertiaryContainer),
+                  style: Theme.of(context).textTheme.labelMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onTertiaryContainer,
+                  ),
                 ),
                 Text(
                   widget.topic != '' ? widget.topic : 'No topic specified',
-                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(color: Theme.of(context).colorScheme.onTertiaryContainer),
+                  style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                    color: Theme.of(context).colorScheme.onTertiaryContainer,
+                  ),
                 ),
               ],
             ),
           ),
-          Row(
-            children: [
-              Container(
-                width: (MediaQuery.of(context).size.width - 16 * 3) / 2,
-                padding: EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16.0),
-                  color: Theme.of(context).colorScheme.secondaryContainer,
-                ),
-                child: Column(
-                  children: [
-                    Text(
-                      'Assessment',
-                      style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Theme.of(context).colorScheme.onSecondaryContainer),
+          if (!isLoading)
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                details['assessment'] == null ?  Container() : 
+                    Container(
+                      width: (MediaQuery.of(context).size.width - 16 * 3) / 2,
+                      padding: EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(16.0),
+                        color: Theme.of(context).colorScheme.secondaryContainer,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Assessment',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.labelMedium?.copyWith(
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSecondaryContainer,
+                            ),
+                          ),
+                          Text(
+                            details['score'] == null ? '-' : details['score'] + '%',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.displayLarge?.copyWith(
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSecondaryContainer,
+                            ),
+                          ),
+                          Text(
+                            details['assessment']['topic'] ?? 'No assessment',
+                            style: Theme.of(
+                              context,
+                            ).textTheme.bodyMedium?.copyWith(
+                              color:
+                                  Theme.of(
+                                    context,
+                                  ).colorScheme.onSecondaryContainer,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                    Text(
-                      '100%',
-                      style: Theme.of(context).textTheme.displayLarge?.copyWith(color: Theme.of(context).colorScheme.onSecondaryContainer),
-                    ),
-                    Text(
-                      'Essay on digital marketing and its impact on research online',
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Theme.of(context).colorScheme.onSecondaryContainer),
-                    )
-                  ],
+                SizedBox(width: details['assessment'] != null ? 16.0 : 0.0),
+                Container(
+                  width: details['assessment'] == null ? MediaQuery.of(context).size.width - 16 * 2 : (MediaQuery.of(context).size.width - 16 * 3) / 2,
+                  padding: EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16.0),
+                    color: Theme.of(context).colorScheme.secondaryContainer,
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Homework due',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.labelMedium?.copyWith(
+                          color:
+                              Theme.of(
+                                context,
+                              ).colorScheme.onSecondaryContainer,
+                        ),
+                      ),
+                      Text(
+                        details['homework_due'] ?? 'None',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color:
+                              Theme.of(
+                                context,
+                              ).colorScheme.onSecondaryContainer,
+                        ),
+                      ),
+                      SizedBox(height: 8.0),
+                      Text(
+                        'Homework assigned',
+                        style: Theme.of(
+                          context,
+                        ).textTheme.labelMedium?.copyWith(
+                          color:
+                              Theme.of(
+                                context,
+                              ).colorScheme.onSecondaryContainer,
+                        ),
+                      ),
+                      Text(
+                        details['homework_assigned'] ?? 'None',
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          color:
+                              Theme.of(
+                                context,
+                              ).colorScheme.onSecondaryContainer,
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              // TODO: you left here. continue with the lesson modal for students here.
-            ],
-          )
-      ],
+                // TODO: you left here. continue with the lesson modal for students here.
+              ],
+            ),
+          if (isLoading)
+            Row(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3.0),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4.0),
+                    child: Shimmer.fromColors(
+                      baseColor: Colors.grey[300]!,
+                      highlightColor: Colors.grey[100]!,
+                      child: Container(
+                        color: Colors.white,
+                        height: 80,
+                        width: (MediaQuery.of(context).size.width - 48) / 2,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(width: 16.0),
+                Padding(
+                  padding: const EdgeInsets.symmetric(vertical: 3.0),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(4.0),
+                    child: Shimmer.fromColors(
+                      baseColor: Colors.grey[300]!,
+                      highlightColor: Colors.grey[100]!,
+                      child: Container(
+                        color: Colors.white,
+                        height: 80,
+                        width: (MediaQuery.of(context).size.width - 48) / 2,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+        ],
+      ),
     );
   }
 }
