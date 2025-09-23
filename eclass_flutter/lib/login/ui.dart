@@ -46,7 +46,7 @@ class _LoginPageState extends State<LoginPage> {
 
     // final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     // final response = await get(
-    //   Uri.parse("http://192.168.1.106:8080/auth/login"),
+    //   Uri.parse("http://erngusmik.hackclub.app:39935/auth/login"),
     //   headers: {"Authorization": "Bearer $idToken"},
     // );
 
@@ -95,7 +95,7 @@ class _LoginPageState extends State<LoginPage> {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await post(
       Uri.parse(
-        "http://192.168.1.106:8080/auth/signup?role=${tab == 0 ? 'teacher' : 'student'}",
+        "http://erngusmik.hackclub.app:39935/auth/signup?role=${tab == 0 ? 'teacher' : 'student'}",
       ),
       body: jsonEncode({
         "className": classNameController.text.trim(),
@@ -160,7 +160,7 @@ class _LoginPageState extends State<LoginPage> {
     });
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
-      Uri.parse('http://192.168.1.106:8080/auth/getClass?code=$code'),
+      Uri.parse('http://erngusmik.hackclub.app:39935/auth/getClass?code=$code'),
       headers: {"Authorization": "Bearer $idToken"},
     );
     if (response.statusCode == 404) {
@@ -204,7 +204,7 @@ class _LoginPageState extends State<LoginPage> {
     }
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
-      Uri.parse("http://192.168.1.106:8080/auth/login"),
+      Uri.parse("http://erngusmik.hackclub.app:39935/auth/login"),
       headers: {"Authorization": "Bearer $idToken"},
     );
 

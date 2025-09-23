@@ -26,7 +26,7 @@ class _StudentDashState extends State<StudentDash> {
   Future<void> loadNotices() async {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
-      Uri.parse('http://192.168.1.106:8080/notices/latest'),
+      Uri.parse('http://erngusmik.hackclub.app:39935/notices/latest'),
       headers: {"Authorization": "Bearer $idToken"},
     );
     Map body = jsonDecode(response.body);
@@ -39,7 +39,7 @@ class _StudentDashState extends State<StudentDash> {
   Future<void> loadClasses() async {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
-      Uri.parse('http://192.168.1.106:8080/teacher/class/get/all'),
+      Uri.parse('http://erngusmik.hackclub.app:39935/teacher/class/get/all'),
       headers: {'Authorization': 'Bearer $idToken'},
     );
 
@@ -95,222 +95,223 @@ class _StudentDashState extends State<StudentDash> {
                   ],
                 ),
               ),
-              Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  spacing: 8.0,
-                  children: [
-                    Text(
-                      "Grades",
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        color: Theme.of(context).colorScheme.onSurface,
-                      ),
-                    ),
-                    SizedBox(
-                      height: 250,
-                      child: CarouselView(
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(28.0),
+              IgnorePointer(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 8.0,
+                    children: [
+                      Text(
+                        "Grades (coming soon for students)",
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          color: Theme.of(context).colorScheme.onSurface,
                         ),
-                        padding: EdgeInsets.all(8.0),
-                        itemSnapping: true,
-                        scrollDirection: Axis.horizontal,
-                        itemExtent: MediaQuery.of(context).size.width * 0.5,
-                        shrinkExtent: MediaQuery.of(context).size.width * 0.5,
-                        onTap: (i) {
-                          // Handle tap
-                        },
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color:
-                                  Theme.of(context)
-                                      .colorScheme
-                                      .primaryContainer, // TODO: change to error background if below avg
-                              borderRadius: BorderRadius.circular(28.0),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                16.0,
-                                16.0,
-                                8.0,
-                                8.0,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'English HL',
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.titleMedium?.copyWith(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.onPrimaryContainer,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Mrs. Smith',
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodySmall?.copyWith(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    spacing: 10.0,
-                                    children: [
-                                      Text(
-                                        '6.8',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.displayLarge?.copyWith(
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.onPrimaryContainer,
-                                        ),
-                                      ),
-                                      Icon(
-                                        Icons.arrow_drop_up,
-                                        color:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.onPrimaryContainer,
-                                      ),
-                                    ],
-                                  ),
-                                  Text(
-                                    'Keep it up!',
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium?.copyWith(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.onPrimaryContainer,
-                                    ),
-                                  ),
-                                  Expanded(child: SizedBox()),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      TextButton(
-                                        onPressed: () {
-                                          // Handle view more
-                                        },
-                                        child: Text('View more'),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                          Container(
-                            decoration: BoxDecoration(
-                              color:
-                                  Theme.of(context)
-                                      .colorScheme
-                                      .primaryContainer, // TODO: change to error background if below avg
-                              borderRadius: BorderRadius.circular(28.0),
-                            ),
-                            child: Padding(
-                              padding: const EdgeInsets.fromLTRB(
-                                16.0,
-                                16.0,
-                                8.0,
-                                8.0,
-                              ),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'English HL',
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.titleMedium?.copyWith(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.onPrimaryContainer,
-                                    ),
-                                  ),
-                                  Text(
-                                    'Mrs. Smith',
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodySmall?.copyWith(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.onSurfaceVariant,
-                                    ),
-                                  ),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.start,
-                                    spacing: 10.0,
-                                    children: [
-                                      Text(
-                                        '6.8',
-                                        style: Theme.of(
-                                          context,
-                                        ).textTheme.displayLarge?.copyWith(
-                                          color:
-                                              Theme.of(
-                                                context,
-                                              ).colorScheme.onPrimaryContainer,
-                                        ),
-                                      ),
-                                      Icon(
-                                        Icons.arrow_drop_up,
-                                        color:
-                                            Theme.of(
-                                              context,
-                                            ).colorScheme.onPrimaryContainer,
-                                      ),
-                                    ],
-                                  ),
-                                  Text(
-                                    'Keep it up!',
-                                    style: Theme.of(
-                                      context,
-                                    ).textTheme.bodyMedium?.copyWith(
-                                      color:
-                                          Theme.of(
-                                            context,
-                                          ).colorScheme.onPrimaryContainer,
-                                    ),
-                                  ),
-                                  Expanded(child: SizedBox()),
-                                  Row(
-                                    mainAxisAlignment: MainAxisAlignment.end,
-                                    children: [
-                                      TextButton(
-                                        onPressed: () {
-                                          // Handle view more
-                                        },
-                                        child: Text('View more'),
-                                      ),
-                                    ],
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
-                    ),
-                  ],
+                      SizedBox(
+                        height: 250,
+                        child: CarouselView(
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28.0),
+                          ),
+                          padding: EdgeInsets.all(8.0),
+                          itemSnapping: true,
+                          scrollDirection: Axis.horizontal,
+                          itemExtent: MediaQuery.of(context).size.width * 0.5,
+                          shrinkExtent: MediaQuery.of(context).size.width * 0.5,
+                          onTap: (i) {
+                            // Handle tap
+                          },
+                          children: [
+                            Container(
+                              decoration: BoxDecoration(
+                                color:
+                                    Theme.of(context)
+                                        .colorScheme
+                                        .primaryContainer, // TODO: change to error background if below avg
+                                borderRadius: BorderRadius.circular(28.0),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  16.0,
+                                  16.0,
+                                  8.0,
+                                  8.0,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'English HL',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleMedium?.copyWith(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimaryContainer,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Mrs. Smith',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall?.copyWith(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      spacing: 10.0,
+                                      children: [
+                                        Text(
+                                          '6.8',
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.displayLarge?.copyWith(
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.onPrimaryContainer,
+                                          ),
+                                        ),
+                                        Icon(
+                                          Icons.arrow_drop_up,
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.onPrimaryContainer,
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                      'Keep it up!',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium?.copyWith(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimaryContainer,
+                                      ),
+                                    ),
+                                    Expanded(child: SizedBox()),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        TextButton(
+                                          onPressed: () {
+                                            // Handle view more
+                                          },
+                                          child: Text('View more'),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                            Container(
+                              decoration: BoxDecoration(
+                                color:
+                                    Theme.of(context)
+                                        .colorScheme
+                                        .primaryContainer, // TODO: change to error background if below avg
+                                borderRadius: BorderRadius.circular(28.0),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(
+                                  16.0,
+                                  16.0,
+                                  8.0,
+                                  8.0,
+                                ),
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'English HL',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.titleMedium?.copyWith(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimaryContainer,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Mrs. Smith',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodySmall?.copyWith(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.start,
+                                      spacing: 10.0,
+                                      children: [
+                                        Text(
+                                          '6.8',
+                                          style: Theme.of(
+                                            context,
+                                          ).textTheme.displayLarge?.copyWith(
+                                            color:
+                                                Theme.of(
+                                                  context,
+                                                ).colorScheme.onPrimaryContainer,
+                                          ),
+                                        ),
+                                        Icon(
+                                          Icons.arrow_drop_up,
+                                          color:
+                                              Theme.of(
+                                                context,
+                                              ).colorScheme.onPrimaryContainer,
+                                        ),
+                                      ],
+                                    ),
+                                    Text(
+                                      'Keep it up!',
+                                      style: Theme.of(
+                                        context,
+                                      ).textTheme.bodyMedium?.copyWith(
+                                        color:
+                                            Theme.of(
+                                              context,
+                                            ).colorScheme.onPrimaryContainer,
+                                      ),
+                                    ),
+                                    Expanded(child: SizedBox()),
+                                    Row(
+                                      mainAxisAlignment: MainAxisAlignment.end,
+                                      children: [
+                                        TextButton(
+                                          onPressed: () {
+                                            // Handle view more
+                                          },
+                                          child: Text('View more'),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
-
               ClassGroup(classes: classes),
               SizedBox(height: 8.0),
             ],
@@ -354,14 +355,14 @@ class _LessonsState extends State<Lessons> {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
       Uri.parse(
-        'http://192.168.1.106:8080/student/lessons/get?date=${selectedDate.toIso8601String()}',
+        'http://erngusmik.hackclub.app:39935/student/lessons/get?date=${selectedDate.toIso8601String()}',
       ),
       headers: {'Authorization': 'Bearer $idToken'},
     );
     final body = jsonDecode(response.body);
     // final allLessons = await get(
     //   Uri.parse(
-    //     'http://192.168.1.106:8080/teacher/lesson/get/all?classId=1',
+    //     'http://erngusmik.hackclub.app:39935/teacher/lesson/get/all?classId=1',
     //   ),
     //   headers: {'Authorization': 'Bearer $idToken'},
     // );
@@ -968,7 +969,7 @@ class _LessonModalState extends State<LessonModal> {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
       Uri.parse(
-        'http://192.168.1.106:8080/student/lessons/details?lessonId=${widget.lessonId}',
+        'http://erngusmik.hackclub.app:39935/student/lessons/details?lessonId=${widget.lessonId}',
       ),
       headers: {'Authorization': 'Bearer $idToken'},
     );

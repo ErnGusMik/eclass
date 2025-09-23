@@ -29,7 +29,7 @@ class _TeacherLessonState extends State<TeacherLesson> {
     final classID = ModalRoute.of(context)?.settings.arguments as int;
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
-      Uri.parse('http://192.168.1.106:8080/teacher/class/get?id=$classID'),
+      Uri.parse('http://erngusmik.hackclub.app:39935/teacher/class/get?id=$classID'),
       headers: {'Authorization': 'Bearer $idToken'},
     );
     final body = jsonDecode(response.body);
@@ -53,7 +53,7 @@ class _TeacherLessonState extends State<TeacherLesson> {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
       Uri.parse(
-        'http://192.168.1.106:8080/teacher/lesson/assessment/getUpcoming?classId=$classId',
+        'http://erngusmik.hackclub.app:39935/teacher/lesson/assessment/getUpcoming?classId=$classId',
       ),
       headers: {'Authorization': 'Bearer $idToken'},
     );
@@ -78,7 +78,7 @@ class _TeacherLessonState extends State<TeacherLesson> {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
       Uri.parse(
-        'http://192.168.1.106:8080/teacher/lesson/get/all?classId=$classId',
+        'http://erngusmik.hackclub.app:39935/teacher/lesson/get/all?classId=$classId',
       ),
       headers: {'Authorization': 'Bearer $idToken'},
     );
@@ -693,7 +693,7 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
     }
 
     final response = await put(
-      Uri.parse('http://192.168.1.106:8080/teacher/lesson/update?field=$field'),
+      Uri.parse('http://erngusmik.hackclub.app:39935/teacher/lesson/update?field=$field'),
       headers: {'Authorization': 'Bearer $idToken'},
       body: {
         'lessonId': widget.lessonId.toString(),
@@ -734,7 +734,7 @@ class _LessonDetailsModalState extends State<LessonDetailsModal> {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await put(
       Uri.parse(
-        'http://192.168.1.106:8080/teacher/lesson/assessment/update/system',
+        'http://erngusmik.hackclub.app:39935/teacher/lesson/assessment/update/system',
       ),
       headers: {'Authorization': 'Bearer $idToken'},
       body: {'lessonId': widget.lessonId.toString(), 'sys': value},
@@ -1121,7 +1121,7 @@ class _AssessmentGradesSectionState extends State<AssessmentGradesSection> {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
       Uri.parse(
-        'http://192.168.1.106:8080/teacher/lesson/scores/get?lessonId=${widget.lessonId}&assessmentId=${widget.assessmentId}',
+        'http://erngusmik.hackclub.app:39935/teacher/lesson/scores/get?lessonId=${widget.lessonId}&assessmentId=${widget.assessmentId}',
       ),
       headers: {'Authorization': 'Bearer $idToken'},
     );
@@ -1147,7 +1147,7 @@ class _AssessmentGradesSectionState extends State<AssessmentGradesSection> {
 
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await put(
-      Uri.parse('http://192.168.1.106:8080/teacher/lesson/scores/update'),
+      Uri.parse('http://erngusmik.hackclub.app:39935/teacher/lesson/scores/update'),
       headers: {'Authorization': 'Bearer $idToken'},
       body: {
         'lessonId': widget.lessonId.toString(),
@@ -1309,7 +1309,7 @@ class _AttendanceSectionState extends State<AttendanceSection> {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
       Uri.parse(
-        'http://192.168.1.106:8080/teacher/lesson/attendance/get?lessonId=${widget.lessonId}',
+        'http://erngusmik.hackclub.app:39935/teacher/lesson/attendance/get?lessonId=${widget.lessonId}',
       ),
       headers: {'Authorization': 'Bearer $idToken'},
     );
@@ -1340,7 +1340,7 @@ class _AttendanceSectionState extends State<AttendanceSection> {
     });
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await put(
-      Uri.parse('http://192.168.1.106:8080/teacher/lesson/attendance/update'),
+      Uri.parse('http://erngusmik.hackclub.app:39935/teacher/lesson/attendance/update'),
       headers: {'Authorization': 'Bearer $idToken'},
       body: {
         'lessonId': widget.lessonId.toString(),
@@ -1487,7 +1487,7 @@ class _DeleteClassDialogState extends State<DeleteClassDialog> {
       final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
       final response = await delete(
         Uri.parse(
-          'http://192.168.1.106:8080/teacher/class/delete?id=${widget.id}',
+          'http://erngusmik.hackclub.app:39935/teacher/class/delete?id=${widget.id}',
         ),
         headers: {'Authorization': 'Bearer $idToken'},
       );
@@ -1632,7 +1632,7 @@ class _ScheduleLessonsModalState extends State<ScheduleLessonsModal> {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
       Uri.parse(
-        'http://192.168.1.106:8080/schedules/getForClass?id=${widget.classId}',
+        'http://erngusmik.hackclub.app:39935/schedules/getForClass?id=${widget.classId}',
       ),
       headers: {'Authorization': 'Bearer $idToken'},
     );
@@ -1900,7 +1900,7 @@ class _NewScheduleDialogState extends State<NewScheduleDialog> {
     });
     final idToken = await FirebaseAuth.instance.currentUser!.getIdToken();
     final response = await post(
-      Uri.parse('http://192.168.1.106:8080/schedules/new?generate=true'),
+      Uri.parse('http://erngusmik.hackclub.app:39935/schedules/new?generate=true'),
       headers: {'Authorization': 'Bearer $idToken'},
       body: {
         'classId': jsonEncode(widget.classId),
@@ -2438,7 +2438,7 @@ class _StudentsSectionState extends State<StudentsSection> {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
       Uri.parse(
-        'http://192.168.1.106:8080/teacher/class/students?classId=${widget.classId}',
+        'http://erngusmik.hackclub.app:39935/teacher/class/students?classId=${widget.classId}',
       ),
       headers: {'Authorization': 'Bearer $idToken'},
     );
@@ -2598,7 +2598,7 @@ class AssessmentCard extends StatelessWidget {
                         await FirebaseAuth.instance.currentUser?.getIdToken();
                     final response = await delete(
                       Uri.parse(
-                        'http://192.168.1.106:8080/teacher/lesson/assessment/delete?lessonId=$lesson',
+                        'http://erngusmik.hackclub.app:39935/teacher/lesson/assessment/delete?lessonId=$lesson',
                       ),
                       headers: {'Authorization': 'Bearer $idToken'},
                     );
@@ -2726,14 +2726,14 @@ class _LessonsSectionState extends State<LessonsSection> {
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await get(
       Uri.parse(
-        'http://192.168.1.106:8080/teacher/lesson/get/date?date=${selectedDate.toIso8601String()}&classId=${widget.classId}',
+        'http://erngusmik.hackclub.app:39935/teacher/lesson/get/date?date=${selectedDate.toIso8601String()}&classId=${widget.classId}',
       ),
       headers: {'Authorization': 'Bearer $idToken'},
     );
     final body = jsonDecode(response.body);
     final allLessons = await get(
       Uri.parse(
-        'http://192.168.1.106:8080/teacher/lesson/get/all?classId=${widget.classId}',
+        'http://erngusmik.hackclub.app:39935/teacher/lesson/get/all?classId=${widget.classId}',
       ),
       headers: {'Authorization': 'Bearer $idToken'},
     );
@@ -2975,7 +2975,7 @@ class _LessonCardState extends State<LessonCard> {
     }
 
     final response = await put(
-      Uri.parse('http://192.168.1.106:8080/teacher/lesson/update?field=$field'),
+      Uri.parse('http://erngusmik.hackclub.app:39935/teacher/lesson/update?field=$field'),
       headers: {'Authorization': 'Bearer $idToken'},
       body: {
         'lessonId': widget.lessonId.toString(),
@@ -3450,7 +3450,7 @@ class _TestEditModalState extends State<TestEditModal> {
 
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await put(
-      Uri.parse('http://192.168.1.106:8080/teacher/lesson/assessment/update'),
+      Uri.parse('http://erngusmik.hackclub.app:39935/teacher/lesson/assessment/update'),
       headers: {'Authorization': 'Bearer $idToken'},
       body: {
         'lessonId': lessonId.toString(),
@@ -3629,7 +3629,7 @@ class _TestModalState extends State<TestModal> {
 
     final idToken = await FirebaseAuth.instance.currentUser?.getIdToken();
     final response = await post(
-      Uri.parse('http://192.168.1.106:8080/teacher/lesson/assessment/create'),
+      Uri.parse('http://erngusmik.hackclub.app:39935/teacher/lesson/assessment/create'),
       headers: {'Authorization': 'Bearer $idToken'},
       body: {'lessonId': lesson['id'].toString(), 'topic': topic, 'sys': sys},
     );
