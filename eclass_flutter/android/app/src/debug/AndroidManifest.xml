@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
     <application
-        android:label="eclass"
+        android:label="eclass_flutter"
     >
     </application>
     <!-- The INTERNET permission is required for development. Specifically,

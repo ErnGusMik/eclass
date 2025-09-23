@@ -1107,7 +1107,7 @@ class _LessonModalState extends State<LessonModal> {
                             ),
                           ),
                           Text(
-                            details['score'] == null ? '-' : details['score'] + '%',
+                            details['score'] == null ? '-' : '${details['score']}%',
                             style: Theme.of(
                               context,
                             ).textTheme.displayLarge?.copyWith(
