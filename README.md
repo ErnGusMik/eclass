@@ -2,7 +2,16 @@
 
 Slowly becoming a reality, eclass will be a tool to help you manage your classes in a more efficient way and let students focus on learning rather than administrative tasks.
 
+An Android classroom manager. A summer project by an IB student for IB teachers.
+
 Started out as a project for Hack Club Neighborhood.
+
+## How to use
+Check out the releases tab and download the latest APK file. Install it on your Android device and you're ready to go! (all you need is the internet!)
+
+
+
+
 
 ## Progress
 
@@ -62,12 +71,12 @@ Started out as a project for Hack Club Neighborhood.
 | Basic UI | ✅ |
 | Notes from teacher | ✅ |
 | Topic | ✅ |
-| HW due | ❌ |
-| HW assigned | ❌ |
+| HW due | ✅ |
+| HW assigned | ✅ |
 | Students' uploads | ❌ |
 | Assessment topic | ✅ |
 | Assessment system | ✅ |
-| Grades | ❌ |
+| Grades | ✅ |
 | Attendance | ✅ |
 
 
@@ -115,8 +124,8 @@ Started out as a project for Hack Club Neighborhood.
 | ------- | ------ |
 | Basic UI | ✅ |
 | Search functionality | ❌ |
-| Heading | ❌ |
-| Today's classes | ❌ |
+| Heading | ✅ |
+| Today's classes | ✅ |
 | Grades | ❌ |
 | Recent files | ❌ |
 
@@ -128,7 +137,7 @@ Started out as a project for Hack Club Neighborhood.
 | Notice viewing | ✅ |
 | Search functionality | ❌ |
 
-**This week**
+**This week (possibly not implementing)**
 | Feature | Status |
 | ------- | ------ |
 | Basic UI | ❌ |
@@ -141,14 +150,14 @@ Started out as a project for Hack Club Neighborhood.
 **Lesson modals**
 | Feature | Status |
 | ------- | ------ |
-| Basic UI | ❌ |
+| Basic UI | ✅ |
 | Mark as complete | ❌ |
-| Heading | ❌ |
-| Status | ❌ |
-| Notes from teacher | ❌ |
-| Topic | ❌ |
-| HW due | ❌ |
-| HW assigned | ❌ |
+| Heading | ✅ |
+| Status | ✅ |
+| Notes from teacher | ✅ |
+| Topic | ✅ |
+| HW due | ✅ |
+| HW assigned | ✅ |
 | Your uploads | ❌ |
 | Teacher's uploads | ❌ |
 | Toolbar | ❌ |
